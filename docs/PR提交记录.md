@@ -97,3 +97,137 @@ npm run prototype
 ```text
 http://127.0.0.1:4178/index.html
 ```
+
+## PR #4：[codex] 调整前后端目录结构
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/4
+- PR 状态：Draft
+- 分支：`codex/split-frontend-backend-layout`
+- 基线分支：`codex/frontend-interaction-prototype`
+- 提交：`6958e97 调整前后端目录结构`
+- 创建时间：2026-06-12
+
+### 背景
+
+VoiceCanvas 已确认采用前后端分离路线。为了避免前端原型、后端骨架和工程文档长期混在根目录，本 PR 先把已有前端原型迁移到 `frontend/`，为后续 Python 后端独立落地腾出清晰边界。
+
+### 改动
+
+- 将 `package.json`、`package-lock.json`、`scripts/`、`src/prototype/`、`tests/prototype/` 迁移到 `frontend/`。
+- 保留前端后续正式化需要的 `frontend/src/app`、`frontend/src/features`、`frontend/tests/features` 和 `frontend/tests/e2e` 占位。
+- 清理根目录中原先混合前后端职责的占位目录。
+- 更新 `frontend/src/README.md` 和 `frontend/tests/README.md`，说明前端只负责交互、渲染和本地投影。
+
+### 测试
+
+已运行：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+测试结果：`前端交互原型契约测试通过`。
+
+### 风险
+
+- 这是目录迁移 PR，GitHub diff 中会出现较多文件移动。
+- 业务逻辑未变更，主要风险是路径引用遗漏；已通过原型契约测试验证。
+
+## PR #5：[codex] 搭建 Python LangGraph 后端骨架
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/5
+- PR 状态：Draft
+- 分支：`codex/python-langgraph-backend`
+- 基线分支：`codex/split-frontend-backend-layout`
+- 提交：`845c53a 搭建 Python LangGraph 后端骨架`
+- 创建时间：2026-06-12
+
+### 背景
+
+后端技术路线已确定为 Python + uv + FastAPI + LangGraph。需要先建立后端工程骨架，承接后续 AI 编排、可信 Project State、命令校验、命令执行、SSE 事件流、导出和七牛云适配。
+
+### 改动
+
+- 新增 `backend/pyproject.toml` 和 `backend/uv.lock`，使用 uv 管理 Python 依赖。
+- 新增 FastAPI 应用入口，包含 `/health` 和 `/api/orchestrations`。
+- 新增 LangGraph Mock 编排图，支持普通命令分支和 `WAITING_FOR_USER` 澄清分支。
+- 新增 Pydantic 领域模型，覆盖 Project、Scene、CanvasElement、CanvasCommand 等基础结构。
+- 新增后端测试，覆盖 API、领域模型和 LangGraph 澄清分支。
+- 更新 `.gitignore`，忽略 Python 测试、lint 和类型检查缓存。
+
+### 测试
+
+已运行：
+
+```powershell
+cd backend
+uv sync --no-editable
+uv run --no-editable pytest
+uv run --no-editable ruff check .
+uv run --no-editable mypy src
+```
+
+测试结果：
+
+- pytest：6 passed。
+- ruff：All checks passed。
+- mypy：Success: no issues found in 12 source files。
+
+说明：pytest 存在 FastAPI TestClient 的上游弃用 warning，不影响当前功能。
+
+### 风险
+
+- 当前 LangGraph 仍是 Mock 编排，只用于验证架构和可恢复分支。
+- Windows 中文路径下 editable 安装会导致 `.pth` 路径编码问题，因此后端命令统一使用 `--no-editable`。
+
+## PR #6：[codex] 补充技术选型与依赖声明
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/6
+- PR 状态：Draft
+- 分支：`codex/document-tech-selection`
+- 基线分支：`codex/python-langgraph-backend`
+- 提交：见 PR commits，包含技术选型文档同步与 PR 记录更新
+- 创建时间：2026-06-12
+
+### 背景
+
+在前端目录迁移和 Python LangGraph 后端骨架落地后，需要同步更新项目文档，避免 README、架构文档和接口文档继续保留旧的 Node/Express 后端表述。
+
+### 改动
+
+- 新增 `docs/技术选型与依赖声明.md`，记录前后端技术栈、依赖边界、运行命令和测试手段。
+- 更新 README，补充 `frontend/`、`backend/` 双目录结构、前后端运行方式和测试方式。
+- 更新技术架构文档，明确 Python 后端使用 LangGraph 承载可恢复 AI 编排。
+- 更新接口与数据模型文档，将实现落点调整为 Python/Pydantic/FastAPI。
+- 更新前端交互原型文档和产品决策记录中的路径、模型落地方式和后端职责表述。
+
+### 测试
+
+已运行：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+```powershell
+cd backend
+uv run --no-editable pytest
+uv run --no-editable ruff check .
+uv run --no-editable mypy src
+```
+
+测试结果：
+
+- 前端交互原型契约测试通过。
+- 后端 pytest：6 passed。
+- ruff：All checks passed。
+- mypy：Success: no issues found in 12 source files。
+
+说明：pytest 存在 FastAPI TestClient 的上游弃用 warning，不影响当前功能。
+
+### 风险
+
+- 本 PR 主要是文档同步，不新增运行时代码。
+- 后续如果真实 LLM、ASR 或七牛云 SDK 接入，需要继续同步依赖声明和适配器测试。
