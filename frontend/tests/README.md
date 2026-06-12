@@ -10,20 +10,30 @@
 - `features/`：画布、左侧画布历史区、右侧 AI 交互栏等组件测试。
 - `e2e/`：完整语音创作链路、澄清恢复、流式画布更新和导出测试。
 
-项目引入测试框架后，应在本文档补充具体命令，例如 `npm test`、`npm run test:e2e`。
+项目已声明 Vitest 作为后续前端单元测试工具。正式前端模块落地后，应在本文档补充具体命令，例如 `npm run test:features`、`npm run test:e2e`。
 
 ## 当前可运行测试
 
 前端交互原型契约测试：
 
 ```powershell
+cd frontend
 npm run test:prototype
 ```
 
 或直接运行：
 
 ```powershell
+cd frontend
 node tests/prototype/prototype-contract.test.mjs
 ```
 
-该测试验证 `src/prototype/mock-data.js` 中的 API 契约、UI 绑定、指令链路和初始 Project 数据模型，确保前端原型与后端接口设计保持强绑定。
+该测试验证 `frontend/src/prototype/mock-data.js` 中的 API 契约、UI 绑定、指令链路和初始 Project 数据模型，确保前端原型与后端接口设计保持强绑定。
+
+## 后续测试工具声明
+
+- 前端纯逻辑和组件测试：使用 `vitest`。
+- 后端 API、领域模型和 LangGraph 测试：在 `backend/` 中使用 `pytest`。
+- 前端 E2E 测试：等正式前端引入后再添加 `playwright`。
+
+新增模块时，需要同步说明测试文件位置、运行命令、覆盖场景和未覆盖风险。
