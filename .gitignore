@@ -7,6 +7,10 @@ venv/
 dist/
 build/
 coverage/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 
 # 本地环境
 .env
@@ -22,4 +26,3 @@ Thumbs.db
 # 编辑器
 .idea/
 .vscode/
-
