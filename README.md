@@ -85,13 +85,69 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - [产品决策记录](./docs/产品决策记录.md)
 - [语音指令语料](./docs/语音指令语料.md)
 - [技术架构设计](./docs/技术架构设计.md)
+- [技术选型与依赖声明](./docs/技术选型与依赖声明.md)
 - [接口与数据模型设计](./docs/接口与数据模型设计.md)
 - [前端交互原型与接口绑定设计](./docs/前端交互原型与接口绑定设计.md)
 - [PR 提交记录](./docs/PR提交记录.md)
 
+## 项目结构
+
+```text
+frontend/  前端静态原型与后续正式前端
+backend/   Python + FastAPI + LangGraph 可信后端
+docs/      产品、架构、接口和工程说明
+```
+
+前端负责语音入口、画布投影、历史区、AI 交互栏和导出入口；后端负责 Project 可信状态、AI 编排、命令校验、命令执行、历史记录、事件流、导出和外部服务适配。
+
+## 运行与测试
+
+前端原型：
+
+```powershell
+cd frontend
+npm run prototype
+```
+
+访问：
+
+```text
+http://127.0.0.1:4178/index.html
+```
+
+前端契约测试：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+后端环境与测试：
+
+```powershell
+cd backend
+uv sync --no-editable
+uv run --no-editable pytest
+uv run --no-editable ruff check .
+uv run --no-editable mypy src
+```
+
+后端本地服务：
+
+```powershell
+cd backend
+uv run --no-editable uvicorn voicecanvas.api.main:app --reload
+```
+
+健康检查：
+
+```text
+http://127.0.0.1:8000/health
+```
+
 ## 当前状态
 
-项目处于产品定义、技术架构确认与 MVP 收敛阶段，当前仓库已提交产品决策、语音指令语料、基础 README、技术架构设计、接口与数据模型设计、前端交互原型与接口绑定设计。当前技术路线已确定为“可恢复 AI 编排器架构”：所有用户语音或文本输入统一进入 AI Orchestrator，由 AI 根据上下文决定直接执行命令、调用工具、拆解多步任务或询问用户；当需要澄清时，系统暂停当前任务会话，等待用户语音或点击回答后从原状态继续执行。页面交互上，左侧为画布历史区，展示镜头历史、操作历史和关键变更记录；右侧为 AI 交互栏，承载语音入口、当前阶段、澄清问题、执行进度和本轮变更总结；主画布支持随命令执行流式更新。当前原型运行命令为 `npm run prototype`，访问 `http://127.0.0.1:4178/index.html`；原型契约测试命令为 `npm run test:prototype`。
+项目处于产品定义、技术架构确认与 MVP 收敛阶段，当前仓库已提交产品决策、语音指令语料、基础 README、技术架构设计、接口与数据模型设计、前端交互原型与接口绑定设计。当前技术路线已确定为“可恢复 AI 编排器架构”：所有用户语音或文本输入统一进入后端 AI Orchestrator，由 LangGraph 根据上下文推进计划、命令执行、工具调用、澄清等待和恢复继续；当需要澄清时，系统暂停当前任务会话，等待用户语音或点击回答后从原状态继续执行。页面交互上，左侧为画布历史区，展示镜头历史、操作历史和关键变更记录；右侧为 AI 交互栏，承载语音入口、当前阶段、澄清问题、执行进度和本轮变更总结；主画布支持随命令执行流式更新。当前前端原型位于 `frontend/`，后端骨架位于 `backend/`。
 
 后续将继续补充：
 
