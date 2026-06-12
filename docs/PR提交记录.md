@@ -39,3 +39,61 @@ VoiceCanvas 已经明确采用可恢复 AI 编排器架构，需要把产品决�
 ### 截图或录屏
 
 不涉及前端 UI 实现，暂无截图或录屏。
+
+## PR #2：[codex] 实现 VoiceCanvas 前端交互原型
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/2
+- PR 状态：Draft
+- 分支：`codex/frontend-interaction-prototype`
+- 基线分支：`codex/scaffold-voicecanvas-architecture`
+- 提交：`55d2554 实现前端交互原型`
+- 创建时间：2026-06-12
+
+### 背景
+
+VoiceCanvas MVP 需要先具备可演示的前端交互原型，用于验证左侧画布历史区、中间结构化画布、右侧 AI 交互栏和项目级设置入口是否符合产品与架构设计。同时，页面交互需要强绑定后端接口模型，方便后续替换为真实 Orchestrator、CommandExecutor、SSE 和导出服务。
+
+### 改动
+
+- 新增 `src/prototype/` 静态前端原型，包含左侧画布历史区、中间结构化画布和右侧 AI 交互栏。
+- 新增项目设置菜单，提供新建项目、载入项目、导出 JSON 和导出图片入口。
+- 实现语音输入草稿流程：识别完成后进入可编辑文本，用户确认后再发送。
+- 支持 `Alt+V` 录音快捷键，松开后生成可编辑转写草稿。
+- 将页面改为稳定三栏独立滚动布局，左右区域内容增长不影响中间画布稳定性。
+- 新增 `docs/前端交互原型与接口绑定设计.md`，说明页面区域职责、接口绑定、事件流和测试方式。
+- 新增 `tests/prototype/prototype-contract.test.mjs`，覆盖 API 契约、UI 绑定、初始项目模型和关键交互入口。
+- 新增 `scripts/serve-prototype.mjs` 和 `npm run prototype`，用于稳定运行本地原型。
+
+### 测试
+
+- 已运行原型契约测试：
+
+```powershell
+npm run test:prototype
+```
+
+- 测试结果：`前端交互原型契约测试通过`。
+- 已在浏览器手动验证：
+  - 设置菜单默认收起，点击展开，再次点击可收回。
+  - `Alt+V` 可以生成可编辑转写草稿，且不会自动执行。
+  - 页面移除底部调试面板后保持三栏稳定布局。
+
+### 风险
+
+- 当前仍是静态 Mock 原型，尚未接入真实 ASR、LLM、BFF 或 SSE。
+- 语音识别流程为原型模拟，后续需要替换为真实 `SpeechRecognizer`。
+- 导出入口已设计，但 PNG、长图导出和七牛云存储还需要后续接入真实 `Exporter` 与 `AssetStorage`。
+
+### 截图或录屏
+
+前端原型可通过以下命令本地启动查看：
+
+```powershell
+npm run prototype
+```
+
+访问地址：
+
+```text
+http://127.0.0.1:4178/index.html
+```
