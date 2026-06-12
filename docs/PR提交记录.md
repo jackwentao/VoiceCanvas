@@ -357,3 +357,72 @@ uv run --no-editable mypy src
 - `test_command_validator.py`：校验核心命令、缺字段、目标不存在、非法尺寸和删除最后一个 Scene 的清空语义。
 - `test_command_executor.py`：校验创建镜头、添加/修改/删除元素、删除 active Scene、清空最后页面和居中布局。
 - `test_history_manager.py`：校验添加、修改、删除、清空页面的 undo/redo，以及新命令清空 redo 栈。
+
+## PR #11（GitHub #12）：[codex] 接入真实后端编排 API
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/12
+- PR 状态：Draft
+- 分支：`codex/real-backend-orchestration-api`
+- 基线分支：`main`
+- 提交：本 PR 当前提交 `接入真实后端编排 API`
+- 创建时间：2026-06-12
+- 编号说明：项目记录顺序上这是 PR #11；GitHub 上误开的旧 #11 已关闭且编号不可复用，因此平台实际编号为 #12。
+
+### 标题
+
+接入同步版真实后端编排 API，返回 Project、Patch、History、事件和总结。
+
+### 功能描述
+
+本 PR 将 `/api/orchestrations` 从 Mock LangGraph 响应升级为真实后端业务闭环。用户或前端提交演示语料后，后端会读取或创建 Project，生成结构化命令，经过命令校验和执行器更新 Project State，并同步返回本轮 CanvasPatch、HistoryEntry、运行事件和 Turn Summary。
+
+使用方式：
+
+- 启动后端服务后，调用 `POST /api/orchestrations`。
+- 请求体包含 `projectId` 和 `userInput`。
+- 响应中读取 `project` 更新当前画布投影，读取 `patches` 做局部刷新，读取 `history` 展示操作历史，读取 `events` 和 `summary` 展示右侧 AI 交互栏状态。
+- 当前自然语言理解由 `DemoCommandPlanner` 覆盖比赛演示语料，包括创建三镜头分镜、切换第二镜头、添加标题/商品/标签/箭头、修改标题、放大商品、删除标题、删除最后镜头、撤销和重做。
+
+### 实现思路
+
+本次变更保持“小 PR 单一功能”，只接入真实后端业务 API，不接真实 LLM、ASR、SSE、导出和七牛云存储。
+
+核心思路：
+
+- 新增 `InMemoryProjectRepository`，为 Demo 阶段提供可连续调用的项目状态存储。
+- 新增 `DemoCommandPlanner`，把有限比赛演示语料转换为合法 `CanvasCommand`，后续可由真实 LLM Adapter 替换。
+- 新增 `OrchestrationService`，串联 ProjectRepository、DemoCommandPlanner、CommandValidator、CommandExecutor 和 HistoryManager。
+- 扩展 `/api/orchestrations` 响应，保留 `nextAction` 兼容字段，同时返回真实 `project`、`patches`、`history`、`events` 和 `summary`。
+- 同步 README、后端 README、接口文档、前端绑定文档和比赛冲刺计划，确保 main 分支状态说明与运行效果一致。
+
+### 测试方式
+
+已运行后端测试、lint 和类型检查：
+
+```powershell
+cd backend
+uv run --no-editable pytest
+uv run --no-editable ruff check .
+uv run --no-editable mypy src
+```
+
+已运行前端原型契约测试：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+测试结果：
+
+- pytest：36 passed，1 个 FastAPI TestClient 上游弃用 warning。
+- ruff：All checks passed。
+- mypy：Success: no issues found in 20 source files。
+- 前端交互原型契约测试通过。
+
+新增测试覆盖：
+
+- `test_project_repository.py`：验证内存 Project Repository 创建、保存、读取和项目隔离。
+- `test_demo_command_planner.py`：验证 Demo 语料能生成创建分镜、切换镜头、修改标题和删除镜头命令。
+- `test_orchestration_service.py`：验证真实编排闭环、Project 保存、Patch 返回、History 记录、撤销和重做。
+- `test_api.py`：验证 `/api/orchestrations` 返回真实 Project、Patch、History、Events，并能在同一个 projectId 上连续修改状态。

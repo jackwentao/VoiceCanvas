@@ -147,18 +147,31 @@ uv run --no-editable uvicorn voicecanvas.api.main:app --reload
 http://127.0.0.1:8000/health
 ```
 
+后端真实编排 API 示例：
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/api/orchestrations" `
+  -ContentType "application/json" `
+  -Body '{"projectId":"project_demo","userInput":"创建一个三镜头的珍珠奶茶带货分镜"}'
+```
+
+当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager` 和内存项目仓库；自然语言理解暂由 `DemoCommandPlanner` 覆盖比赛演示语料，后续可替换为真实 LLM Adapter。
+
 ## 当前状态
 
-项目处于产品定义、技术架构确认与 MVP 收敛阶段，当前仓库已提交产品决策、语音指令语料、基础 README、技术架构设计、接口与数据模型设计、前端交互原型与接口绑定设计。当前技术路线已确定为“可恢复 AI 编排器架构”：所有用户语音或文本输入统一进入后端 AI Orchestrator，由 LangGraph 根据上下文推进计划、命令执行、工具调用、澄清等待和恢复继续；当需要澄清时，系统暂停当前任务会话，等待用户语音或点击回答后从原状态继续执行。页面交互上，左侧为画布历史区，展示镜头历史、操作历史和关键变更记录；右侧为 AI 交互栏，承载语音入口、当前阶段、澄清问题、执行进度和本轮变更总结；主画布支持随命令执行流式更新。当前前端原型位于 `frontend/`，后端骨架位于 `backend/`。
+项目处于 MVP 主链路落地阶段，当前仓库已提交产品决策、语音指令语料、基础 README、技术架构设计、接口与数据模型设计、前端交互原型与接口绑定设计。当前技术路线已确定为“可恢复 AI 编排器架构”：所有用户语音或文本输入统一进入后端 AI Orchestrator，由 LangGraph 根据上下文推进计划、命令执行、工具调用、澄清等待和恢复继续；当需要澄清时，系统暂停当前任务会话，等待用户语音或点击回答后从原状态继续执行。
+
+当前已完成后端应用层命令闭环，并将 `/api/orchestrations` 接入真实业务执行链路：请求会通过 Demo Planner 生成结构化命令，再经过 Command Validator、Command Executor、History Manager 和内存 Project Repository，最终返回真实 Project State、CanvasPatch、HistoryEntry、运行事件和本轮总结。页面交互上，左侧为画布历史区，展示镜头历史、操作历史和关键变更记录；右侧为 AI 交互栏，承载语音入口、当前阶段、澄清问题、执行进度和本轮变更总结；主画布支持随命令执行流式更新。当前前端原型位于 `frontend/`，后端服务位于 `backend/`。
 
 后续将继续补充：
 
-- AI Orchestrator 与可恢复会话模块
-- Orchestration Event 与画布流式更新模块
+- 真实 LLM Orchestrator 与可恢复会话模块
+- SSE Orchestration Event 与画布流式更新模块
 - 左侧画布历史区
 - 右侧 AI 交互栏
 - 用户长期记忆模块
-- 画布命令执行模块
 - AI 工具调用模块
 - 测试用例与运行方式
 

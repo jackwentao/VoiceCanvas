@@ -20,8 +20,10 @@ class OrchestrationResponse(BaseModel):
     status: Literal["RUNNING", "WAITING_FOR_USER", "COMPLETED", "FAILED", "CANCELLED"]
     stage: str
     next_action: dict[str, Any] | None = Field(default=None, alias="nextAction")
+    project: dict[str, Any] | None = None
+    patches: list[dict[str, Any]] = Field(default_factory=list)
+    history: list[dict[str, Any]] = Field(default_factory=list)
     events: list[dict[str, Any]] = Field(default_factory=list)
-    summary: str | None = None
+    summary: dict[str, Any] | str | None = None
 
     model_config = {"populate_by_name": True}
-
