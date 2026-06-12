@@ -11,3 +11,19 @@
 - `e2e/`：完整语音创作链路、澄清恢复、流式画布更新和导出测试。
 
 项目引入测试框架后，应在本文档补充具体命令，例如 `npm test`、`npm run test:e2e`。
+
+## 当前可运行测试
+
+前端交互原型契约测试：
+
+```powershell
+npm run test:prototype
+```
+
+或直接运行：
+
+```powershell
+node tests/prototype/prototype-contract.test.mjs
+```
+
+该测试验证 `src/prototype/mock-data.js` 中的 API 契约、UI 绑定、指令链路和初始 Project 数据模型，确保前端原型与后端接口设计保持强绑定。
