@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, PositiveFloat, field_validator, model_validator
 
@@ -30,6 +30,11 @@ class CanvasElement(BaseModel):
     z_index: int = Field(alias="zIndex")
     name: str | None = None
     text: str | None = None
+    style: dict[str, Any] = Field(default_factory=dict)
+    shape: str | None = None
+    label: str | None = None
+    from_anchor: dict[str, str] | None = Field(default=None, alias="from")
+    to_anchor: dict[str, str] | None = Field(default=None, alias="to")
     created_at: str | None = Field(default=None, alias="createdAt")
     updated_at: str | None = Field(default=None, alias="updatedAt")
 

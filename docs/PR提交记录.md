@@ -231,3 +231,129 @@ uv run --no-editable mypy src
 
 - 本 PR 主要是文档同步，不新增运行时代码。
 - 后续如果真实 LLM、ASR 或七牛云 SDK 接入，需要继续同步依赖声明和适配器测试。
+
+## PR #9：[codex] 补充比赛冲刺计划
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/9
+- PR 状态：Merged
+- 分支：`codex/competition-sprint-plan`
+- 基线分支：`main`
+- 提交：`bf05b59 补充比赛冲刺计划`
+- 创建时间：2026-06-12
+- 合并时间：2026-06-12
+
+### 标题
+
+补充比赛冲刺计划与 Demo 指令能力验收文档。
+
+### 功能描述
+
+本 PR 为 VoiceCanvas 增加比赛冲刺与 Demo 验收说明，帮助后续开发、测试和录屏统一目标。
+
+使用方式：
+
+- 通过 README 文档索引进入 `docs/比赛冲刺行动计划.md`，查看 MVP 闭环、优先级、行动顺序和提交验收标准。
+- 通过 README 文档索引进入 `docs/Demo脚本与指令能力验收.md`，查看 3 到 5 分钟 Demo 主线、语音指令能力清单、验收语料和测试建议。
+- 后续实现 P0 模块、录制 Demo、补测试和准备比赛提交材料时，以这两份文档作为范围约束和验收依据。
+
+### 实现思路
+
+本次变更是文档型 PR，不新增运行时代码。
+
+核心思路：
+
+- 将比赛提交前的工作拆成 P0、P1、P2，优先保证“语音输入 -> AI/Mock 编排 -> 结构化命令 -> 校验执行 -> Project State -> Canvas Patch -> 前端更新 -> 撤销/导出”的稳定闭环。
+- 将 Demo 路径固化为可演示脚本，避免后续开发无限扩展语料范围。
+- 将语音指令能力拆成创建分镜、镜头管理、添加元素、修改元素、连接线、澄清、撤销、导出、未知元素降级和用户偏好记忆等验收项。
+- 更新 README 文档入口，让新文档可以从项目首页直接访问。
+
+### 测试方式
+
+已运行前端原型契约测试：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：前端交互原型契约测试通过。
+
+已运行后端测试、lint 和类型检查：
+
+```powershell
+cd backend
+uv run --no-editable pytest
+uv run --no-editable ruff check .
+uv run --no-editable mypy src
+```
+
+测试结果：
+
+- pytest：6 passed，1 个 FastAPI TestClient 上游弃用 warning。
+- ruff：All checks passed。
+- mypy：Success: no issues found in 12 source files。
+
+手动验证方式：
+
+- 打开 README，确认文档索引包含 `Demo 脚本与指令能力验收` 和 `比赛冲刺行动计划`。
+- 点击两份文档链接，确认能正确跳转并阅读对应内容。
+- 对照 `docs/Demo脚本与指令能力验收.md` 中的主线脚本，检查后续实现是否覆盖创建、修改、澄清、撤销和导出。
+
+## PR #11：[codex] 实现后端命令执行闭环
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/11
+- PR 状态：Draft
+- 分支：`codex/backend-command-pipeline`
+- 基线分支：`main`
+- 提交：本 PR 当前提交 `实现后端命令执行闭环`
+- 创建时间：2026-06-12
+
+### 标题
+
+实现后端命令校验、执行、历史记录、撤销重做和画布 Patch 闭环。
+
+### 功能描述
+
+本 PR 为 VoiceCanvas 后端补齐应用层确定性写操作链路，使后续 AI Orchestrator 或工具调用只要产出合法 `CanvasCommand`，就能通过统一流程修改可信 Project State。
+
+使用方式：
+
+- 调用 `CommandValidator.validate()` 校验 AI 或工具生成的一组画布命令。
+- 调用 `CommandExecutor.execute()` 或 `execute_batch()` 执行合法命令，并获得更新后的 `Project`、`CanvasPatch` 和 `HistoryEntry`。
+- 调用 `HistoryManager.record()` 记录成功操作，使用 `undo()` 和 `redo()` 基于历史逆命令回退或恢复画布状态。
+- 当用户删除最后一个 `Scene` 时，系统不会删除项目最后页面，而是解释为清空当前页面，保留 `activeSceneId` 并生成 `SCENE_CLEARED` Patch。
+
+### 实现思路
+
+本次实现保持后端分层解耦，不接入 `/api/orchestrations` 真实执行流程。
+
+核心思路：
+
+- 在 `domain/` 层新增 `CanvasPatch`、`HistoryEntry` 和 `UndoRedoState`，让 Project State、画布增量和操作历史有统一数据结构。
+- 继续保留 `CanvasCommand.payload` 的通用字典设计，由 `CommandValidator` 按命令类型校验必填字段、目标 Scene/Element 和坐标尺寸，降低比赛期间模型迁移风险。
+- 在 `CommandExecutor` 中集中处理 `CREATE_SCENE`、`UPDATE_SCENE`、`DELETE_SCENE`、`SWITCH_SCENE`、`ADD_ELEMENT`、`UPDATE_ELEMENT`、`DELETE_ELEMENT` 和基础 `ARRANGE_LAYOUT`。
+- 每条成功命令都生成可追溯 `commandId` 的 Patch 和可执行的 `inverseCommand`，供历史撤销重做复用。
+- `HistoryManager` 维护 undo/redo 栈；普通新命令会清空 redo 栈，undo/redo 本身不追加新的普通历史记录。
+
+### 测试方式
+
+已运行后端测试、lint 和类型检查：
+
+```powershell
+cd backend
+uv run --no-editable pytest
+uv run --no-editable ruff check .
+uv run --no-editable mypy src
+```
+
+测试结果：
+
+- pytest：21 passed，1 个 FastAPI TestClient 上游弃用 warning。
+- ruff：All checks passed。
+- mypy：Success: no issues found in 17 source files。
+
+新增测试覆盖：
+
+- `test_command_validator.py`：校验核心命令、缺字段、目标不存在、非法尺寸和删除最后一个 Scene 的清空语义。
+- `test_command_executor.py`：校验创建镜头、添加/修改/删除元素、删除 active Scene、清空最后页面和居中布局。
+- `test_history_manager.py`：校验添加、修改、删除、清空页面的 undo/redo，以及新命令清空 redo 栈。
