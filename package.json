@@ -1,9 +1,0 @@
-{
-  "name": "voicecanvas",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "prototype": "node scripts/serve-prototype.mjs",
-    "test:prototype": "node tests/prototype/prototype-contract.test.mjs"
-  }
-}
