@@ -299,9 +299,9 @@ uv run --no-editable mypy src
 - 点击两份文档链接，确认能正确跳转并阅读对应内容。
 - 对照 `docs/Demo脚本与指令能力验收.md` 中的主线脚本，检查后续实现是否覆盖创建、修改、澄清、撤销和导出。
 
-## PR #11：[codex] 实现后端命令执行闭环
+## PR #10：[codex] 实现后端命令执行闭环
 
-- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/11
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/10
 - PR 状态：Draft
 - 分支：`codex/backend-command-pipeline`
 - 基线分支：`main`
