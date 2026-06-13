@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Any, Literal
 from uuid import uuid4
@@ -5,6 +6,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from voicecanvas.application.command_executor import CommandExecutor
+from voicecanvas.application.command_planner import CommandPlanner
 from voicecanvas.application.command_validator import CommandValidator
 from voicecanvas.application.demo_command_planner import DemoCommandPlanner
 from voicecanvas.application.history_manager import HistoryManager
@@ -24,8 +26,8 @@ class TurnSummary(BaseModel):
 
 class OrchestrationServiceResponse(BaseModel):
     session_id: str = Field(alias="sessionId")
-    status: Literal["COMPLETED", "FAILED"]
-    stage: Literal["completed", "failed"]
+    status: Literal["COMPLETED", "FAILED", "WAITING_FOR_USER"]
+    stage: Literal["completed", "failed", "waiting_for_user"]
     project: Project
     patches: list[CanvasPatch]
     history: list[HistoryEntry]
@@ -42,7 +44,7 @@ class OrchestrationService:
     def __init__(
         self,
         repository: InMemoryProjectRepository | None = None,
-        planner: DemoCommandPlanner | None = None,
+        planner: CommandPlanner | None = None,
         executor: CommandExecutor | None = None,
         validator: CommandValidator | None = None,
     ) -> None:
@@ -60,9 +62,31 @@ class OrchestrationService:
             self._stage_event(session_id, "understanding", "正在理解用户输入"),
         ]
         plan = self._planner.plan(user_input, project)
+        if plan.notice:
+            events.append(self._planner_warning_event(session_id, plan.notice))
+
+        if plan.action == "ask_clarification":
+            next_action = self._next_action_with_session_id(plan.next_action, session_id)
+            events.append(self._clarification_event(session_id, next_action, plan.message))
+            summary = TurnSummary(completed=False, message=plan.message, commandCount=0)
+            events.append(self._turn_summary_event(session_id, summary))
+            return self._response(
+                session_id,
+                "WAITING_FOR_USER",
+                project,
+                [],
+                history.entries(),
+                events,
+                summary,
+                next_action=next_action,
+            )
 
         if plan.action == "respond":
-            summary = TurnSummary(completed=True, message=plan.message, commandCount=0)
+            summary = TurnSummary(
+                completed=True,
+                message=self._message_with_notice(plan.message, plan.notice),
+                commandCount=0,
+            )
             events.append(self._turn_summary_event(session_id, summary))
             return self._response(
                 session_id,
@@ -84,7 +108,11 @@ class OrchestrationService:
         validation = self._validator.validate(plan.commands, project)
         if not validation.ok:
             message = "；".join(issue.message for issue in validation.issues)
-            summary = TurnSummary(completed=False, message=message, commandCount=0)
+            summary = TurnSummary(
+                completed=False,
+                message=self._message_with_notice(message, plan.notice),
+                commandCount=0,
+            )
             events.append(self._turn_summary_event(session_id, summary))
             return self._response(
                 session_id,
@@ -108,7 +136,7 @@ class OrchestrationService:
         if result.failed is not None:
             summary = TurnSummary(
                 completed=False,
-                message=result.failed.error,
+                message=self._message_with_notice(result.failed.error, plan.notice),
                 commandCount=len(result.applied),
             )
             events.append(self._turn_summary_event(session_id, summary))
@@ -124,7 +152,10 @@ class OrchestrationService:
 
         summary = TurnSummary(
             completed=True,
-            message=f"已执行 {len(result.applied)} 条命令",
+            message=self._message_with_notice(
+                f"已执行 {len(result.applied)} 条命令",
+                plan.notice,
+            ),
             commandCount=len(result.applied),
         )
         events.append(self._turn_summary_event(session_id, summary))
@@ -221,22 +252,24 @@ class OrchestrationService:
     def _response(
         self,
         session_id: str,
-        status: Literal["COMPLETED", "FAILED"],
+        status: Literal["COMPLETED", "FAILED", "WAITING_FOR_USER"],
         project: Project,
         patches: list[CanvasPatch],
         history: list[HistoryEntry],
         events: list[dict[str, Any]],
         summary: TurnSummary,
+        next_action: dict[str, Any] | None = None,
     ) -> OrchestrationServiceResponse:
         return OrchestrationServiceResponse(
             sessionId=session_id,
             status=status,
-            stage="completed" if status == "COMPLETED" else "failed",
+            stage=self._stage_from_status(status),
             project=project,
             patches=patches,
             history=history,
             events=events,
             summary=summary,
+            nextAction=next_action,
         )
 
     def _history_for(self, project_id: str) -> HistoryManager:
@@ -274,6 +307,52 @@ class OrchestrationService:
             "summary": summary.model_dump(by_alias=True),
             "createdAt": self._now(),
         }
+
+    def _clarification_event(
+        self,
+        session_id: str,
+        next_action: dict[str, Any] | None,
+        message: str,
+    ) -> dict[str, Any]:
+        return {
+            "type": "CLARIFICATION_REQUESTED",
+            "sessionId": session_id,
+            "question": next_action.get("question", message) if next_action else message,
+            "options": next_action.get("options", []) if next_action else [],
+            "createdAt": self._now(),
+        }
+
+    def _planner_warning_event(self, session_id: str, notice: str) -> dict[str, Any]:
+        return {
+            "type": "PLANNER_WARNING",
+            "sessionId": session_id,
+            "message": notice,
+            "createdAt": self._now(),
+        }
+
+    def _message_with_notice(self, message: str, notice: str | None) -> str:
+        return f"{notice}；{message}" if notice else message
+
+    def _stage_from_status(
+        self, status: Literal["COMPLETED", "FAILED", "WAITING_FOR_USER"]
+    ) -> Literal["completed", "failed", "waiting_for_user"]:
+        if status == "COMPLETED":
+            return "completed"
+        if status == "WAITING_FOR_USER":
+            return "waiting_for_user"
+        return "failed"
+
+    def _next_action_with_session_id(
+        self,
+        next_action: dict[str, Any] | None,
+        session_id: str,
+    ) -> dict[str, Any] | None:
+        if next_action is None:
+            return None
+        updated = deepcopy(next_action)
+        resume_policy = updated.setdefault("resumePolicy", {})
+        resume_policy["sessionId"] = session_id
+        return updated
 
     def _now(self) -> str:
         return datetime.now(UTC).isoformat()

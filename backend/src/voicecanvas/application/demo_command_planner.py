@@ -1,17 +1,11 @@
-from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal
 from uuid import uuid4
 
+from voicecanvas.application.command_planner import CommandPlan
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
 
-
-@dataclass(frozen=True)
-class DemoCommandPlan:
-    action: Literal["commands", "undo", "redo", "respond"]
-    commands: list[CanvasCommand]
-    message: str
+DemoCommandPlan = CommandPlan
 
 
 class DemoCommandPlanner:

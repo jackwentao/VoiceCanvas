@@ -1,10 +1,15 @@
 from fastapi.testclient import TestClient
 
 from voicecanvas.api.main import create_app
+from voicecanvas.application.orchestration_service import OrchestrationService
+
+
+def _client() -> TestClient:
+    return TestClient(create_app(OrchestrationService()))
 
 
 def test_health_endpoint() -> None:
-    client = TestClient(create_app())
+    client = _client()
 
     response = client.get("/health")
 
@@ -13,7 +18,7 @@ def test_health_endpoint() -> None:
 
 
 def test_start_orchestration_returns_real_project_patches_and_history() -> None:
-    client = TestClient(create_app())
+    client = _client()
 
     response = client.post(
         "/api/orchestrations",
@@ -37,7 +42,7 @@ def test_start_orchestration_returns_real_project_patches_and_history() -> None:
 
 
 def test_orchestration_api_keeps_project_state_between_calls() -> None:
-    client = TestClient(create_app())
+    client = _client()
     client.post(
         "/api/orchestrations",
         json={
