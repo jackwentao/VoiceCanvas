@@ -82,3 +82,67 @@ def test_orchestration_api_keeps_project_state_between_calls() -> None:
     assert response.status_code == 200
     assert body["project"]["activeSceneId"] == "scene_demo_2"
     assert body["patches"][-1]["type"] == "ACTIVE_SCENE_CHANGED"
+
+
+def test_resume_orchestration_accepts_voice_clarification_answer() -> None:
+    client = _client()
+    client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_demo",
+            "userInput": "创建一个三镜头奶茶带货分镜",
+        },
+    )
+    waiting = client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_demo",
+            "userInput": "把标题放上面",
+        },
+    ).json()
+
+    response = client.post(
+        f"/api/orchestrations/{waiting['sessionId']}/resume",
+        json={
+            "projectId": "project_demo",
+            "answer": "左边那个",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == "COMPLETED"
+    assert body["patches"][-1]["type"] == "ELEMENT_UPDATED"
+    assert body["nextAction"] is None
+
+
+def test_resume_orchestration_confirms_clear_scene() -> None:
+    client = _client()
+    client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_demo",
+            "userInput": "加标题，写新品上市",
+        },
+    )
+    waiting = client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_demo",
+            "userInput": "清空当前画布",
+        },
+    ).json()
+
+    response = client.post(
+        f"/api/orchestrations/{waiting['sessionId']}/resume",
+        json={
+            "projectId": "project_demo",
+            "answer": "确认清空",
+        },
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["status"] == "COMPLETED"
+    assert body["patches"][-1]["type"] == "SCENE_CLEARED"
+    assert body["project"]["scenes"][0]["elements"] == []

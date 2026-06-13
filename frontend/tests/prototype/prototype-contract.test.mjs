@@ -7,6 +7,12 @@ import {
   initialProject
 } from "../../src/prototype/mock-data.js";
 import { mergeElementPatch } from "../../src/prototype/element-patch.js";
+import {
+  isAmbientNoiseTranscript,
+  isLikelyFeedbackEcho,
+  VoiceSessionController,
+  resolveClarificationOption
+} from "../../src/prototype/voice-session.js";
 
 const requiredEvents = [
   "TRANSCRIPT_PARTIAL",
@@ -174,7 +180,8 @@ async function testPrototypeHtml() {
   );
 
   assert.ok(html.includes('data-run="voice"'), "AI 交互栏必须提供语音输入按钮");
-  assert.ok(html.includes('aria-label="开始语音输入"'), "语音按钮必须提供可访问名称");
+  assert.ok(html.includes('aria-label="开始语音创作"'), "语音按钮必须提供可访问名称");
+  assert.ok(html.includes("开始语音创作"), "语音按钮必须明确进入持续创作模式");
   assert.ok(html.includes("voiceStatus"), "AI 交互栏必须展示语音识别状态");
   assert.ok(html.includes('data-menu-toggle="settings"'), "顶部必须提供设置菜单入口");
   assert.ok(html.includes('data-project-action="new"'), "设置菜单必须提供新建项目入口");
@@ -187,9 +194,11 @@ async function testPrototypeHtml() {
   assert.ok(app.includes('runButton.dataset.run === "voice"'), "语音按钮必须保留点击触发");
   assert.ok(app.includes('voiceButton?.addEventListener("click"'), "语音按钮必须有直接点击监听");
   assert.ok(app.includes('sendButton?.addEventListener("click"'), "发送按钮必须有直接点击监听");
-  assert.ok(app.includes('document.addEventListener("keyup"'), "快捷键必须支持松开发送");
-  assert.ok(app.includes("submitVoiceDraft"), "语音转写后必须由用户手动发送");
-  assert.ok(app.includes("识别完成，等待修改或发送"), "识别完成后必须停留在可编辑草稿状态");
+  assert.ok(app.includes("VoiceSessionController"), "原型必须接入持续语音会话控制器");
+  assert.ok(app.includes("handleVoiceTranscript"), "最终语音转写必须自动进入命令编排");
+  assert.ok(app.includes("resumeOrchestration"), "澄清回答必须能恢复后端挂起会话");
+  assert.ok(app.includes("resolveClarificationOption"), "澄清回答必须支持本地候选解析兜底");
+  assert.ok(app.includes("结束创作"), "语音创作模式必须支持语音或按钮结束");
   assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
   assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
   assert.ok(app.includes("applyBackendResponse"), "后端响应必须统一归并到页面状态");
@@ -222,6 +231,8 @@ async function testPrototypeHtml() {
   assert.ok(css.includes(".cat-body"), "CSS 必须定义猫插画样式");
   assert.ok(css.includes(".table-top"), "CSS 必须定义桌子插画样式");
   assert.ok(backendClient.includes("/api/orchestrations"), "前端客户端必须绑定编排 API");
+  assert.ok(backendClient.includes("/api/orchestrations/"), "前端客户端必须绑定澄清恢复 API");
+  assert.ok(backendClient.includes("/resume"), "前端客户端必须提供 resume 调用");
   assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
   assert.ok(stateSync.includes("CANVAS_PATCH_APPLIED"), "状态归并层必须保留画布事件投影能力");
   assert.ok(stateSync.includes("CLARIFICATION_REQUESTED"), "状态归并层必须保留澄清事件投影能力");
@@ -237,11 +248,196 @@ async function testPrototypeHtml() {
   );
 }
 
+class MockRecognition {
+  constructor() {
+    this.handlers = null;
+    this.started = false;
+    this.stopCount = 0;
+  }
+
+  isSupported() {
+    return true;
+  }
+
+  start(handlers) {
+    this.handlers = handlers;
+    this.started = true;
+  }
+
+  stop() {
+    this.stopCount += 1;
+    this.started = false;
+  }
+
+  abort() {
+    this.started = false;
+  }
+
+  emitFinal(text) {
+    this.handlers.onFinal(text);
+  }
+
+  emitPartial(text) {
+    this.handlers.onPartial(text);
+  }
+}
+
+class MockFeedback {
+  constructor() {
+    this.messages = [];
+    this.cancelCount = 0;
+    this.pendingResolve = null;
+    this.holdNext = false;
+  }
+
+  async say(text) {
+    this.messages.push(text);
+    if (!this.holdNext) return;
+    this.holdNext = false;
+    await new Promise((resolve) => {
+      this.pendingResolve = resolve;
+    });
+  }
+
+  cancel() {
+    this.cancelCount += 1;
+    this.pendingResolve?.();
+    this.pendingResolve = null;
+  }
+}
+
+async function testVoiceSessionController() {
+  const recognition = new MockRecognition();
+  const feedback = new MockFeedback();
+  const submitted = [];
+  const statuses = [];
+  const controller = new VoiceSessionController({
+    recognition,
+    feedback,
+    restartDelayMs: 1,
+    submitTranscript: async (text) => {
+      submitted.push(text);
+      return { message: "已创建三个分镜" };
+    },
+    onStatusChange: (message) => statuses.push(message)
+  });
+
+  await controller.start();
+  assert.equal(controller.isActive(), true);
+  assert.equal(recognition.started, true);
+  assert.equal(feedback.messages[0], "语音创作模式已开启，请说出你想绘制的内容。");
+
+  await controller.handleFinalTranscript("创建一个三镜头奶茶广告分镜");
+  assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜"]);
+  assert.ok(feedback.messages.includes("已创建三个分镜"));
+  assert.equal(controller.isListening(), true);
+
+  await controller.handleFinalTranscript("结束创作");
+  assert.equal(controller.isActive(), false);
+  assert.ok(statuses.includes("语音创作模式已结束"));
+}
+
+async function testVoiceSessionBargeInInterruptsFeedback() {
+  const recognition = new MockRecognition();
+  const feedback = new MockFeedback();
+  const submitted = [];
+  const controller = new VoiceSessionController({
+    recognition,
+    feedback,
+    restartDelayMs: 1,
+    submitTranscript: async (text) => {
+      submitted.push(text);
+      return { message: text.includes("创建") ? "已创建三个分镜，请继续修改。" : "已撤销上一步。" };
+    }
+  });
+
+  await controller.start();
+  feedback.holdNext = true;
+  const firstTurn = controller.handleFinalTranscript("创建一个三镜头奶茶广告分镜");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  recognition.emitFinal("撤销上一步");
+  await firstTurn;
+  await new Promise((resolve) => setTimeout(resolve, 0));
+
+  assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜", "撤销上一步"]);
+  assert.ok(feedback.cancelCount >= 1, "用户打断时必须取消正在播报的反馈");
+}
+
+async function testVoiceSessionDropsAmbientNoise() {
+  const recognition = new MockRecognition();
+  const feedback = new MockFeedback();
+  const submitted = [];
+  const statuses = [];
+  const controller = new VoiceSessionController({
+    recognition,
+    feedback,
+    restartDelayMs: 1,
+    submitTranscript: async (text) => {
+      submitted.push(text);
+      return { message: "已处理" };
+    },
+    onStatusChange: (message) => statuses.push(message)
+  });
+
+  await controller.start();
+  await controller.handleFinalTranscript("嗯");
+  await controller.handleFinalTranscript("环境噪声");
+  await controller.handleFinalTranscript("撤销上一步");
+
+  assert.deepEqual(submitted, ["撤销上一步"]);
+  assert.ok(statuses.includes("已忽略环境噪声"));
+}
+
+function testAmbientNoiseDetection() {
+  assert.equal(isAmbientNoiseTranscript("嗯"), true);
+  assert.equal(isAmbientNoiseTranscript("咳嗽"), true);
+  assert.equal(isAmbientNoiseTranscript("环境噪声"), true);
+  assert.equal(isAmbientNoiseTranscript("确认"), false);
+  assert.equal(isAmbientNoiseTranscript("取消"), false);
+  assert.equal(isAmbientNoiseTranscript("清空当前画布"), false);
+  assert.equal(isAmbientNoiseTranscript("撤销"), false);
+}
+
+function testFeedbackEchoDetection() {
+  assert.equal(isLikelyFeedbackEcho("已创建三个分镜请继续修改", "已创建三个分镜，请继续修改。"), true);
+  assert.equal(isLikelyFeedbackEcho("已导出图片", "已导出图片。"), true);
+  assert.equal(isLikelyFeedbackEcho("导出图片", "已导出图片。"), false);
+  assert.equal(isLikelyFeedbackEcho("撤销", "已创建三个分镜，请继续修改。"), false);
+}
+
+function testClarificationOptionResolver() {
+  const options = [
+    {
+      id: "cup_red",
+      label: "红色杯子",
+      value: "cup_red",
+      bounds: { x: 100, y: 180, width: 80, height: 140 }
+    },
+    {
+      id: "cup_blue",
+      label: "蓝色杯子",
+      value: "cup_blue",
+      bounds: { x: 360, y: 180, width: 80, height: 140 }
+    }
+  ];
+
+  assert.equal(resolveClarificationOption("左边那个", options).id, "cup_red");
+  assert.equal(resolveClarificationOption("蓝色杯子", options).id, "cup_blue");
+  assert.equal(resolveClarificationOption("第二个", options).id, "cup_blue");
+}
+
 testApiContract();
 testUiBindings();
 testCommandBindings();
 testInitialProjectModel();
 testElementPatchMirrorSync();
+await testVoiceSessionController();
+await testVoiceSessionBargeInInterruptsFeedback();
+await testVoiceSessionDropsAmbientNoise();
+testAmbientNoiseDetection();
+testFeedbackEchoDetection();
+testClarificationOptionResolver();
 await testPrototypeHtml();
 
 console.log("前端交互原型契约测试通过");

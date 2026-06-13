@@ -2,6 +2,7 @@ import { COMMAND_BINDINGS, initialHistory, initialProject, initialSession } from
 import {
   DEFAULT_PROJECT_ID,
   loadProjectState,
+  resumeOrchestration,
   startOrchestration
 } from "./backend-client.js";
 import {
@@ -10,6 +11,12 @@ import {
   createBackendPendingSession
 } from "./state-sync.js";
 import { mergeElementPatch } from "./element-patch.js";
+import {
+  BrowserSpeechRecognitionAdapter,
+  BrowserVoiceFeedbackAdapter,
+  VoiceSessionController,
+  resolveClarificationOption
+} from "./voice-session.js";
 
 const state = {
   project: structuredClone(initialProject),
@@ -19,6 +26,8 @@ const state = {
   selectedElementId: null,
   voiceStatus: "等待语音输入",
   voiceRecording: null,
+  voiceSessionActive: false,
+  voiceListening: false,
   voiceDraftReady: false,
   settingsOpen: false,
   backend: {
@@ -61,6 +70,7 @@ const renderCatalogState = {
 };
 
 const $ = (selector) => document.querySelector(selector);
+let voiceController = null;
 
 async function hydrateRenderCatalog() {
   try {
@@ -295,7 +305,7 @@ async function hydrateBackendState() {
 }
 
 async function runBackendInput(userInput, fallback) {
-  if (!userInput) return;
+  if (!userInput) return null;
 
   setBusy(true);
   state.settingsOpen = false;
@@ -315,6 +325,7 @@ async function runBackendInput(userInput, fallback) {
     state.backend.connected = true;
     state.backend.lastError = null;
     render();
+    return response;
   } catch (error) {
     state.backend.connected = false;
     state.backend.lastError = error.message || String(error);
@@ -323,8 +334,78 @@ async function runBackendInput(userInput, fallback) {
     if (fallback) {
       await fallback();
     }
+    return null;
   } finally {
     setBusy(false);
+  }
+}
+
+async function runBackendResume(answer, fallback) {
+  const pending = state.session.pendingClarification;
+  const sessionId = pending?.resumePolicy?.sessionId || state.session.id;
+  if (!answer || !sessionId) return null;
+
+  setBusy(true);
+  state.settingsOpen = false;
+  state.voiceDraftReady = false;
+  state.voiceStatus = "正在恢复澄清任务";
+  pushEvent({
+    type: "TRANSCRIPT_FINAL",
+    sessionId,
+    text: answer
+  });
+  render();
+
+  try {
+    const response = await resumeOrchestration(state.backend.projectId, sessionId, answer);
+    applyBackendResponse(state, response, { userInput: answer });
+    state.backend.connected = true;
+    state.backend.lastError = null;
+    render();
+    return response;
+  } catch (error) {
+    state.backend.connected = false;
+    state.backend.lastError = error.message || String(error);
+    appendBackendError(state, error);
+    render();
+    if (fallback) {
+      await fallback();
+    }
+    return null;
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function handleVoiceTranscript(text) {
+  const pending = state.session.pendingClarification;
+  const response = pending
+    ? await runBackendResume(text, () => resumeClarificationFromVoice(text))
+    : await runBackendInput(text, () => runLocalFallbackForInput(text));
+
+  return response?.summary?.message || state.session.lastSummary?.message || state.voiceStatus;
+}
+
+async function resumeClarificationFromVoice(answer) {
+  const pending = state.session.pendingClarification;
+  const option = resolveClarificationOption(answer, pending?.options || []);
+  if (!option) {
+    state.voiceStatus = "我还不能确定你指的是哪一个，请换一种说法";
+    render();
+    return;
+  }
+  resumeClarification(option.value || option.elementId || option.id);
+}
+
+async function runLocalFallbackForInput(input) {
+  if (input.includes("箭头")) {
+    await runArrowDemoLocal();
+  } else if (input.includes("标题") || input.includes("它")) {
+    await runClarificationDemoLocal();
+  } else if (input.includes("导出")) {
+    await runExportDemoLocal();
+  } else {
+    await runStoryboardDemoLocal();
   }
 }
 
@@ -333,15 +414,15 @@ function runStoryboardDemo() {
 }
 
 function runArrowDemoLocal() {
-  return runBackendInput(COMMAND_BINDINGS[1].userInput, runArrowDemoLocal);
+  return runArrowDemo();
 }
 
 function runClarificationDemoLocal() {
-  return runBackendInput(COMMAND_BINDINGS[2].userInput, runClarificationDemoLocal);
+  return runClarificationDemo();
 }
 
 function runExportDemoLocal() {
-  return runBackendInput(COMMAND_BINDINGS[3].userInput, runExportDemoLocal);
+  return runExportDemo();
 }
 
 function runStoryboardDemoLocal() {
@@ -801,79 +882,67 @@ function runCustomInput() {
 }
 
 function startVoiceRecording() {
-  if (state.voiceRecording || document.body.dataset.busy === "true") return;
-
-  const input = $("#voiceInput").value.trim() || COMMAND_BINDINGS[0].userInput;
-  const sessionId = makeId("session");
-  state.session = {
-    id: sessionId,
-    status: "RUNNING",
-    stage: "listening",
-    originalUserInput: input,
-    currentUserInput: "",
-    progress: {
-      completedSteps: 0,
-      totalSteps: 3,
-      message: "正在听取语音"
-    },
-    taskPlan: null,
-    pendingClarification: null,
-    lastSummary: null
-  };
-  state.voiceStatus = "正在听取语音";
-  state.voiceDraftReady = false;
-  state.voiceRecording = {
-    sessionId,
-    input,
-    partialTimer: window.setTimeout(() => {
-      if (!state.voiceRecording || state.voiceRecording.sessionId !== sessionId) return;
-
-      state.voiceStatus = "实时转写中";
-      state.session.currentUserInput = input.slice(0, Math.max(8, Math.floor(input.length * 0.45)));
-      $("#voiceInput").value = state.session.currentUserInput;
-      pushEvent({
-        type: "TRANSCRIPT_PARTIAL",
-        sessionId,
-        text: state.session.currentUserInput
-      });
-      render();
-    }, 420)
-  };
-  pushEvent({
-    type: "STAGE_CHANGED",
-    sessionId,
-    stage: "listening",
-    message: "正在听取语音"
-  });
-  render();
+  getVoiceController().start();
 }
 
 function finishVoiceRecording() {
-  if (!state.voiceRecording) return;
-
-  const recording = state.voiceRecording;
-  window.clearTimeout(recording.partialTimer);
-  state.voiceRecording = null;
-  state.voiceStatus = "识别完成，等待修改或发送";
-  state.voiceDraftReady = true;
-  state.session.currentUserInput = recording.input;
-  $("#voiceInput").value = recording.input;
-  pushEvent({
-    type: "TRANSCRIPT_FINAL",
-    sessionId: recording.sessionId,
-    text: recording.input
-  });
-  publishStage("listening", "语音识别完成，等待修改或发送");
-  render();
+  getVoiceController().stop();
 }
 
 function runVoiceInputDemo() {
-  if (state.voiceRecording) {
+  if (getVoiceController().isActive()) {
     finishVoiceRecording();
     return;
   }
 
   startVoiceRecording();
+}
+
+function getVoiceController() {
+  if (voiceController) return voiceController;
+
+  voiceController = new VoiceSessionController({
+    recognition: new BrowserSpeechRecognitionAdapter(),
+    feedback: new BrowserVoiceFeedbackAdapter(),
+    submitTranscript: handleVoiceTranscript,
+    onStatusChange: (message) => {
+      state.voiceStatus = message;
+      state.voiceSessionActive = Boolean(voiceController?.isActive());
+      render();
+    },
+    onListeningChange: (isListening) => {
+      state.voiceSessionActive = getVoiceController().isActive();
+      state.voiceListening = isListening;
+      state.voiceRecording = isListening ? { sessionId: state.session.id } : null;
+      if (isListening) {
+        publishStage("listening", "持续语音监听中");
+      }
+      render();
+    },
+    onPartialTranscript: (text) => {
+      const sessionId = state.session.id || makeId("session");
+      state.session.currentUserInput = text;
+      $("#voiceInput").value = text;
+      pushEvent({
+        type: "TRANSCRIPT_PARTIAL",
+        sessionId,
+        text
+      });
+      render();
+    },
+    onFinalTranscript: (text) => {
+      const sessionId = state.session.id || makeId("session");
+      $("#voiceInput").value = text;
+      state.session.currentUserInput = text;
+      pushEvent({
+        type: "TRANSCRIPT_FINAL",
+        sessionId,
+        text
+      });
+      render();
+    }
+  });
+  return voiceController;
 }
 
 function switchScene(sceneId) {
@@ -1573,10 +1642,11 @@ function renderAIPanel() {
   $("#voiceStatus").textContent = state.voiceStatus;
   $("#voiceStatus").classList.toggle("is-ready", state.voiceDraftReady);
   const voiceButton = document.querySelector("[data-run='voice']");
-  voiceButton?.setAttribute("aria-pressed", String(Boolean(state.voiceRecording)));
+  const voiceActive = Boolean(state.voiceSessionActive || state.voiceRecording);
+  voiceButton?.setAttribute("aria-pressed", String(voiceActive));
   const voiceButtonLabel = voiceButton?.querySelector("strong");
   if (voiceButtonLabel) {
-    voiceButtonLabel.textContent = state.voiceRecording ? "结束识别" : "语音输入";
+    voiceButtonLabel.textContent = voiceActive ? "结束创作" : "开始语音创作";
   }
 
   const stage = $("#stageIndicator");
@@ -1696,16 +1766,7 @@ function bindEvents() {
 
     event.preventDefault();
     state.settingsOpen = false;
-    startVoiceRecording();
-  });
-
-  document.addEventListener("keyup", (event) => {
-    if (!state.voiceRecording) return;
-    if (event.code !== "KeyV" && event.key !== "Control") return;
-    if (isTypingTarget(event.target)) return;
-
-    event.preventDefault();
-    finishVoiceRecording();
+    runVoiceInputDemo();
   });
 }
 

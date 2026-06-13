@@ -66,3 +66,13 @@ export function startOrchestration(projectId, userInput) {
     })
   });
 }
+
+export function resumeOrchestration(projectId, sessionId, answer) {
+  return requestJson(`/api/orchestrations/${encodeURIComponent(sessionId)}/resume`, {
+    method: "POST",
+    body: JSON.stringify({
+      projectId,
+      answer
+    })
+  });
+}

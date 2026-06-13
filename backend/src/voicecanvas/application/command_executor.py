@@ -81,6 +81,8 @@ class CommandExecutor:
                 return self._create_scene(command, project)
             case CommandType.UPDATE_SCENE:
                 return self._update_scene(command, project)
+            case CommandType.CLEAR_SCENE:
+                return self._clear_scene(command, project)
             case CommandType.DELETE_SCENE:
                 return self._delete_scene(command, project)
             case CommandType.SWITCH_SCENE:
@@ -182,38 +184,7 @@ class CommandExecutor:
         scene = self._require_scene(project, scene_id)
 
         if len(project.scenes) == 1:
-            cleared_scene = scene.model_copy(update={"elements": [], "description": None})
-            next_project = project.model_copy(update={"scenes": [cleared_scene]})
-            patches = [
-                self._patch(
-                    command.id,
-                    PatchType.SCENE_CLEARED,
-                    scene_id=scene_id,
-                    patch={"clearedElementIds": [element.id for element in scene.elements]},
-                )
-            ]
-            inverse = self._command(
-                command.id,
-                CommandType.UPDATE_SCENE,
-                {
-                    "sceneId": scene_id,
-                    "patch": {
-                        "description": scene.description,
-                        "elements": [
-                            element.model_dump(by_alias=True) for element in scene.elements
-                        ],
-                    },
-                },
-                source="system",
-                reason="撤销清空页面",
-            )
-            return self._result(
-                command,
-                next_project,
-                patches,
-                inverse,
-                f"清空页面：{scene.name}",
-            )
+            return self._clear_scene(command, project)
 
         remaining_scenes = [item for item in project.scenes if item.id != scene_id]
         active_scene_id = project.active_scene_id
@@ -245,6 +216,35 @@ class CommandExecutor:
             reason="撤销删除镜头",
         )
         return self._result(command, next_project, patches, inverse, f"删除镜头：{scene.name}")
+
+    def _clear_scene(self, command: CanvasCommand, project: Project) -> CommandExecutionResult:
+        scene_id = command.payload["sceneId"]
+        scene = self._require_scene(project, scene_id)
+        cleared_scene = scene.model_copy(update={"elements": [], "description": None})
+        scenes = [cleared_scene if item.id == scene_id else item for item in project.scenes]
+        next_project = project.model_copy(update={"scenes": scenes})
+        patches = [
+            self._patch(
+                command.id,
+                PatchType.SCENE_CLEARED,
+                scene_id=scene_id,
+                patch={"clearedElementIds": [element.id for element in scene.elements]},
+            )
+        ]
+        inverse = self._command(
+            command.id,
+            CommandType.UPDATE_SCENE,
+            {
+                "sceneId": scene_id,
+                "patch": {
+                    "description": scene.description,
+                    "elements": [element.model_dump(by_alias=True) for element in scene.elements],
+                },
+            },
+            source="system",
+            reason="撤销清空页面",
+        )
+        return self._result(command, next_project, patches, inverse, f"清空页面：{scene.name}")
 
     def _switch_scene(self, command: CanvasCommand, project: Project) -> CommandExecutionResult:
         scene_id = command.payload["sceneId"]

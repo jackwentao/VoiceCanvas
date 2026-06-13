@@ -395,6 +395,19 @@ def test_executor_clears_page_when_deleting_last_scene() -> None:
     assert result.history_entry.inverse_command.type == CommandType.UPDATE_SCENE
 
 
+def test_executor_clears_active_scene_with_clear_scene_command() -> None:
+    result = CommandExecutor().execute(
+        _command(CommandType.CLEAR_SCENE, {"sceneId": "scene_1"}, "cmd_clear_scene"),
+        _project(scene_count=2),
+    )
+
+    assert len(result.project.scenes) == 2
+    assert result.project.scenes[0].elements == []
+    assert result.patches[0].type == PatchType.SCENE_CLEARED
+    assert result.history_entry.inverse_command is not None
+    assert result.history_entry.inverse_command.type == CommandType.UPDATE_SCENE
+
+
 def test_executor_centers_element_with_arrange_layout() -> None:
     result = CommandExecutor().execute(
         _command(

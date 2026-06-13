@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 class CommandType(StrEnum):
     CREATE_SCENE = "CREATE_SCENE"
     UPDATE_SCENE = "UPDATE_SCENE"
+    CLEAR_SCENE = "CLEAR_SCENE"
     DELETE_SCENE = "DELETE_SCENE"
     SWITCH_SCENE = "SWITCH_SCENE"
     ADD_ELEMENT = "ADD_ELEMENT"
