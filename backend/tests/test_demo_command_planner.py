@@ -28,6 +28,21 @@ def test_planner_switches_to_second_scene_when_it_exists() -> None:
     assert plan.commands[0].payload["sceneId"] == "scene_2"
 
 
+def test_planner_switches_by_visible_scene_index_not_backend_order() -> None:
+    project = _project()
+    project.scenes = [
+        project.scenes[0].model_copy(update={"id": "scene_backend_2", "name": "镜头1", "order": 2}),
+        project.scenes[0].model_copy(update={"id": "scene_backend_3", "name": "镜头2", "order": 3}),
+        project.scenes[0].model_copy(update={"id": "scene_backend_4", "name": "镜头3", "order": 4}),
+    ]
+    project.active_scene_id = "scene_backend_2"
+
+    plan = DemoCommandPlanner().plan("切换到第二镜头", project)
+
+    assert plan.action == "commands"
+    assert plan.commands[0].payload["sceneId"] == "scene_backend_3"
+
+
 def test_planner_updates_title_text() -> None:
     project = _project()
     storyboard = DemoCommandPlanner().plan("创建一个三镜头的珍珠奶茶带货分镜", project)

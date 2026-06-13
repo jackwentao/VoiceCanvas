@@ -27,6 +27,20 @@ def test_project_rejects_invalid_active_scene() -> None:
         )
 
 
+def test_project_rejects_duplicate_scene_name() -> None:
+    with pytest.raises(ValidationError, match="Scene name 不能重复"):
+        Project(
+            id="project_demo",
+            title="Demo",
+            mode="storyboard",
+            scenes=[
+                Scene(id="scene_1", name="镜头", order=1),
+                Scene(id="scene_2", name="镜头", order=2),
+            ],
+            activeSceneId="scene_1",
+        )
+
+
 def test_canvas_element_uses_frontend_aliases() -> None:
     element = CanvasElement(
         id="el_title",

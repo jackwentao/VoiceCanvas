@@ -326,4 +326,8 @@ class Project(BaseModel):
         if len(set(orders)) != len(orders):
             raise ValueError("Scene order 不能重复")
 
+        names = [scene.name.strip() for scene in self.scenes]
+        if len(set(names)) != len(names):
+            raise ValueError("Scene name 不能重复")
+
         return self

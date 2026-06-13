@@ -448,7 +448,11 @@ class DemoCommandPlanner:
         return [*active, *others]
 
     def _scene_by_order(self, project: Project, order: int) -> Scene | None:
-        return next((scene for scene in project.scenes if scene.order == order), None)
+        ordered_scenes = sorted(project.scenes, key=lambda scene: scene.order)
+        index = order - 1
+        if index < 0 or index >= len(ordered_scenes):
+            return None
+        return ordered_scenes[index]
 
     def _requested_scene_order(self, text: str) -> int | None:
         order_keywords = {
