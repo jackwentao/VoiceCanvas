@@ -1,11 +1,12 @@
 from datetime import UTC, datetime
+from typing import TypeAlias
 from uuid import uuid4
 
 from voicecanvas.application.command_planner import CommandPlan
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
 
-DemoCommandPlan = CommandPlan
+DemoCommandPlan: TypeAlias = CommandPlan
 
 
 class DemoCommandPlanner:
@@ -19,6 +20,30 @@ class DemoCommandPlanner:
 
         if self._contains_any(text, ["重做", "恢复刚才", "取消撤销"]):
             return DemoCommandPlan("redo", [], "准备重做上一步操作")
+
+        if self._is_clear_scene_request(text):
+            return DemoCommandPlan(
+                "ask_clarification",
+                [],
+                "清空当前画布会删除当前镜头里的所有元素，请确认是否继续",
+                next_action={
+                    "id": f"clarification_{uuid4().hex[:12]}",
+                    "type": "CONFIRM_CLEAR_SCENE",
+                    "question": "清空当前画布会删除所有元素。请说确认清空，或说取消。",
+                    "expectedAnswerType": "confirmation",
+                    "options": [
+                        {"id": "confirm", "label": "确认清空", "value": "confirm"},
+                        {"id": "cancel", "label": "取消", "value": "cancel"},
+                    ],
+                    "resumePolicy": {
+                        "allowVoiceAnswer": True,
+                        "resumeWith": {
+                            "type": "CLEAR_SCENE_CONFIRMATION",
+                            "sceneId": project.active_scene_id,
+                        },
+                    },
+                },
+            )
 
         if "创建" in text and "分镜" in text:
             return DemoCommandPlan(
@@ -51,6 +76,13 @@ class DemoCommandPlanner:
                     "label": element.name or element.id,
                     "value": element.id,
                     "sceneId": scene.id,
+                    "elementId": element.id,
+                    "bounds": {
+                        "x": element.x,
+                        "y": element.y,
+                        "width": element.width,
+                        "height": element.height,
+                    },
                 }
                 for scene in project.scenes
                 for element in scene.elements
@@ -445,6 +477,20 @@ class DemoCommandPlanner:
 
     def _contains_any(self, text: str, keywords: list[str]) -> bool:
         return any(keyword in text for keyword in keywords)
+
+    def _is_clear_scene_request(self, text: str) -> bool:
+        return self._contains_any(
+            text,
+            [
+                "清空画布",
+                "清空当前画布",
+                "清空当前镜头",
+                "删除所有元素",
+                "删掉所有元素",
+                "全部清空",
+                "重新开始这个画布",
+            ],
+        )
 
     def _command(self, command_type: CommandType, payload: dict, reason: str) -> CanvasCommand:
         return CanvasCommand(

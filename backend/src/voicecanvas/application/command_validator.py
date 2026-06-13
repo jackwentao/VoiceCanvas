@@ -46,6 +46,8 @@ class CommandValidator:
                 return self._validate_create_scene(command, path)
             case CommandType.UPDATE_SCENE:
                 return self._validate_update_scene(command, project, path)
+            case CommandType.CLEAR_SCENE:
+                return self._validate_clear_scene(command, project, path)
             case CommandType.DELETE_SCENE:
                 return self._validate_delete_scene(command, project, path)
             case CommandType.SWITCH_SCENE:
@@ -140,6 +142,14 @@ class CommandValidator:
                     )
 
         return issues
+
+    def _validate_clear_scene(
+        self, command: CanvasCommand, project: Project, path: str
+    ) -> list[ValidationIssue]:
+        scene_id = command.payload.get("sceneId")
+        if self._find_scene(project, scene_id) is None:
+            return [self._issue(f"{path}.payload.sceneId", "not_found", "目标 Scene 不存在")]
+        return []
 
     def _validate_delete_scene(
         self, command: CanvasCommand, project: Project, path: str

@@ -115,6 +115,8 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 | `backend/pyproject.toml` | `httpx`、`python-dotenv` | 外部服务 HTTP 调用与本地环境变量加载 |
 | `backend/pyproject.toml` | `pytest`、`pytest-asyncio`、`respx`、`ruff`、`mypy` | 后端测试、外部 HTTP Mock、lint 与类型检查 |
 | 外部服务 | DeepSeek OpenAI-compatible API | 真实 LLM Planner 的自然语言理解能力；仅通过 `adapters/llm` 接入，可降级到 Demo Planner |
+| 浏览器原生 API | Web Speech API（`SpeechRecognition` / `webkitSpeechRecognition`） | 持续语音创作模式的中文语音转写入口；仅在前端适配层使用，可被后续云端 ASR adapter 替换 |
+| 浏览器原生 API | SpeechSynthesis | 系统语音反馈播报；仅用于演示交互反馈，不参与后端可信状态判断 |
 
 当前原创功能部分：
 
@@ -127,6 +129,8 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - 并行工具结果聚合后统一回灌 Orchestrator 的应用层缓冲机制。
 - Render Catalog 语义渲染能力目录、别名归一化、前端 renderer registry 和不支持对象的生成素材占位降级策略。
 - 前端原型中的画布投影、历史区、AI 交互栏和导出入口设计。
+- 持续语音创作会话状态机，包括首次授权后持续监听、最终转写自动提交、系统播报可被用户语音打断、系统回声过滤和“结束创作”退出。
+- 高风险清空画布的语音确认闭环，包括 `CLEAR_SCENE` 命令、确认/取消恢复逻辑、撤销历史和噪声不入后端指令系统的前端过滤。
 
 第三方框架只作为服务运行、模型校验、编排基础设施和测试工具使用；VoiceCanvas 的业务规则、画布状态变更、命令语义和演示工作流为本项目原创实现。
 

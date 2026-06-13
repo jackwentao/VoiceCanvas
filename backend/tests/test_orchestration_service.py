@@ -40,6 +40,59 @@ def test_service_requests_clarification_for_ambiguous_title_move() -> None:
     assert any(event["type"] == "CLARIFICATION_REQUESTED" for event in response.events)
 
 
+def test_service_resumes_clarification_with_spatial_voice_answer() -> None:
+    service = OrchestrationService()
+    service.handle_user_input("project_demo", "创建一个三镜头的珍珠奶茶带货分镜")
+    waiting = service.handle_user_input("project_demo", "把标题放上面")
+
+    response = service.resume_user_input("project_demo", waiting.session_id, "左边那个")
+
+    assert response.status == "COMPLETED"
+    assert response.patches[-1].type == PatchType.ELEMENT_UPDATED
+    first_scene_title = next(
+        element for element in response.project.scenes[0].elements if element.name == "标题"
+    )
+    assert first_scene_title.y == 36
+    assert response.next_action is None
+
+
+def test_service_asks_confirmation_before_clearing_scene() -> None:
+    service = OrchestrationService()
+    service.handle_user_input("project_demo", "加标题，写新品上市")
+
+    response = service.handle_user_input("project_demo", "清空当前画布")
+
+    assert response.status == "WAITING_FOR_USER"
+    assert response.next_action is not None
+    assert response.next_action["type"] == "CONFIRM_CLEAR_SCENE"
+    assert response.patches == []
+
+
+def test_service_clears_scene_after_voice_confirmation() -> None:
+    service = OrchestrationService()
+    service.handle_user_input("project_demo", "加标题，写新品上市")
+    waiting = service.handle_user_input("project_demo", "清空当前画布")
+
+    response = service.resume_user_input("project_demo", waiting.session_id, "确认清空")
+
+    assert response.status == "COMPLETED"
+    assert response.patches[-1].type == PatchType.SCENE_CLEARED
+    assert response.project.scenes[0].elements == []
+
+
+def test_service_cancels_clear_scene_when_user_says_no() -> None:
+    service = OrchestrationService()
+    service.handle_user_input("project_demo", "加标题，写新品上市")
+    waiting = service.handle_user_input("project_demo", "清空当前画布")
+
+    response = service.resume_user_input("project_demo", waiting.session_id, "不清空")
+
+    assert response.status == "COMPLETED"
+    assert response.summary.message == "已取消清空画布"
+    assert response.patches == []
+    assert response.project.scenes[0].elements
+
+
 def test_service_updates_title_and_records_inverse_history() -> None:
     service = OrchestrationService()
     service.handle_user_input("project_demo", "创建一个三镜头的珍珠奶茶带货分镜")

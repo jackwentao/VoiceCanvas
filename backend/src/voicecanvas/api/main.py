@@ -5,6 +5,7 @@ from voicecanvas.api.schemas import (
     HealthResponse,
     OrchestrationResponse,
     ProjectStateResponse,
+    ResumeOrchestrationRequest,
     StartOrchestrationRequest,
 )
 from voicecanvas.application.orchestration_service import OrchestrationService
@@ -28,6 +29,24 @@ def create_app(orchestration_service: OrchestrationService | None = None) -> Fas
     @app.post("/api/orchestrations", response_model=OrchestrationResponse)
     async def start_orchestration(request: StartOrchestrationRequest) -> OrchestrationResponse:
         result = service.handle_user_input(request.project_id, request.user_input)
+
+        return OrchestrationResponse(
+            sessionId=result.session_id,
+            status=result.status,
+            stage=result.stage,
+            nextAction=result.next_action,
+            project=result.project.model_dump(by_alias=True),
+            patches=[patch.model_dump(by_alias=True) for patch in result.patches],
+            history=[entry.model_dump(by_alias=True) for entry in result.history],
+            events=result.events,
+            summary=result.summary.model_dump(by_alias=True),
+        )
+
+    @app.post("/api/orchestrations/{session_id}/resume", response_model=OrchestrationResponse)
+    async def resume_orchestration(
+        session_id: str, request: ResumeOrchestrationRequest
+    ) -> OrchestrationResponse:
+        result = service.resume_user_input(request.project_id, session_id, request.answer)
 
         return OrchestrationResponse(
             sessionId=result.session_id,

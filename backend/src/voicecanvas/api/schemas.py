@@ -15,6 +15,13 @@ class StartOrchestrationRequest(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class ResumeOrchestrationRequest(BaseModel):
+    project_id: str = Field(alias="projectId")
+    answer: str = Field(min_length=1)
+
+    model_config = {"populate_by_name": True}
+
+
 class OrchestrationResponse(BaseModel):
     session_id: str = Field(alias="sessionId")
     status: Literal["RUNNING", "WAITING_FOR_USER", "COMPLETED", "FAILED", "CANCELLED"]

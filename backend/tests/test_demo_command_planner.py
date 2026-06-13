@@ -50,6 +50,15 @@ def test_planner_deletes_last_scene() -> None:
     assert plan.commands[0].type == CommandType.DELETE_SCENE
 
 
+def test_planner_asks_confirmation_before_clearing_scene() -> None:
+    plan = DemoCommandPlanner().plan("清空当前画布", _project())
+
+    assert plan.action == "ask_clarification"
+    assert plan.next_action is not None
+    assert plan.next_action["type"] == "CONFIRM_CLEAR_SCENE"
+    assert plan.next_action["resumePolicy"]["resumeWith"]["type"] == "CLEAR_SCENE_CONFIRMATION"
+
+
 def test_planner_responds_for_unknown_sentence() -> None:
     plan = DemoCommandPlanner().plan("帮我做一个非常复杂的镜头运动", _project())
 

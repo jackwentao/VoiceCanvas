@@ -72,8 +72,12 @@ function pendingClarificationFrom(response, events) {
     options: options.map((option) => ({
       id: option.id || option.value || option.label,
       label: option.label || option.value || option.id,
-      value: option.value || option.id || option.label
+      value: option.value || option.elementId || option.id || option.label,
+      elementId: option.elementId || option.value || option.id,
+      sceneId: option.sceneId,
+      bounds: option.bounds
     })),
+    resumePolicy: nextAction?.resumePolicy,
     createdAt: event?.createdAt || nowIso()
   };
 }
