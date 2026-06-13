@@ -7,6 +7,7 @@ import {
   initialProject
 } from "../../src/prototype/mock-data.js";
 import { mergeElementPatch } from "../../src/prototype/element-patch.js";
+import { estimateTextUnits, fitTextFontSize } from "../../src/prototype/text-layout.js";
 import {
   isAmbientNoiseTranscript,
   isLikelyFeedbackEcho,
@@ -163,10 +164,29 @@ function testElementPatchMirrorSync() {
   assert.equal(structuredResize.layer.zIndex, 5);
 }
 
+function testTextLayoutFontFit() {
+  const compactFontSize = fitTextFontSize({
+    text: "今天好开心的碰到了喜欢",
+    baseFontSize: 14,
+    transform: { width: 124, height: 30 }
+  });
+  assert.ok(compactFontSize < 14, "窄文本框内的长句必须自动缩小字号");
+  assert.ok(compactFontSize >= 9, "字号适配必须保留可读下限");
+
+  const roomyFontSize = fitTextFontSize({
+    text: "开心",
+    baseFontSize: 14,
+    transform: { width: 124, height: 30 }
+  });
+  assert.equal(roomyFontSize, 14, "短文本不应被无谓缩小");
+  assert.ok(estimateTextUnits("Hello 开心") > estimateTextUnits("开心"), "中英文混排必须参与宽度估算");
+}
+
 async function testPrototypeHtml() {
   const html = await readFile(new URL("../../src/prototype/index.html", import.meta.url), "utf-8");
   const app = await readFile(new URL("../../src/prototype/app.js", import.meta.url), "utf-8");
   const css = await readFile(new URL("../../src/prototype/styles.css", import.meta.url), "utf-8");
+  const textLayout = await readFile(new URL("../../src/prototype/text-layout.js", import.meta.url), "utf-8");
   const renderCatalog = JSON.parse(
     await readFile(new URL("../../src/prototype/render-catalog.json", import.meta.url), "utf-8")
   );
@@ -215,6 +235,8 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("characterIllustrationSvg"), "画布必须使用通用人物插画渲染器");
   assert.ok(app.includes("renderVariant"), "画布必须支持后端传入的人物渲染变体");
   assert.ok(app.includes('data-variant="${spec.variant || ""}"'), "人物渲染变体必须落到 DOM 便于视觉 QA");
+  assert.ok(app.includes("fitTextFontSize"), "文字渲染必须根据元素边界自适应字号");
+  assert.ok(textLayout.includes("estimateTextUnits"), "文字布局模块必须估算中英文混排宽度");
   assert.ok(app.includes("catIllustrationSvg"), "画布必须能把猫渲染成专门插画");
   assert.ok(app.includes("tableIllustrationSvg"), "画布必须能把桌子渲染成专门插画");
   assert.ok(app.includes("metadata?.renderHint"), "前端必须优先使用后端显式渲染提示");
@@ -225,6 +247,8 @@ async function testPrototypeHtml() {
   assert.ok(!app.includes("element.name || element.shape"), "shape 不应把图层 name 当画面内容渲染");
   assert.ok(css.includes(".connector-layer"), "CSS 必须定义连接层样式");
   assert.ok(css.includes(".illustration-element"), "CSS 必须定义语义插画元素样式");
+  assert.ok(css.includes("overflow-wrap: anywhere"), "文字元素必须支持长文本断行，避免裁剪");
+  assert.ok(css.includes("word-break: break-word"), "文字元素必须支持混合长词断行");
   assert.ok(css.includes(".character-shirt"), "CSS 必须定义人物上衣样式");
   assert.ok(css.includes(".character-dress"), "CSS 必须定义女性人物裙装样式");
   assert.ok(css.includes(".character-pants"), "CSS 必须定义男性人物裤装样式");
@@ -432,6 +456,7 @@ testUiBindings();
 testCommandBindings();
 testInitialProjectModel();
 testElementPatchMirrorSync();
+testTextLayoutFontFit();
 await testVoiceSessionController();
 await testVoiceSessionBargeInInterruptsFeedback();
 await testVoiceSessionDropsAmbientNoise();
