@@ -27,20 +27,45 @@ class DemoCommandPlanner:
                 "创建三镜头带货分镜",
             )
 
-        if self._contains_any(text, ["切换到第二", "第二镜头", "看一下第二"]):
-            scene = self._scene_by_order(project, 2)
+        scene_order = self._requested_scene_order(text)
+        if scene_order is not None:
+            scene = self._scene_by_order(project, scene_order)
             if scene is None:
-                return DemoCommandPlan("respond", [], "当前项目还没有第二镜头")
+                return DemoCommandPlan("respond", [], f"当前项目还没有第 {scene_order} 镜头")
             return DemoCommandPlan(
                 "commands",
                 [
                     self._command(
                         CommandType.SWITCH_SCENE,
                         {"sceneId": scene.id},
-                        "切换到第二镜头",
+                        f"切换到第 {scene_order} 镜头",
                     )
                 ],
-                "切换到第二镜头",
+                f"切换到第 {scene_order} 镜头",
+            )
+
+        if "标题" in text and self._contains_any(text, ["放上面", "移上面", "上面"]):
+            title_options = [
+                {
+                    "id": element.id,
+                    "label": element.name or element.id,
+                    "value": element.id,
+                    "sceneId": scene.id,
+                }
+                for scene in project.scenes
+                for element in scene.elements
+                if element.type == ElementType.TEXT and "标题" in (element.name or "")
+            ]
+            return DemoCommandPlan(
+                "ask_clarification",
+                [],
+                "当前有多个标题候选，请确认要移动哪一个标题",
+                next_action={
+                    "id": f"clarification_{uuid4().hex[:12]}",
+                    "question": "你想移动哪一个标题？",
+                    "expectedAnswerType": "element_selection",
+                    "options": title_options,
+                },
             )
 
         if self._contains_any(text, ["删除最后", "最后一个镜头"]):
@@ -392,6 +417,19 @@ class DemoCommandPlanner:
 
     def _scene_by_order(self, project: Project, order: int) -> Scene | None:
         return next((scene for scene in project.scenes if scene.order == order), None)
+
+    def _requested_scene_order(self, text: str) -> int | None:
+        order_keywords = {
+            1: ["第一镜头", "第1镜头", "一镜头"],
+            2: ["第二镜头", "第2镜头", "二镜头", "看一下第二", "切换到第二"],
+            3: ["第三镜头", "第3镜头", "三镜头"],
+            4: ["第四镜头", "第4镜头", "四镜头"],
+            5: ["第五镜头", "第5镜头", "五镜头"],
+        }
+        for order, keywords in order_keywords.items():
+            if self._contains_any(text, keywords):
+                return order
+        return None
 
     def _tag_text(self, text: str) -> str:
         if "立减" in text:

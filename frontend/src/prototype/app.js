@@ -1,4 +1,14 @@
 import { COMMAND_BINDINGS, initialHistory, initialProject, initialSession } from "./mock-data.js";
+import {
+  DEFAULT_PROJECT_ID,
+  loadProjectState,
+  startOrchestration
+} from "./backend-client.js";
+import {
+  appendBackendError,
+  applyBackendResponse,
+  createBackendPendingSession
+} from "./state-sync.js";
 
 const state = {
   project: structuredClone(initialProject),
@@ -9,7 +19,12 @@ const state = {
   voiceStatus: "等待语音输入",
   voiceRecording: null,
   voiceDraftReady: false,
-  settingsOpen: false
+  settingsOpen: false,
+  backend: {
+    projectId: DEFAULT_PROJECT_ID,
+    connected: false,
+    lastError: null
+  }
 };
 
 const stageLabels = {
@@ -142,6 +157,7 @@ function executeCommand(command) {
   }
 
   if (command.type === "EXPORT_PROJECT") {
+    state.project.metadata ||= {};
     state.project.metadata.lastExportedAt = timestamp;
     patches.push({
       id: makeId("patch"),
@@ -215,7 +231,74 @@ function setBusy(isBusy) {
   });
 }
 
+async function hydrateBackendState() {
+  try {
+    state.voiceStatus = "正在同步后端状态";
+    const response = await loadProjectState(state.backend.projectId);
+    applyBackendResponse(state, response);
+    state.backend.connected = true;
+    state.backend.lastError = null;
+    state.voiceStatus = "后端状态已同步";
+  } catch (error) {
+    state.backend.connected = false;
+    state.backend.lastError = error.message || String(error);
+    appendBackendError(state, error);
+  }
+
+  render();
+}
+
+async function runBackendInput(userInput, fallback) {
+  if (!userInput) return;
+
+  setBusy(true);
+  state.settingsOpen = false;
+  state.voiceDraftReady = false;
+  state.voiceStatus = "正在提交后端编排";
+  state.session = createBackendPendingSession(makeId("session"), userInput);
+  pushEvent({
+    type: "TRANSCRIPT_FINAL",
+    sessionId: state.session.id,
+    text: userInput
+  });
+  render();
+
+  try {
+    const response = await startOrchestration(state.backend.projectId, userInput);
+    applyBackendResponse(state, response, { userInput });
+    state.backend.connected = true;
+    state.backend.lastError = null;
+    render();
+  } catch (error) {
+    state.backend.connected = false;
+    state.backend.lastError = error.message || String(error);
+    appendBackendError(state, error);
+    render();
+    if (fallback) {
+      await fallback();
+    }
+  } finally {
+    setBusy(false);
+  }
+}
+
 function runStoryboardDemo() {
+  return runBackendInput(COMMAND_BINDINGS[0].userInput, runStoryboardDemoLocal);
+}
+
+function runArrowDemoLocal() {
+  return runBackendInput(COMMAND_BINDINGS[1].userInput, runArrowDemoLocal);
+}
+
+function runClarificationDemoLocal() {
+  return runBackendInput(COMMAND_BINDINGS[2].userInput, runClarificationDemoLocal);
+}
+
+function runExportDemoLocal() {
+  return runBackendInput(COMMAND_BINDINGS[3].userInput, runExportDemoLocal);
+}
+
+function runStoryboardDemoLocal() {
   const input = COMMAND_BINDINGS[0].userInput;
   beginSession(input);
   const commands = [
@@ -659,22 +742,16 @@ function runCustomInput() {
   const input = $("#voiceInput").value.trim();
   if (!input) return;
 
+  let fallback = runStoryboardDemoLocal;
   if (input.includes("箭头")) {
-    runArrowDemo();
-    return;
+    fallback = runArrowDemoLocal;
+  } else if (input.includes("标题") || input.includes("它")) {
+    fallback = runClarificationDemoLocal;
+  } else if (input.includes("导出")) {
+    fallback = runExportDemoLocal;
   }
 
-  if (input.includes("标题") || input.includes("它")) {
-    runClarificationDemo();
-    return;
-  }
-
-  if (input.includes("导出")) {
-    runExportDemo();
-    return;
-  }
-
-  runStoryboardDemo();
+  runBackendInput(input, fallback);
 }
 
 function startVoiceRecording() {
@@ -754,6 +831,14 @@ function runVoiceInputDemo() {
 }
 
 function switchScene(sceneId) {
+  const scene = state.project.scenes.find((item) => item.id === sceneId);
+  if (!scene) return;
+
+  const orderText = ["零", "一", "二", "三", "四", "五"][scene.order] || String(scene.order);
+  runBackendInput(`切换到第${orderText}镜头`, () => switchSceneLocal(sceneId));
+}
+
+function switchSceneLocal(sceneId) {
   executeCommand({
     id: makeId("cmd"),
     type: "SWITCH_SCENE",
@@ -803,6 +888,8 @@ function renderHistory() {
 
   const timeline = $("#operationTimeline");
   timeline.innerHTML = state.history
+    .slice()
+    .reverse()
     .slice(0, 8)
     .map((entry) => `
       <li>
@@ -818,12 +905,12 @@ function renderHistory() {
 function renderCanvas() {
   const scene = activeScene();
   $("#activeSceneName").textContent = scene.name;
-  $("#activeSceneDescription").textContent = scene.description;
-  $("#activeSceneNarration").textContent = scene.narration;
-  $("#sceneDuration").textContent = `${(scene.durationMs / 1000).toFixed(1)}s`;
+  $("#activeSceneDescription").textContent = scene.description || "当前镜头由后端 Project State 驱动";
+  $("#activeSceneNarration").textContent = scene.narration || "等待旁白";
+  $("#sceneDuration").textContent = scene.durationMs ? `${(scene.durationMs / 1000).toFixed(1)}s` : "未设置";
 
   const canvas = $("#canvasSurface");
-  canvas.style.background = scene.canvas.background.type === "solid" ? scene.canvas.background.color : "#ffffff";
+  canvas.style.background = scene.canvas?.background?.type === "solid" ? scene.canvas.background.color : "#ffffff";
   canvas.innerHTML = scene.elements
     .slice()
     .sort((left, right) => left.zIndex - right.zIndex)
@@ -882,9 +969,9 @@ function renderElement(element) {
   }
 
   const placeholderStyle = [
-    `background:${element.placeholderStyle.fill || "#ffffff"}`,
-    `border:${element.placeholderStyle.strokeWidth || 1}px dashed ${element.placeholderStyle.stroke || "#243b53"}`,
-    `border-radius:${element.placeholderStyle.radius || 8}px`
+    `background:${element.placeholderStyle?.fill || "#ffffff"}`,
+    `border:${element.placeholderStyle?.strokeWidth || 1}px dashed ${element.placeholderStyle?.stroke || "#243b53"}`,
+    `border-radius:${element.placeholderStyle?.radius || 8}px`
   ].join(";");
   return `
     <button class="canvas-element unknown-element ${selected}" data-element="${element.id}" style="${style};${placeholderStyle}">
@@ -894,11 +981,11 @@ function renderElement(element) {
 }
 
 function scaleX(value) {
-  return (value / 960) * 100;
+  return (value / (activeScene()?.canvas?.width || 960)) * 100;
 }
 
 function scaleY(value) {
-  return (value / 540) * 100;
+  return (value / (activeScene()?.canvas?.height || 540)) * 100;
 }
 
 function renderAIPanel() {
@@ -937,6 +1024,8 @@ function renderAIPanel() {
     summary.innerHTML = state.session.lastSummary.changes
       .map((change) => `<li><span>${change.targetName || change.targetType}</span>${change.description}</li>`)
       .join("");
+  } else if (state.session.lastSummary?.message) {
+    summary.innerHTML = `<li><span>后端总结</span>${state.session.lastSummary.message}</li>`;
   } else {
     summary.innerHTML = "<li><span>待开始</span>暂无本轮变更</li>";
   }
@@ -1052,3 +1141,4 @@ function isTypingTarget(target) {
 
 bindEvents();
 render();
+hydrateBackendState();

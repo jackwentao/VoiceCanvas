@@ -24,6 +24,18 @@ def test_service_switches_to_second_scene_after_create() -> None:
     assert response.patches[-1].type == PatchType.ACTIVE_SCENE_CHANGED
 
 
+def test_service_requests_clarification_for_ambiguous_title_move() -> None:
+    service = OrchestrationService()
+    service.handle_user_input("project_demo", "创建一个三镜头的珍珠奶茶带货分镜")
+
+    response = service.handle_user_input("project_demo", "把标题放上面")
+
+    assert response.status == "WAITING_FOR_USER"
+    assert response.next_action is not None
+    assert response.next_action["options"]
+    assert any(event["type"] == "CLARIFICATION_REQUESTED" for event in response.events)
+
+
 def test_service_updates_title_and_records_inverse_history() -> None:
     service = OrchestrationService()
     service.handle_user_input("project_demo", "创建一个三镜头的珍珠奶茶带货分镜")
