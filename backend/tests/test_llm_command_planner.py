@@ -95,6 +95,54 @@ def test_llm_planner_accepts_pydantic_validated_output() -> None:
     assert plan.attempts[-1].validated
 
 
+def test_llm_planner_splits_scene_patch_elements_into_add_element_commands() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "更新镜头并补充元素",
+                    "commands": [
+                        {
+                            "type": "UPDATE_SCENE",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "patch": {
+                                    "name": "主图开场",
+                                    "description": "展示新品卖点",
+                                    "elements": [
+                                        {
+                                            "type": "text",
+                                            "name": "标题",
+                                            "text": "新品上市",
+                                            "x": 160,
+                                            "y": 70,
+                                            "width": 260,
+                                            "height": 64,
+                                            "zIndex": 5,
+                                        }
+                                    ],
+                                },
+                            },
+                            "reason": "创建首屏内容",
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("创建一个三镜头带货分镜", _project())
+
+    assert plan.action == "commands"
+    assert [command.type for command in plan.commands] == [
+        CommandType.UPDATE_SCENE,
+        CommandType.ADD_ELEMENT,
+    ]
+    assert "elements" not in plan.commands[0].payload["patch"]
+    assert plan.commands[1].payload["element"]["text"] == "新品上市"
+
+
 def test_llm_planner_retries_invalid_json_then_succeeds() -> None:
     client = FakeLLMClient(
         [

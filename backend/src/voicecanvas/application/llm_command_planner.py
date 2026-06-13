@@ -212,8 +212,8 @@ class LLMCommandPlanner:
         payload: dict[str, Any],
         project: Project,
     ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
-        if "sceneId" in payload and "patch" in payload:
-            return [(draft.type, payload, draft.reason)]
+        if "sceneId" in payload and isinstance(payload.get("patch"), dict):
+            return self._normalize_scene_patch_with_elements(draft, payload)
 
         scene = payload.get("scene")
         if not isinstance(scene, dict):
@@ -243,6 +243,46 @@ class LLMCommandPlanner:
                             CommandType.ADD_ELEMENT,
                             {
                                 "sceneId": project.active_scene_id,
+                                "element": self._normalize_element(element),
+                            },
+                            "补充镜头元素",
+                        )
+                    )
+
+        return commands or [(draft.type, payload, draft.reason)]
+
+    def _normalize_scene_patch_with_elements(
+        self,
+        draft: LLMCommandDraft,
+        payload: dict[str, Any],
+    ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
+        scene_id = payload["sceneId"]
+        source_patch = deepcopy(payload["patch"])
+        elements = source_patch.pop("elements", None)
+        patch = {
+            key: source_patch[key]
+            for key in ("name", "description", "canvas")
+            if key in source_patch
+        }
+
+        commands: list[tuple[CommandType, dict[str, Any], str | None]] = []
+        if patch:
+            commands.append(
+                (
+                    CommandType.UPDATE_SCENE,
+                    {"sceneId": scene_id, "patch": patch},
+                    draft.reason,
+                )
+            )
+
+        if isinstance(elements, list):
+            for element in elements:
+                if isinstance(element, dict):
+                    commands.append(
+                        (
+                            CommandType.ADD_ELEMENT,
+                            {
+                                "sceneId": scene_id,
                                 "element": self._normalize_element(element),
                             },
                             "补充镜头元素",
@@ -335,23 +375,24 @@ class LLMCommandPlanner:
         attempts: list[PlannerAttempt],
     ) -> CommandPlan:
         reason = self._summarize_failure(attempts)
-        notice = f"LLM 暂不可用：{reason}；已降级到本地 Demo Planner"
+        notice = f"LLM 暂不可用：{reason}"
 
         if self._fallback_planner is None:
             return CommandPlan(
                 "respond",
                 [],
-                f"{notice}，请稍后重试或检查模型配置。",
+                f"{notice}，未执行任何画布命令，请稍后重试或检查模型配置。",
                 notice=notice,
                 attempts=attempts,
             )
 
         fallback = self._fallback_planner.plan(user_input, project)
+        fallback_notice = f"{notice}；已降级到本地 Demo Planner"
         return CommandPlan(
             fallback.action,
             fallback.commands,
             fallback.message,
-            notice=notice,
+            notice=fallback_notice,
             attempts=attempts,
         )
 
