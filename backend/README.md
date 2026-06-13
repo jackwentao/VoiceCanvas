@@ -6,6 +6,7 @@ VoiceCanvas 后端使用 Python、uv、FastAPI、LangGraph 和 Pydantic 构建�
 
 ```powershell
 uv sync --no-editable
+$env:PYTHONPATH="src"
 uv run --no-editable uvicorn voicecanvas.api.main:app --reload
 ```
 
@@ -25,6 +26,14 @@ Invoke-RestMethod `
   -Body '{"projectId":"project_demo","userInput":"创建一个三镜头的珍珠奶茶带货分镜"}'
 ```
 
+项目状态接口：
+
+```powershell
+Invoke-RestMethod `
+  -Method Get `
+  -Uri "http://127.0.0.1:8000/api/projects/project_demo"
+```
+
 当前接口同步返回：
 
 - `project`：执行后的可信 Project State。
@@ -32,6 +41,8 @@ Invoke-RestMethod `
 - `history`：已记录的 HistoryEntry。
 - `events`：阶段、画布 Patch 和本轮总结事件。
 - `summary`：本轮是否完成及执行命令数量。
+
+`GET /api/projects/{projectId}` 返回当前可信 `project`、该项目 `history` 和可扩展的 `events` 数组，前端原型启动时用它初始化画布、历史区和 AI 交互栏状态。
 
 说明：默认自然语言理解由 `DemoCommandPlanner` 覆盖比赛演示语料；设置环境变量后可启用真实 LLM Planner，并在失败时重试、提醒错误原因，再按配置降级。
 
@@ -46,6 +57,7 @@ $env:VOICECANVAS_LLM_MODEL="你的模型名"
 $env:VOICECANVAS_LLM_API_KEY="你的 API Key"
 $env:VOICECANVAS_LLM_MAX_ATTEMPTS="3"
 $env:VOICECANVAS_LLM_TIMEOUT_SECONDS="20"
+$env:PYTHONPATH="src"
 uv run --no-editable uvicorn voicecanvas.api.main:app --reload
 ```
 
@@ -64,6 +76,19 @@ $env:VOICECANVAS_LLM_MODEL="你的模型名"
 $env:VOICECANVAS_LLM_API_KEY="你的 API Key"
 uv run --no-editable pytest tests/test_real_llm_command_planner.py -s
 ```
+
+真实 LLM 增删改查冒烟验收：
+
+```powershell
+$env:PYTHONPATH="src"
+$env:PYTHONIOENCODING="utf-8"
+$env:VOICECANVAS_PLANNER="llm"
+$env:VOICECANVAS_LLM_MAX_ATTEMPTS="2"
+$env:VOICECANVAS_LLM_TIMEOUT_SECONDS="45"
+uv run --no-editable python scripts\real_llm_crud_smoke.py
+```
+
+该脚本会连续调用创建分镜、切换镜头、新增元素、修改元素、删除元素、删除镜头、撤销和重做，输出每一步的状态、Patch 类型、History 数量和事件类型，便于确认真实模型是否能驱动画布命令闭环。
 
 测试会使用规定好的真实命令：
 
