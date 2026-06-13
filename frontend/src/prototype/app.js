@@ -11,6 +11,7 @@ import {
   createBackendPendingSession
 } from "./state-sync.js";
 import { mergeElementPatch } from "./element-patch.js";
+import { fitTextFontSize } from "./text-layout.js";
 import {
   BrowserSpeechRecognitionAdapter,
   BrowserVoiceFeedbackAdapter,
@@ -1063,15 +1064,8 @@ function renderElement(element) {
 
 function renderTextElement(element) {
   const selected = state.selectedElementId === element.id ? "is-selected" : "";
-  const content = getContent(element);
-  const textStyle = [
-    `font-size:${Math.max(12, getStyleNumber(element.style?.fontSize, 28) * 0.42)}px`,
-    `color:${element.style?.color || "#173b2c"}`,
-    `background:${element.boxStyle?.fill?.color || element.style?.backgroundColor || "transparent"}`,
-    `font-weight:${element.style?.fontWeight || "normal"}`,
-    `text-align:${element.style?.align || "left"}`
-  ].join(";");
-  return `<button class="canvas-element text-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)};${textStyle}">${escapeHtml(content.text || element.text || "")}</button>`;
+  const text = getTextElementContent(element);
+  return `<button class="canvas-element text-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)};${textElementStyle(element, text)}">${escapeHtml(text)}</button>`;
 }
 
 function renderShapeElement(element) {
@@ -1560,6 +1554,28 @@ function elementBoxStyle(element) {
   ]
     .filter(Boolean)
     .join(";");
+}
+
+function textElementStyle(element, text) {
+  const baseFontSize = Math.max(12, getStyleNumber(element.style?.fontSize, 28) * 0.42);
+  const fittedFontSize = fitTextFontSize({
+    text,
+    baseFontSize,
+    transform: getTransform(element)
+  });
+
+  return [
+    `font-size:${fittedFontSize}px`,
+    `color:${element.style?.color || "#173b2c"}`,
+    `background:${element.boxStyle?.fill?.color || element.style?.backgroundColor || "transparent"}`,
+    `font-weight:${element.style?.fontWeight || "normal"}`,
+    `text-align:${element.style?.align || "left"}`
+  ].join(";");
+}
+
+function getTextElementContent(element) {
+  const content = getContent(element);
+  return content.text || element.text || "";
 }
 
 function getTransform(element) {

@@ -419,6 +419,8 @@ h2 {
 .text-element {
   border: 1px solid rgba(27, 43, 52, 0.08);
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .shape-element,
