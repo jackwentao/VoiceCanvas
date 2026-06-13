@@ -427,10 +427,10 @@ npm run test:prototype
 - `test_orchestration_service.py`：验证真实编排闭环、Project 保存、Patch 返回、History 记录、撤销和重做。
 - `test_api.py`：验证 `/api/orchestrations` 返回真实 Project、Patch、History、Events，并能在同一个 projectId 上连续修改状态。
 
-## PR #待创建：[codex] 修复语义对象尺寸更新同步
+## PR #18：[codex] 修复语义对象尺寸更新同步
 
-- PR 链接：待创建
-- PR 状态：待创建
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/18
+- PR 状态：Open
 - 分支：`codex/sync-semantic-element-size-patches`
 - 基线分支：`main`
 - 提交：本 PR 当前提交 `修复语义对象尺寸更新同步`
