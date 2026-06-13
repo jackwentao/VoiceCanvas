@@ -38,6 +38,12 @@ class OrchestrationServiceResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class ProjectState(BaseModel):
+    project: Project
+    history: list[HistoryEntry]
+    events: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class OrchestrationService:
     """同步编排 Demo 指令，并执行真实后端命令闭环。"""
 
@@ -168,6 +174,11 @@ class OrchestrationService:
             events,
             summary,
         )
+
+    def get_project_state(self, project_id: str) -> ProjectState:
+        project = self._repository.get_or_create(project_id)
+        history = self._history_for(project.id)
+        return ProjectState(project=project, history=history.entries(), events=[])
 
     def _undo(
         self,

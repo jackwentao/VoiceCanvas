@@ -37,7 +37,7 @@ export const API_CONTRACT = {
     load: {
       method: "GET",
       path: "/api/projects/:projectId",
-      response: ["Project"]
+      response: ["Project", "HistoryEntry[]", "OrchestrationEvent[]"]
     },
     save: {
       method: "PUT",

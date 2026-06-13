@@ -41,6 +41,25 @@ def test_start_orchestration_returns_real_project_patches_and_history() -> None:
     assert body["events"][-1]["type"] == "TURN_SUMMARY"
 
 
+def test_get_project_returns_backend_project_state_and_history() -> None:
+    client = _client()
+    client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_demo",
+            "userInput": "加标题，写新品上市",
+        },
+    )
+
+    response = client.get("/api/projects/project_demo")
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["project"]["id"] == "project_demo"
+    assert body["history"]
+    assert body["events"] == []
+
+
 def test_orchestration_api_keeps_project_state_between_calls() -> None:
     client = _client()
     client.post(

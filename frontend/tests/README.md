@@ -30,6 +30,12 @@ node tests/prototype/prototype-contract.test.mjs
 
 该测试验证 `frontend/src/prototype/mock-data.js` 中的 API 契约、UI 绑定、指令链路和初始 Project 数据模型，确保前端原型与后端接口设计保持强绑定。
 
+本轮新增的后端绑定测试还会检查：
+
+- `frontend/src/prototype/backend-client.js` 是否保留项目状态与编排 API 调用。
+- `frontend/src/prototype/state-sync.js` 是否把后端 `project`、`history`、`events` 和 `summary` 统一归并到前端状态。
+- `frontend/src/prototype/app.js` 是否在启动时拉取后端状态，并把 AI 指令统一提交到后端编排入口。
+
 ## 后续测试工具声明
 
 - 前端纯逻辑和组件测试：使用 `vitest`。

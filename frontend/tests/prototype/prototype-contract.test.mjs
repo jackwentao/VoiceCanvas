@@ -108,6 +108,14 @@ async function testPrototypeHtml() {
   const html = await readFile(new URL("../../src/prototype/index.html", import.meta.url), "utf-8");
   const app = await readFile(new URL("../../src/prototype/app.js", import.meta.url), "utf-8");
   const css = await readFile(new URL("../../src/prototype/styles.css", import.meta.url), "utf-8");
+  const backendClient = await readFile(
+    new URL("../../src/prototype/backend-client.js", import.meta.url),
+    "utf-8"
+  );
+  const stateSync = await readFile(
+    new URL("../../src/prototype/state-sync.js", import.meta.url),
+    "utf-8"
+  );
 
   assert.ok(html.includes('data-run="voice"'), "AI 交互栏必须提供语音输入按钮");
   assert.ok(html.includes('aria-label="开始语音输入"'), "语音按钮必须提供可访问名称");
@@ -126,6 +134,13 @@ async function testPrototypeHtml() {
   assert.ok(app.includes('document.addEventListener("keyup"'), "快捷键必须支持松开发送");
   assert.ok(app.includes("submitVoiceDraft"), "语音转写后必须由用户手动发送");
   assert.ok(app.includes("识别完成，等待修改或发送"), "识别完成后必须停留在可编辑草稿状态");
+  assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
+  assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
+  assert.ok(app.includes("applyBackendResponse"), "后端响应必须统一归并到页面状态");
+  assert.ok(backendClient.includes("/api/orchestrations"), "前端客户端必须绑定编排 API");
+  assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
+  assert.ok(stateSync.includes("CANVAS_PATCH_APPLIED"), "状态归并层必须保留画布事件投影能力");
+  assert.ok(stateSync.includes("CLARIFICATION_REQUESTED"), "状态归并层必须保留澄清事件投影能力");
   assert.ok(css.includes(".settings-popover[hidden]"), "设置菜单 hidden 状态必须真正隐藏");
 }
 

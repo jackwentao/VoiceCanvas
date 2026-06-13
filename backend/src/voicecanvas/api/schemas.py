@@ -27,3 +27,11 @@ class OrchestrationResponse(BaseModel):
     summary: dict[str, Any] | str | None = None
 
     model_config = {"populate_by_name": True}
+
+
+class ProjectStateResponse(BaseModel):
+    project: dict[str, Any]
+    history: list[dict[str, Any]] = Field(default_factory=list)
+    events: list[dict[str, Any]] = Field(default_factory=list)
+
+    model_config = {"populate_by_name": True}

@@ -153,6 +153,21 @@ npm run prototype
 http://127.0.0.1:4178/index.html
 ```
 
+前后端联调时，先启动后端服务，再启动前端原型：
+
+```powershell
+cd backend
+$env:PYTHONPATH="src"
+uv run --no-editable uvicorn voicecanvas.api.main:app --reload
+```
+
+```powershell
+cd frontend
+npm run prototype
+```
+
+页面启动后会自动请求 `GET /api/projects/project_demo_voicecanvas` 同步后端 Project State；发送语音转写或点击演示指令时，会调用 `POST /api/orchestrations`，并用返回的 `project`、`history`、`events` 和 `summary` 同步画布、左侧历史区和右侧 AI 交互栏。若后端未启动，前端会记录 `BACKEND_REQUEST_FAILED` 事件并降级到本地演示链路，便于比赛现场保底展示。
+
 前端契约测试：
 
 ```powershell
@@ -174,6 +189,7 @@ uv run --no-editable mypy src
 
 ```powershell
 cd backend
+$env:PYTHONPATH="src"
 uv run --no-editable uvicorn voicecanvas.api.main:app --reload
 ```
 
@@ -194,6 +210,14 @@ Invoke-RestMethod `
 ```
 
 当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager` 和内存项目仓库；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
+
+项目状态 API 示例：
+
+```powershell
+Invoke-RestMethod `
+  -Method Get `
+  -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas"
+```
 
 ## 当前状态
 
