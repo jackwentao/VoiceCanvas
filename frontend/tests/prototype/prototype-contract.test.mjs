@@ -338,6 +338,7 @@ class MockFeedback {
   constructor() {
     this.messages = [];
     this.cancelCount = 0;
+    this.readyToneCount = 0;
     this.pendingResolve = null;
     this.holdNext = false;
   }
@@ -353,6 +354,15 @@ class MockFeedback {
 
   cancel() {
     this.cancelCount += 1;
+    this.pendingResolve?.();
+    this.pendingResolve = null;
+  }
+
+  async playReadyTone() {
+    this.readyToneCount += 1;
+  }
+
+  release() {
     this.pendingResolve?.();
     this.pendingResolve = null;
   }
@@ -378,10 +388,12 @@ async function testVoiceSessionController() {
   assert.equal(controller.isActive(), true);
   assert.equal(recognition.started, true);
   assert.equal(feedback.messages[0], "语音创作模式已开启，请说出你想绘制的内容。");
+  assert.equal(feedback.readyToneCount, 1);
 
   await controller.handleFinalTranscript("创建一个三镜头奶茶广告分镜");
   assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜"]);
   assert.ok(feedback.messages.includes("已创建三个分镜"));
+  assert.equal(feedback.readyToneCount, 2);
   assert.equal(controller.isListening(), true);
 
   await controller.handleFinalTranscript("结束创作");
@@ -389,7 +401,7 @@ async function testVoiceSessionController() {
   assert.ok(statuses.includes("语音创作模式已结束"));
 }
 
-async function testVoiceSessionBargeInInterruptsFeedback() {
+async function testVoiceSessionDoesNotListenDuringFeedback() {
   const recognition = new MockRecognition();
   const feedback = new MockFeedback();
   const submitted = [];
@@ -408,12 +420,20 @@ async function testVoiceSessionBargeInInterruptsFeedback() {
   const firstTurn = controller.handleFinalTranscript("创建一个三镜头奶茶广告分镜");
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  recognition.emitFinal("撤销上一步");
+  assert.equal(controller.isListening(), false, "系统播报期间必须关闭语音监听");
+  assert.equal(recognition.started, false, "系统播报期间 recognition 不应保持 started");
+  assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜"]);
+
+  feedback.release();
   await firstTurn;
   await new Promise((resolve) => setTimeout(resolve, 0));
 
+  assert.equal(feedback.readyToneCount, 2, "播报结束后必须播放可说话提示音");
+  assert.equal(controller.isListening(), true, "提示音后必须恢复监听");
+
+  await controller.handleFinalTranscript("撤销上一步");
   assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜", "撤销上一步"]);
-  assert.ok(feedback.cancelCount >= 1, "用户打断时必须取消正在播报的反馈");
+  assert.equal(feedback.cancelCount, 0, "播报期间不再通过打断监听取消系统播报");
 }
 
 async function testVoiceSessionDropsAmbientNoise() {
@@ -487,7 +507,7 @@ testElementPatchMirrorSync();
 testTextLayoutFontFit();
 testSceneDisplayNumberingUsesSortedVisibleIndex();
 await testVoiceSessionController();
-await testVoiceSessionBargeInInterruptsFeedback();
+await testVoiceSessionDoesNotListenDuringFeedback();
 await testVoiceSessionDropsAmbientNoise();
 testAmbientNoiseDetection();
 testFeedbackEchoDetection();

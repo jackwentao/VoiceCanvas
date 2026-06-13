@@ -108,6 +108,39 @@ export class BrowserVoiceFeedbackAdapter {
     this.currentResolve = null;
   }
 
+  async playReadyTone() {
+    const AudioContextCtor = this.win.AudioContext || this.win.webkitAudioContext;
+    if (!AudioContextCtor) return;
+
+    let audioContext = null;
+    try {
+      audioContext = new AudioContextCtor();
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const startAt = audioContext.currentTime;
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(880, startAt);
+      gain.gain.setValueAtTime(0.0001, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.18, startAt + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.16);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startAt);
+      oscillator.stop(startAt + 0.18);
+      await new Promise((resolve) => {
+        oscillator.onended = resolve;
+      });
+    } catch {
+      // 提示音失败不应阻断语音会话恢复监听。
+    } finally {
+      await audioContext?.close?.();
+    }
+  }
+
   _finishCurrentSpeech(resolve) {
     if (this.currentResolve === resolve) {
       this.currentResolve = null;
@@ -125,8 +158,7 @@ export class VoiceSessionController {
     onListeningChange = () => {},
     onPartialTranscript = () => {},
     onFinalTranscript = () => {},
-    restartDelayMs = DEFAULT_RESTART_DELAY_MS,
-    allowBargeIn = true
+    restartDelayMs = DEFAULT_RESTART_DELAY_MS
   }) {
     this.recognition = recognition;
     this.feedback = feedback;
@@ -136,13 +168,11 @@ export class VoiceSessionController {
     this.onPartialTranscript = onPartialTranscript;
     this.onFinalTranscript = onFinalTranscript;
     this.restartDelayMs = restartDelayMs;
-    this.allowBargeIn = allowBargeIn;
     this.active = false;
     this.listening = false;
     this.processing = false;
     this.speaking = false;
     this.acceptingUserSpeech = false;
-    this.bargeInListening = false;
     this.currentSpeechText = "";
     this.restartTimer = null;
   }
@@ -166,7 +196,7 @@ export class VoiceSessionController {
     this.acceptingUserSpeech = false;
     this.onStatusChange("语音创作模式已开启，请说出你想绘制的内容");
     await this._say("语音创作模式已开启，请说出你想绘制的内容。");
-    this._startListening();
+    await this._resumeListeningWithReadyTone();
   }
 
   async stop({ speak = true } = {}) {
@@ -174,7 +204,6 @@ export class VoiceSessionController {
     this.active = false;
     this.processing = false;
     this.acceptingUserSpeech = false;
-    this.bargeInListening = false;
     this.currentSpeechText = "";
     this._clearRestartTimer();
     this.recognition.abort?.();
@@ -217,13 +246,12 @@ export class VoiceSessionController {
     this.onStatusChange(feedbackText);
     await this._say(feedbackText);
     if (this.active && !this.processing && !this.speaking && !this.listening) {
-      this._startListening();
+      await this._resumeListeningWithReadyTone();
     }
   }
 
   _startListening() {
     if (!this.active || this.processing || this.speaking || this.listening) return;
-    this.bargeInListening = false;
     this.acceptingUserSpeech = true;
     this._setListening(true);
     this.onStatusChange("持续监听中，可以继续说绘图指令");
@@ -265,57 +293,19 @@ export class VoiceSessionController {
     this.speaking = true;
     this.currentSpeechText = String(text || "");
     this.acceptingUserSpeech = false;
-    if (this.allowBargeIn && this.active) {
-      this._startBargeInListening(this.currentSpeechText);
-    }
     try {
       await this.feedback.say(text);
     } finally {
       this.speaking = false;
       this.currentSpeechText = "";
-      if (this.active && this.bargeInListening) {
-        this.bargeInListening = false;
-        this.acceptingUserSpeech = true;
-        this.onStatusChange("持续监听中，可以继续说绘图指令");
-      }
     }
   }
 
-  _startBargeInListening(spokenText) {
-    if (!this.active || this.bargeInListening) return;
-    this.bargeInListening = true;
-    this.acceptingUserSpeech = true;
-    this._setListening(true);
-    this.recognition.start({
-      onPartial: (text) => {
-        if (!this.acceptingUserSpeech) return;
-        if (isAmbientNoiseTranscript(text)) return;
-        if (this.speaking && isLikelyFeedbackEcho(text, spokenText)) return;
-        if (this.speaking) {
-          this.feedback.cancel?.();
-          this.onStatusChange("已打断播报，请继续说");
-        }
-        this.onPartialTranscript(text);
-      },
-      onFinal: (text) => {
-        if (!this.acceptingUserSpeech) return;
-        if (isAmbientNoiseTranscript(text)) return;
-        if (this.speaking && isLikelyFeedbackEcho(text, spokenText)) return;
-        this.feedback.cancel?.();
-        this.bargeInListening = false;
-        this.handleFinalTranscript(text);
-      },
-      onError: (error) => {
-        this.onStatusChange(error.message || "打断监听失败，播报结束后将恢复监听");
-      },
-      onEnd: () => {
-        this.bargeInListening = false;
-        this._setListening(false);
-        if (this.active && !this.processing && !this.speaking) {
-          this._scheduleRestart();
-        }
-      }
-    });
+  async _resumeListeningWithReadyTone() {
+    if (!this.active || this.processing || this.speaking || this.listening) return;
+    this.onStatusChange("提示音后可以继续说绘图指令");
+    await this.feedback.playReadyTone?.();
+    this._startListening();
   }
 
   _setListening(value) {
