@@ -43,7 +43,7 @@ class CommandValidator:
     ) -> list[ValidationIssue]:
         match command.type:
             case CommandType.CREATE_SCENE:
-                return self._validate_create_scene(command, path)
+                return self._validate_create_scene(command, project, path)
             case CommandType.UPDATE_SCENE:
                 return self._validate_update_scene(command, project, path)
             case CommandType.CLEAR_SCENE:
@@ -69,16 +69,33 @@ class CommandValidator:
                     )
                 ]
 
-    def _validate_create_scene(self, command: CanvasCommand, path: str) -> list[ValidationIssue]:
+    def _validate_create_scene(
+        self, command: CanvasCommand, project: Project, path: str
+    ) -> list[ValidationIssue]:
         issues: list[ValidationIssue] = []
         payload = command.payload
         if "scene" in payload:
             self._try_model(Scene, payload["scene"], f"{path}.payload.scene", issues)
+            scene_name = payload["scene"].get("name") if isinstance(payload["scene"], dict) else None
+            self._append_duplicate_scene_name_issue(
+                issues,
+                project,
+                scene_name,
+                f"{path}.payload.scene.name",
+            )
             return issues
 
-        if not self._is_non_empty_string(payload.get("name")):
+        scene_name = payload.get("name")
+        if not self._is_non_empty_string(scene_name):
             issues.append(
                 self._issue(f"{path}.payload.name", "missing_field", "CREATE_SCENE 需要 name")
+            )
+        else:
+            self._append_duplicate_scene_name_issue(
+                issues,
+                project,
+                scene_name,
+                f"{path}.payload.name",
             )
 
         canvas = payload.get("canvas")
@@ -123,6 +140,14 @@ class CommandValidator:
 
         if "canvas" in patch:
             self._try_model(CanvasSpec, patch["canvas"], f"{path}.payload.patch.canvas", issues)
+        if "name" in patch and scene is not None:
+            self._append_duplicate_scene_name_issue(
+                issues,
+                project,
+                patch["name"],
+                f"{path}.payload.patch.name",
+                ignored_scene_id=scene.id,
+            )
         if "elements" in patch and command.source == "system":
             if not isinstance(patch["elements"], list):
                 issues.append(
@@ -381,6 +406,28 @@ class CommandValidator:
         if not isinstance(element_id, str):
             return None
         return next((element for element in scene.elements if element.id == element_id), None)
+
+    def _append_duplicate_scene_name_issue(
+        self,
+        issues: list[ValidationIssue],
+        project: Project,
+        scene_name: Any,
+        path: str,
+        *,
+        ignored_scene_id: str | None = None,
+    ) -> None:
+        if not self._is_non_empty_string(scene_name):
+            return
+
+        normalized_name = str(scene_name).strip()
+        has_duplicate = any(
+            scene.id != ignored_scene_id and scene.name.strip() == normalized_name
+            for scene in project.scenes
+        )
+        if has_duplicate:
+            issues.append(
+                self._issue(path, "duplicate_scene_name", "同一项目内 Scene name 不能重复")
+            )
 
     def _is_non_empty_string(self, value: Any) -> bool:
         return isinstance(value, str) and bool(value.strip())

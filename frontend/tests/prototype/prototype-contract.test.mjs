@@ -7,6 +7,11 @@ import {
   initialProject
 } from "../../src/prototype/mock-data.js";
 import { mergeElementPatch } from "../../src/prototype/element-patch.js";
+import {
+  sceneAtDisplayNumber,
+  sceneDisplayNumber,
+  visibleSceneEntries
+} from "../../src/prototype/scene-numbering.js";
 import { estimateTextUnits, fitTextFontSize } from "../../src/prototype/text-layout.js";
 import {
   isAmbientNoiseTranscript,
@@ -180,6 +185,29 @@ function testTextLayoutFontFit() {
   });
   assert.equal(roomyFontSize, 14, "短文本不应被无谓缩小");
   assert.ok(estimateTextUnits("Hello 开心") > estimateTextUnits("开心"), "中英文混排必须参与宽度估算");
+}
+
+function testSceneDisplayNumberingUsesSortedVisibleIndex() {
+  const scenes = [
+    { id: "scene_backend_2", name: "镜头1", order: 2 },
+    { id: "scene_backend_3", name: "镜头2", order: 3 },
+    { id: "scene_backend_4", name: "镜头3", order: 4 }
+  ];
+
+  assert.deepEqual(
+    visibleSceneEntries(scenes).map((entry) => ({
+      sceneId: entry.scene.id,
+      displayNumber: entry.displayNumber
+    })),
+    [
+      { sceneId: "scene_backend_2", displayNumber: 1 },
+      { sceneId: "scene_backend_3", displayNumber: 2 },
+      { sceneId: "scene_backend_4", displayNumber: 3 }
+    ],
+    "用户可见镜头编号必须按排序后的列表从 1 开始"
+  );
+  assert.equal(sceneDisplayNumber(scenes, "scene_backend_2"), 1);
+  assert.equal(sceneAtDisplayNumber(scenes, 2).id, "scene_backend_3");
 }
 
 async function testPrototypeHtml() {
@@ -457,6 +485,7 @@ testCommandBindings();
 testInitialProjectModel();
 testElementPatchMirrorSync();
 testTextLayoutFontFit();
+testSceneDisplayNumberingUsesSortedVisibleIndex();
 await testVoiceSessionController();
 await testVoiceSessionBargeInInterruptsFeedback();
 await testVoiceSessionDropsAmbientNoise();

@@ -100,6 +100,16 @@ def test_validator_reports_missing_scene_id() -> None:
     assert "sceneId" in result.issues[0].path
 
 
+def test_validator_rejects_duplicate_scene_name() -> None:
+    result = CommandValidator().validate(
+        [_command(CommandType.CREATE_SCENE, {"name": "主图"})],
+        _project(),
+    )
+
+    assert not result.ok
+    assert result.issues[0].code == "duplicate_scene_name"
+
+
 def test_validator_reports_missing_element() -> None:
     command = _command(
         CommandType.UPDATE_ELEMENT,

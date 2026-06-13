@@ -11,6 +11,7 @@ import {
   createBackendPendingSession
 } from "./state-sync.js";
 import { mergeElementPatch } from "./element-patch.js";
+import { sceneDisplayNumber, visibleSceneEntries } from "./scene-numbering.js";
 import { fitTextFontSize } from "./text-layout.js";
 import {
   BrowserSpeechRecognitionAdapter,
@@ -950,7 +951,8 @@ function switchScene(sceneId) {
   const scene = state.project.scenes.find((item) => item.id === sceneId);
   if (!scene) return;
 
-  const orderText = ["零", "一", "二", "三", "四", "五"][scene.order] || String(scene.order);
+  const displayNumber = sceneDisplayNumber(state.project.scenes, sceneId) || scene.order;
+  const orderText = ["零", "一", "二", "三", "四", "五"][displayNumber] || String(displayNumber);
   runBackendInput(`切换到第${orderText}镜头`, () => switchSceneLocal(sceneId));
 }
 
@@ -987,12 +989,12 @@ function renderHeader() {
 
 function renderHistory() {
   const sceneList = $("#sceneList");
-  sceneList.innerHTML = state.project.scenes
-    .map((scene) => {
+  sceneList.innerHTML = visibleSceneEntries(state.project.scenes)
+    .map(({ scene, displayNumber }) => {
       const active = scene.id === state.project.activeSceneId ? "is-active" : "";
       return `
         <button class="scene-row ${active}" data-scene="${scene.id}">
-          <span class="scene-order">${scene.order}</span>
+          <span class="scene-order">${displayNumber}</span>
           <span>
             <strong>${scene.name}</strong>
             <small>${scene.description}</small>
