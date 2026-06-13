@@ -74,3 +74,6 @@ class HistoryManager:
             nextUndoSummary=next_undo,
             nextRedoSummary=next_redo,
         )
+
+    def entries(self) -> list[HistoryEntry]:
+        return [entry.model_copy(deep=True) for entry in self._undo_stack]
