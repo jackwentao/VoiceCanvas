@@ -430,7 +430,7 @@ npm run test:prototype
 ## PR #18：[codex] 修复语义对象尺寸更新同步
 
 - PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/18
-- PR 状态：Open
+- PR 状态：Merged
 - 分支：`codex/sync-semantic-element-size-patches`
 - 基线分支：`main`
 - 提交：本 PR 当前提交 `修复语义对象尺寸更新同步`
