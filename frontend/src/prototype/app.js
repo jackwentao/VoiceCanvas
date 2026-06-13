@@ -9,6 +9,7 @@ import {
   applyBackendResponse,
   createBackendPendingSession
 } from "./state-sync.js";
+import { mergeElementPatch } from "./element-patch.js";
 
 const state = {
   project: structuredClone(initialProject),
@@ -188,7 +189,7 @@ function executeCommand(command) {
   if (command.type === "UPDATE_ELEMENT") {
     const targetScene = state.project.scenes.find((scene) => scene.id === command.payload.sceneId);
     const element = targetScene.elements.find((item) => item.id === command.payload.elementId);
-    Object.assign(element, command.payload.patch, { updatedAt: timestamp });
+    Object.assign(element, mergeElementPatch(element, command.payload.patch), { updatedAt: timestamp });
     targetScene.updatedAt = timestamp;
     patches.push({
       id: makeId("patch"),

@@ -6,6 +6,7 @@ import {
   UI_BINDINGS,
   initialProject
 } from "../../src/prototype/mock-data.js";
+import { mergeElementPatch } from "../../src/prototype/element-patch.js";
 
 const requiredEvents = [
   "TRANSCRIPT_PARTIAL",
@@ -122,6 +123,40 @@ function testInitialProjectModel() {
   }
 }
 
+function testElementPatchMirrorSync() {
+  const element = {
+    id: "el_cat",
+    type: "generated_asset",
+    x: 10,
+    y: 20,
+    width: 120,
+    height: 90,
+    zIndex: 2,
+    transform: { x: 10, y: 20, width: 120, height: 90 },
+    layer: { zIndex: 2 },
+    content: { alt: "猫" },
+    asset: { kind: "character", status: "pending" },
+    placeholderStyle: { fill: "#ffffff", stroke: "#1f8a5b", strokeWidth: 2 }
+  };
+
+  const legacyResize = mergeElementPatch(element, { width: 180, height: 135 });
+  assert.equal(legacyResize.width, 180);
+  assert.equal(legacyResize.height, 135);
+  assert.equal(legacyResize.transform.width, 180);
+  assert.equal(legacyResize.transform.height, 135);
+
+  const structuredResize = mergeElementPatch(element, {
+    transform: { width: 96, height: 72 },
+    layer: { zIndex: 5 }
+  });
+  assert.equal(structuredResize.width, 96);
+  assert.equal(structuredResize.height, 72);
+  assert.equal(structuredResize.transform.width, 96);
+  assert.equal(structuredResize.transform.height, 72);
+  assert.equal(structuredResize.zIndex, 5);
+  assert.equal(structuredResize.layer.zIndex, 5);
+}
+
 async function testPrototypeHtml() {
   const html = await readFile(new URL("../../src/prototype/index.html", import.meta.url), "utf-8");
   const app = await readFile(new URL("../../src/prototype/app.js", import.meta.url), "utf-8");
@@ -206,6 +241,7 @@ testApiContract();
 testUiBindings();
 testCommandBindings();
 testInitialProjectModel();
+testElementPatchMirrorSync();
 await testPrototypeHtml();
 
 console.log("前端交互原型契约测试通过");

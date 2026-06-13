@@ -30,6 +30,11 @@ node tests/prototype/prototype-contract.test.mjs
 
 该测试验证 `frontend/src/prototype/mock-data.js` 中的 API 契约、UI 绑定、指令链路和初始 Project 数据模型，确保前端原型与后端接口设计保持强绑定。
 
+本轮新增的元素补丁测试还会直接校验 `frontend/src/prototype/element-patch.js`：
+
+- 旧字段 `width/height` 更新时，会同步写入 `transform.width/height`。
+- 结构化 `transform.width/height` 更新时，会同步写回旧字段，保证本地降级演示中的语义插画对象可以缩放。
+
 本轮新增的后端绑定测试还会检查：
 
 - `frontend/src/prototype/backend-client.js` 是否保留项目状态与编排 API 调用。

@@ -229,6 +229,66 @@ def test_executor_merges_structured_element_patch() -> None:
     assert element.style["color"] == "#173b2c"
 
 
+def test_executor_keeps_transform_and_legacy_size_in_sync() -> None:
+    executor = CommandExecutor()
+    add_result = executor.execute(
+        _command(
+            CommandType.ADD_ELEMENT,
+            {
+                "sceneId": "scene_1",
+                "element": {
+                    "type": "generated_asset",
+                    "transform": {"x": 100, "y": 120, "width": 160, "height": 120},
+                    "layer": {"zIndex": 4},
+                    "content": {"alt": "猫"},
+                    "asset": {"kind": "character", "status": "pending", "prompt": "猫"},
+                    "placeholderStyle": {"fill": "#ffffff", "stroke": "#1f8a5b", "strokeWidth": 2},
+                    "metadata": {"renderKey": "cat"},
+                },
+            },
+            "cmd_add_cat",
+        ),
+        _project(),
+    )
+    element_id = add_result.patches[0].element_id
+
+    legacy_update = executor.execute(
+        _command(
+            CommandType.UPDATE_ELEMENT,
+            {
+                "sceneId": "scene_1",
+                "elementId": element_id,
+                "patch": {"width": 240, "height": 180},
+            },
+            "cmd_resize_cat_legacy",
+        ),
+        add_result.project,
+    )
+    legacy_element = legacy_update.project.scenes[0].elements[-1]
+    assert legacy_element.width == 240
+    assert legacy_element.height == 180
+    assert legacy_element.transform.width == 240
+    assert legacy_element.transform.height == 180
+
+    structured_update = executor.execute(
+        _command(
+            CommandType.UPDATE_ELEMENT,
+            {
+                "sceneId": "scene_1",
+                "elementId": element_id,
+                "patch": {"transform": {"width": 120, "height": 90}},
+            },
+            "cmd_resize_cat_structured",
+        ),
+        legacy_update.project,
+    )
+    structured_element = structured_update.project.scenes[0].elements[-1]
+    assert structured_element.width == 120
+    assert structured_element.height == 90
+    assert structured_element.transform.width == 120
+    assert structured_element.transform.height == 90
+
+
 def test_executor_degrades_connector_when_target_element_is_deleted() -> None:
     project = Project(
         id="project_demo",
@@ -296,7 +356,11 @@ def test_executor_degrades_connector_when_target_element_is_deleted() -> None:
         project,
     )
 
-    connector = next(element for element in result.project.scenes[0].elements if element.id == "el_connector")
+    connector = next(
+        element
+        for element in result.project.scenes[0].elements
+        if element.id == "el_connector"
+    )
     assert connector.type == ElementType.UNKNOWN
     assert connector.reason == "invalid_reference"
     assert result.history_entry.inverse_command is not None
