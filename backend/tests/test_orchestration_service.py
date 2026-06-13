@@ -1,3 +1,7 @@
+import json
+
+from voicecanvas.adapters.llm.fake import FakeLLMClient
+from voicecanvas.application.llm_command_planner import LLMCommandPlanner
 from voicecanvas.application.orchestration_service import OrchestrationService
 from voicecanvas.domain.patches import PatchType
 
@@ -82,3 +86,54 @@ def test_service_returns_completed_response_for_unknown_sentence() -> None:
     assert response.status == "COMPLETED"
     assert response.summary.command_count == 0
     assert response.patches == []
+
+
+def test_service_e2e_adds_boy_as_male_character_asset() -> None:
+    client = FakeLLMClient(
+        [
+            json.dumps(
+                {
+                    "action": "commands",
+                    "message": "添加男生",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "generated_asset",
+                                    "name": "男生",
+                                    "x": 260,
+                                    "y": 220,
+                                    "width": 160,
+                                    "height": 220,
+                                    "zIndex": 5,
+                                    "content": {"alt": "男生"},
+                                    "asset": {
+                                        "kind": "character",
+                                        "status": "pending",
+                                        "prompt": "一个男生站在画布中间",
+                                    },
+                                    "placeholderStyle": {
+                                        "fill": "#ffffff",
+                                        "stroke": "#1f8a5b",
+                                        "strokeWidth": 2,
+                                    },
+                                },
+                            },
+                        }
+                    ],
+                },
+                ensure_ascii=False,
+            )
+        ]
+    )
+    service = OrchestrationService(planner=LLMCommandPlanner(client))
+
+    response = service.handle_user_input("project_boy", "画一个男生")
+    element = response.project.scenes[0].elements[0]
+
+    assert response.status == "COMPLETED"
+    assert element.metadata["renderHint"] == "character"
+    assert element.metadata["renderVariant"] == "male"
+    assert element.subject["character"]["gender"] == "male"

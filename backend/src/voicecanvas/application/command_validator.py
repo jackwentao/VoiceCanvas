@@ -161,7 +161,8 @@ class CommandValidator:
     ) -> list[ValidationIssue]:
         issues: list[ValidationIssue] = []
         payload = command.payload
-        if self._find_scene(project, payload.get("sceneId")) is None:
+        scene = self._find_scene(project, payload.get("sceneId"))
+        if scene is None:
             issues.append(self._issue(f"{path}.payload.sceneId", "not_found", "目标 Scene 不存在"))
 
         element = payload.get("element")
@@ -177,6 +178,19 @@ class CommandValidator:
 
         draft = {"id": "el_validation_placeholder", **element}
         self._try_model(CanvasElement, draft, f"{path}.payload.element", issues)
+        if scene is not None:
+            self._try_model(
+                Scene,
+                {
+                    **scene.model_dump(by_alias=True),
+                    "elements": [
+                        *[item.model_dump(by_alias=True) for item in scene.elements],
+                        draft,
+                    ],
+                },
+                f"{path}.payload.element",
+                issues,
+            )
         return issues
 
     def _validate_update_element(
@@ -216,10 +230,27 @@ class CommandValidator:
             "name",
             "text",
             "style",
+            "transform",
+            "layer",
+            "content",
+            "boxStyle",
             "shape",
             "label",
+            "connector",
+            "connectorType",
             "from",
             "to",
+            "image",
+            "asset",
+            "subject",
+            "children",
+            "group",
+            "placeholderStyle",
+            "reason",
+            "role",
+            "interaction",
+            "semantic",
+            "metadata",
         }
         for field_name in patch:
             if field_name not in allowed_fields:
@@ -231,8 +262,20 @@ class CommandValidator:
                     )
                 )
 
-        merged = {**element.model_dump(by_alias=True), **patch}
+        merged = self._merge_element_patch(element.model_dump(by_alias=True), patch)
         self._try_model(CanvasElement, merged, f"{path}.payload.patch", issues)
+        self._try_model(
+            Scene,
+            {
+                **scene.model_dump(by_alias=True),
+                "elements": [
+                    merged if item.id == element.id else item.model_dump(by_alias=True)
+                    for item in scene.elements
+                ],
+            },
+            f"{path}.payload.patch",
+            issues,
+        )
         return issues
 
     def _validate_delete_element(
@@ -317,6 +360,23 @@ class CommandValidator:
                         str(item["msg"]),
                     )
                 )
+
+    def _merge_element_patch(self, before: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
+        merged = dict(before)
+        for key, value in patch.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = {**merged[key], **value}
+            else:
+                merged[key] = value
+            if key == "text":
+                content = dict(merged.get("content") or {})
+                content["text"] = value
+                merged["content"] = content
+            if key == "label":
+                content = dict(merged.get("content") or {})
+                content["label"] = value
+                merged["content"] = content
+        return merged
 
     def _find_scene(self, project: Project, scene_id: Any) -> Scene | None:
         if not isinstance(scene_id, str):

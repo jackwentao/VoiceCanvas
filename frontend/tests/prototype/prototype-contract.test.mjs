@@ -96,9 +96,27 @@ function testInitialProjectModel() {
       assert.ok(element.height > 0);
       assert.ok(Number.isFinite(element.zIndex));
 
+      if (element.type === "text") {
+        assert.ok(element.content?.text || element.text, "text 元素必须有可渲染文本");
+      }
+
+      if (element.type === "shape") {
+        assert.ok(element.shape?.kind || element.shape, "shape 元素必须声明图形类型");
+        assert.notEqual(element.content?.label, element.name, "shape 的画面标签不应依赖图层 name");
+      }
+
       if (element.type === "connector") {
         if (element.from) assert.ok(elementIds.has(element.from.elementId));
         if (element.to) assert.ok(elementIds.has(element.to.elementId));
+      }
+
+      if (element.type === "generated_asset") {
+        assert.ok(element.asset?.status, "generated_asset 必须声明生成状态");
+        if (element.asset.status === "ready") {
+          assert.ok(element.content?.assetId || element.content?.url, "ready 素材必须有资源引用");
+        } else {
+          assert.ok(element.placeholderStyle, "未完成素材必须有占位样式");
+        }
       }
     }
   }
@@ -108,6 +126,9 @@ async function testPrototypeHtml() {
   const html = await readFile(new URL("../../src/prototype/index.html", import.meta.url), "utf-8");
   const app = await readFile(new URL("../../src/prototype/app.js", import.meta.url), "utf-8");
   const css = await readFile(new URL("../../src/prototype/styles.css", import.meta.url), "utf-8");
+  const renderCatalog = JSON.parse(
+    await readFile(new URL("../../src/prototype/render-catalog.json", import.meta.url), "utf-8")
+  );
   const backendClient = await readFile(
     new URL("../../src/prototype/backend-client.js", import.meta.url),
     "utf-8"
@@ -137,11 +158,48 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
   assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
   assert.ok(app.includes("applyBackendResponse"), "后端响应必须统一归并到页面状态");
+  assert.ok(app.includes("renderConnectorLayer"), "画布必须提供独立 SVG 连接层");
+  assert.ok(app.includes("createElementLayoutIndex"), "连接线必须依赖元素布局索引计算端点");
+  assert.ok(app.includes("<path"), "连接线必须使用 SVG path 渲染");
+  assert.ok(app.includes("marker-end"), "箭头必须使用 SVG marker 渲染");
+  assert.ok(app.includes("renderGeneratedAssetElement"), "画布必须支持生成素材渲染");
+  assert.ok(app.includes("hydrateRenderCatalog"), "前端必须加载 Render Catalog");
+  assert.ok(app.includes("renderCatalogState"), "前端必须建立 Render Catalog 索引");
+  assert.ok(app.includes("getIllustrationRenderer"), "前端必须通过 renderer registry 分发语义插画");
+  assert.ok(app.includes("metadata.renderKey"), "前端必须优先使用后端显式 renderKey");
+  assert.ok(app.includes("renderSemanticIllustrationElement"), "画布必须支持语义对象插画渲染");
+  assert.ok(app.includes("characterIllustrationSvg"), "画布必须使用通用人物插画渲染器");
+  assert.ok(app.includes("renderVariant"), "画布必须支持后端传入的人物渲染变体");
+  assert.ok(app.includes('data-variant="${spec.variant || ""}"'), "人物渲染变体必须落到 DOM 便于视觉 QA");
+  assert.ok(app.includes("catIllustrationSvg"), "画布必须能把猫渲染成专门插画");
+  assert.ok(app.includes("tableIllustrationSvg"), "画布必须能把桌子渲染成专门插画");
+  assert.ok(app.includes("metadata?.renderHint"), "前端必须优先使用后端显式渲染提示");
+  assert.ok(app.includes("semanticSpecFromSubject"), "前端必须支持 subject 结构化主体识别");
+  assert.ok(!app.includes('|| "girl"'), "人物识别不能把未知 character 默认画成女生");
+  assert.ok(!app.includes("asset?.prompt ||"), "前端不能根据 prompt 场景词决定插画主体");
+  assert.ok(app.indexOf('text.includes("男生")') < app.indexOf('text.includes("女生")'), "男生主体识别必须在通用人物识别前处理");
+  assert.ok(!app.includes("element.name || element.shape"), "shape 不应把图层 name 当画面内容渲染");
+  assert.ok(css.includes(".connector-layer"), "CSS 必须定义连接层样式");
+  assert.ok(css.includes(".illustration-element"), "CSS 必须定义语义插画元素样式");
+  assert.ok(css.includes(".character-shirt"), "CSS 必须定义人物上衣样式");
+  assert.ok(css.includes(".character-dress"), "CSS 必须定义女性人物裙装样式");
+  assert.ok(css.includes(".character-pants"), "CSS 必须定义男性人物裤装样式");
+  assert.ok(css.includes(".cat-body"), "CSS 必须定义猫插画样式");
+  assert.ok(css.includes(".table-top"), "CSS 必须定义桌子插画样式");
   assert.ok(backendClient.includes("/api/orchestrations"), "前端客户端必须绑定编排 API");
   assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
   assert.ok(stateSync.includes("CANVAS_PATCH_APPLIED"), "状态归并层必须保留画布事件投影能力");
   assert.ok(stateSync.includes("CLARIFICATION_REQUESTED"), "状态归并层必须保留澄清事件投影能力");
   assert.ok(css.includes(".settings-popover[hidden]"), "设置菜单 hidden 状态必须真正隐藏");
+
+  const catalogItems = new Map(renderCatalog.items.map((item) => [item.renderKey, item]));
+  assert.equal(renderCatalog.version, 1, "Render Catalog 必须有版本");
+  assert.equal(catalogItems.get("character")?.directRender, true, "人物必须声明本地 direct renderer");
+  assert.equal(catalogItems.get("dog")?.directRender, false, "未接入 renderer 的对象必须走 placeholder");
+  assert.ok(
+    catalogItems.get("character")?.variants?.some((variant) => variant.key === "male"),
+    "人物 catalog 必须声明 male variant"
+  );
 }
 
 testApiContract();

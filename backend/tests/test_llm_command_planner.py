@@ -143,6 +143,230 @@ def test_llm_planner_splits_scene_patch_elements_into_add_element_commands() -> 
     assert plan.commands[1].payload["element"]["text"] == "新品上市"
 
 
+def test_llm_planner_normalizes_scene_id_update_with_top_level_elements() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "更新镜头并补充素材",
+                    "commands": [
+                        {
+                            "type": "UPDATE_SCENE",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "name": "开场主图",
+                                "description": "展示人物和奶茶",
+                                "elements": [
+                                    {
+                                        "type": "generated_asset",
+                                        "x": 0,
+                                        "y": 0,
+                                        "width": 1280,
+                                        "height": 720,
+                                        "zIndex": 0,
+                                        "asset": {
+                                            "kind": "background",
+                                            "status": "pending",
+                                            "prompt": "奶茶店背景",
+                                            "placeholderStyle": {"fill": "#ffffff"},
+                                        },
+                                    }
+                                ],
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("创建一个三镜头的珍珠奶茶带货分镜", _project())
+
+    assert [command.type for command in plan.commands] == [
+        CommandType.UPDATE_SCENE,
+        CommandType.ADD_ELEMENT,
+    ]
+    assert plan.commands[0].payload["patch"]["name"] == "开场主图"
+    assert "placeholderStyle" in plan.commands[1].payload["element"]
+
+
+def test_llm_planner_normalizes_real_world_objects_to_generated_assets() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "添加猫",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "shape",
+                                    "name": "猫",
+                                    "shape": "rectangle",
+                                    "x": 260,
+                                    "y": 260,
+                                    "width": 180,
+                                    "height": 140,
+                                    "zIndex": 5,
+                                },
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("画一个猫在桌子旁边", _project())
+    element = plan.commands[0].payload["element"]
+
+    assert element["type"] == "generated_asset"
+    assert element["asset"]["kind"] == "character"
+    assert element["asset"]["status"] == "pending"
+    assert element["metadata"]["renderHint"] == "cat"
+    assert "placeholderStyle" in element
+
+
+def test_llm_planner_prioritizes_girl_subject_over_table_context() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "添加女生",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "generated_asset",
+                                    "name": "女生",
+                                    "x": 260,
+                                    "y": 220,
+                                    "width": 160,
+                                    "height": 220,
+                                    "zIndex": 5,
+                                    "content": {"alt": "女生在桌子旁边"},
+                                    "asset": {
+                                        "kind": "product",
+                                        "status": "pending",
+                                        "prompt": "一个女生在桌子旁边",
+                                    },
+                                    "placeholderStyle": {
+                                        "fill": "#ffffff",
+                                        "stroke": "#1f8a5b",
+                                        "strokeWidth": 2,
+                                    },
+                                },
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("画一个女生在桌子旁边", _project())
+    element = plan.commands[0].payload["element"]
+
+    assert element["type"] == "generated_asset"
+    assert element["asset"]["kind"] == "character"
+    assert element["subject"]["character"]["category"] == "女生"
+    assert element["subject"]["character"]["gender"] == "female"
+    assert element["metadata"]["renderHint"] == "character"
+    assert element["metadata"]["renderVariant"] == "female"
+
+
+def test_llm_planner_normalizes_boy_as_male_character() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "添加男生",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "generated_asset",
+                                    "name": "男生",
+                                    "x": 260,
+                                    "y": 220,
+                                    "width": 160,
+                                    "height": 220,
+                                    "zIndex": 5,
+                                    "content": {"alt": "男生"},
+                                    "asset": {
+                                        "kind": "character",
+                                        "status": "pending",
+                                        "prompt": "一个男生站在画布中间",
+                                    },
+                                    "placeholderStyle": {
+                                        "fill": "#ffffff",
+                                        "stroke": "#1f8a5b",
+                                        "strokeWidth": 2,
+                                    },
+                                },
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("画一个男生", _project())
+    element = plan.commands[0].payload["element"]
+
+    assert element["type"] == "generated_asset"
+    assert element["metadata"]["renderHint"] == "character"
+    assert element["metadata"]["renderVariant"] == "male"
+    assert element["subject"]["character"]["gender"] == "male"
+
+
+def test_llm_planner_keeps_structured_text_content_valid() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "添加标题",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "text",
+                                    "x": 440,
+                                    "y": 50,
+                                    "width": 400,
+                                    "height": 80,
+                                    "zIndex": 1,
+                                    "content": {"text": "新品上市"},
+                                },
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("加标题，写新品上市", _project())
+    element = plan.commands[0].payload["element"]
+
+    assert element["text"] == "新品上市"
+    assert element["content"]["text"] == "新品上市"
+
+
 def test_llm_planner_retries_invalid_json_then_succeeds() -> None:
     client = FakeLLMClient(
         [

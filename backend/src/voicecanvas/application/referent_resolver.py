@@ -261,11 +261,16 @@ class ReferentResolver:
         ]
 
     def _element_text(self, element: CanvasElement) -> str:
+        shape_text = (
+            element.shape.get("kind")
+            if isinstance(element.shape, dict)
+            else element.shape
+        )
         values: list[str] = [
             element.type.value,
             element.name or "",
             element.text or "",
-            element.shape or "",
+            shape_text or "",
             element.label or "",
         ]
         values.extend(str(value) for value in element.style.values())
