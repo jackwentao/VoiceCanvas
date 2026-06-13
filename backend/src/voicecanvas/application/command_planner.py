@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
 from voicecanvas.domain.commands import CanvasCommand
+from voicecanvas.domain.conversation import ConversationMemorySnapshot
 from voicecanvas.domain.project import Project
 
 
@@ -27,8 +28,21 @@ class CommandPlan:
     attempts: list[PlannerAttempt] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class PlanningContext:
+    """Planner 可选读取的上下文；普通规则 planner 可以忽略。"""
+
+    conversation: ConversationMemorySnapshot | None = None
+
+
 class CommandPlanner(Protocol):
     """将用户输入和当前项目状态转换为结构化画布计划。"""
 
-    def plan(self, user_input: str, project: Project) -> CommandPlan:
+    def plan(
+        self,
+        user_input: str,
+        project: Project,
+        *,
+        context: PlanningContext | None = None,
+    ) -> CommandPlan:
         ...

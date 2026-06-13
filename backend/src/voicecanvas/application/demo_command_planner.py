@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from typing import TypeAlias
 from uuid import uuid4
 
-from voicecanvas.application.command_planner import CommandPlan
+from voicecanvas.application.command_planner import CommandPlan, PlanningContext
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
 
@@ -12,7 +12,13 @@ DemoCommandPlan: TypeAlias = CommandPlan
 class DemoCommandPlanner:
     """将比赛 Demo 语料映射成结构化命令；真实 LLM 后续替换这一层。"""
 
-    def plan(self, user_input: str, project: Project) -> DemoCommandPlan:
+    def plan(
+        self,
+        user_input: str,
+        project: Project,
+        *,
+        context: PlanningContext | None = None,
+    ) -> DemoCommandPlan:
         text = user_input.strip()
 
         if self._contains_any(text, ["撤销", "回退", "刚才那个不要"]):

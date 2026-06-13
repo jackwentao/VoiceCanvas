@@ -1,9 +1,79 @@
 import json
+from datetime import UTC, datetime
+from uuid import uuid4
 
 from voicecanvas.adapters.llm.fake import FakeLLMClient
+from voicecanvas.application.command_planner import CommandPlan, PlanningContext
 from voicecanvas.application.llm_command_planner import LLMCommandPlanner
 from voicecanvas.application.orchestration_service import OrchestrationService
+from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.patches import PatchType
+from voicecanvas.domain.project import Project
+
+
+class FocusAwarePlanner:
+    def plan(
+        self,
+        user_input: str,
+        project: Project,
+        *,
+        context: PlanningContext | None = None,
+    ) -> CommandPlan:
+        if "狗" in user_input:
+            return CommandPlan(
+                "commands",
+                [
+                    self._command(
+                        CommandType.ADD_ELEMENT,
+                        {
+                            "sceneId": project.active_scene_id,
+                            "element": {
+                                "type": "generated_asset",
+                                "name": "狗",
+                                "x": 300,
+                                "y": 260,
+                                "width": 180,
+                                "height": 120,
+                                "zIndex": 5,
+                                "asset": {
+                                    "kind": "character",
+                                    "status": "pending",
+                                    "prompt": "一只狗",
+                                },
+                                "placeholderStyle": {"fill": "#ffffff"},
+                            },
+                        },
+                    )
+                ],
+                "添加狗",
+            )
+
+        assert context is not None
+        assert context.conversation is not None
+        target = context.conversation.focus_stack[0]
+        return CommandPlan(
+            "commands",
+            [
+                self._command(
+                    CommandType.UPDATE_ELEMENT,
+                    {
+                        "sceneId": target.scene_id,
+                        "elementId": target.element_id,
+                        "patch": {"x": target.bounds["x"] - 40},
+                    },
+                )
+            ],
+            "移动最近主体",
+        )
+
+    def _command(self, command_type: CommandType, payload: dict) -> CanvasCommand:
+        return CanvasCommand(
+            id=f"cmd_{uuid4().hex[:12]}",
+            type=command_type,
+            source="ai",
+            payload=payload,
+            createdAt=datetime.now(UTC).isoformat(),
+        )
 
 
 def test_service_creates_storyboard_with_real_execution_pipeline() -> None:
@@ -308,3 +378,16 @@ def test_service_e2e_adds_boy_as_male_character_asset() -> None:
     assert element.metadata["renderHint"] == "character"
     assert element.metadata["renderVariant"] == "male"
     assert element.subject["character"]["gender"] == "male"
+
+
+def test_service_extracts_short_term_memory_after_patch_for_next_turn() -> None:
+    service = OrchestrationService(planner=FocusAwarePlanner())
+
+    created = service.handle_user_input("project_focus", "画一个狗")
+    moved = service.handle_user_input("project_focus", "往左移一点")
+
+    dog = next(element for element in moved.project.scenes[0].elements if element.name == "狗")
+    assert created.status == "COMPLETED"
+    assert moved.status == "COMPLETED"
+    assert moved.patches[-1].type == PatchType.ELEMENT_UPDATED
+    assert dog.x == 260

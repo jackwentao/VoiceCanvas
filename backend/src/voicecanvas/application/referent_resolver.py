@@ -2,6 +2,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from voicecanvas.domain.conversation import ConversationMemorySnapshot, ElementMemory
 from voicecanvas.domain.project import CanvasElement, Project, Scene
 
 
@@ -49,11 +50,24 @@ class ReferentResolver:
         "杯": ["陶瓷", "容器", "器皿", "瓶", "罐", "包装", "商品", "产品", "主体"],
     }
 
-    def resolve(self, user_input: str, project: Project) -> ReferentResolution | None:
+    def resolve(
+        self,
+        user_input: str,
+        project: Project,
+        memory: ConversationMemorySnapshot | None = None,
+    ) -> ReferentResolution | None:
         if not self.needs_resolution(user_input):
             return None
 
         scene = self._active_scene(project)
+        focus_candidate = self._resolve_focus_candidate(user_input, project, memory)
+        if focus_candidate is not None:
+            return ReferentResolution(
+                status="matched",
+                query=user_input,
+                candidates=[focus_candidate],
+            )
+
         strict_candidates = self._score_scene(scene, user_input, expanded=False)
         decision = self._decide(user_input, strict_candidates, expanded=False)
         if decision.status != "not_found":
@@ -78,19 +92,125 @@ class ReferentResolver:
             "这个",
             "那个",
             "它",
+            "刚才",
             "左边",
             "右边",
             "上面",
             "下面",
             "中间",
+            "左",
+            "右",
+            "上",
+            "下",
             "杯",
+            "标题",
             "商品",
             "按钮",
             "标签",
         ]
-        action_cues = ["改", "删", "放大", "缩小", "移动", "居中", "置顶", "置底", "换"]
+        action_cues = [
+            "改",
+            "删",
+            "删除",
+            "放大",
+            "缩小",
+            "移动",
+            "移",
+            "挪",
+            "居中",
+            "置顶",
+            "置底",
+            "换",
+        ]
         return any(cue in user_input for cue in cues) and any(
             cue in user_input for cue in action_cues
+        )
+
+    def _resolve_focus_candidate(
+        self,
+        user_input: str,
+        project: Project,
+        memory: ConversationMemorySnapshot | None,
+    ) -> ElementCandidate | None:
+        if memory is None or not memory.focus_stack:
+            return None
+        if not self._should_use_recent_focus(user_input):
+            return None
+
+        for item in memory.focus_stack:
+            located = self._find_element(project, item.scene_id, item.element_id)
+            if located is None:
+                continue
+            scene, element = located
+            return self._candidate_from_focus(scene, element, item)
+        return None
+
+    def _should_use_recent_focus(self, user_input: str) -> bool:
+        create_cues = ["画", "添加", "新增", "加一个", "生成", "创建"]
+        if any(cue in user_input for cue in create_cues):
+            return False
+
+        explicit_target_cues = [
+            "左边那个",
+            "右边那个",
+            "上面那个",
+            "下面那个",
+            "中间那个",
+            "标题",
+            "杯",
+            "商品",
+            "按钮",
+            "标签",
+            "文字",
+            "人",
+            "狗",
+            "猫",
+            "桌",
+        ]
+        if any(cue in user_input for cue in explicit_target_cues):
+            return False
+
+        focus_cues = ["它", "这个", "那个", "刚才", "刚刚", "上一个"]
+        relative_edit_cues = [
+            "往左",
+            "向左",
+            "左移",
+            "往右",
+            "向右",
+            "右移",
+            "上移",
+            "下移",
+            "移一点",
+            "挪一点",
+            "放大一点",
+            "缩小一点",
+            "大一点",
+            "小一点",
+        ]
+        return any(cue in user_input for cue in focus_cues) or any(
+            cue in user_input for cue in relative_edit_cues
+        )
+
+    def _candidate_from_focus(
+        self,
+        scene: Scene,
+        element: CanvasElement,
+        memory: ElementMemory,
+    ) -> ElementCandidate:
+        return ElementCandidate(
+            sceneId=scene.id,
+            elementId=element.id,
+            type=element.type.value,
+            name=element.name or memory.name,
+            text=element.text or memory.text,
+            bounds=ElementBounds(
+                x=element.x,
+                y=element.y,
+                width=element.width,
+                height=element.height,
+            ),
+            score=0.92,
+            reason="命中最近操作焦点",
         )
 
     def _score_scene(
@@ -220,6 +340,13 @@ class ReferentResolver:
 
         top = filtered[0]
         second = filtered[1] if len(filtered) > 1 else None
+        if second is None and top.score >= 0.55:
+            return ReferentResolution(
+                status="matched",
+                query=user_input,
+                candidates=[top],
+                expanded=expanded,
+            )
         if top.score >= 0.68 and (second is None or top.score - second.score >= 0.18):
             return ReferentResolution(
                 status="matched",
@@ -278,6 +405,20 @@ class ReferentResolver:
 
     def _active_scene(self, project: Project) -> Scene:
         return next(scene for scene in project.scenes if scene.id == project.active_scene_id)
+
+    def _find_element(
+        self,
+        project: Project,
+        scene_id: str,
+        element_id: str,
+    ) -> tuple[Scene, CanvasElement] | None:
+        for scene in project.scenes:
+            if scene.id != scene_id:
+                continue
+            for element in scene.elements:
+                if element.id == element_id:
+                    return scene, element
+        return None
 
 
 def resolution_to_next_action(resolution: ReferentResolution, session_id: str) -> dict[str, Any]:

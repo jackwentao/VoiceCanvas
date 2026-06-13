@@ -7,8 +7,9 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from voicecanvas.application.command_executor import CommandExecutor
-from voicecanvas.application.command_planner import CommandPlanner
+from voicecanvas.application.command_planner import CommandPlanner, PlanningContext
 from voicecanvas.application.command_validator import CommandValidator
+from voicecanvas.application.conversation_memory import ConversationMemoryManager
 from voicecanvas.application.demo_command_planner import DemoCommandPlanner
 from voicecanvas.application.history_manager import HistoryManager
 from voicecanvas.application.project_repository import InMemoryProjectRepository
@@ -69,6 +70,7 @@ class OrchestrationService:
         self._validator = validator or CommandValidator()
         self._executor = executor or CommandExecutor(self._validator)
         self._histories: dict[str, HistoryManager] = {}
+        self._conversation_memories: dict[str, ConversationMemoryManager] = {}
         self._pending_clarifications: dict[str, dict[str, Any]] = {}
 
     def handle_user_input(self, project_id: str, user_input: str) -> OrchestrationServiceResponse:
@@ -89,6 +91,7 @@ class OrchestrationService:
         session_id = f"session_{uuid4().hex[:12]}"
         project = self._repository.get_or_create(project_id)
         history = self._history_for(project.id)
+        memory = self._conversation_memory_for(project.id)
         patches: list[CanvasPatch] = []
         events: list[dict[str, Any]] = []
         yield from self._emit_event(
@@ -112,6 +115,12 @@ class OrchestrationService:
             )
             summary = TurnSummary(completed=False, message=message, commandCount=0)
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            memory.record_turn(
+                user_input=user_input,
+                assistant_message=summary.message,
+                action="ask_clarification",
+                command_count=0,
+            )
             yield self._result_chunk(
                 self._response(
                     session_id,
@@ -126,7 +135,8 @@ class OrchestrationService:
             )
             return
 
-        plan = self._planner.plan(user_input, project)
+        context = PlanningContext(conversation=memory.snapshot(project))
+        plan = self._planner.plan(user_input, project, context=context)
         if plan.notice:
             yield from self._emit_event(
                 events,
@@ -146,6 +156,12 @@ class OrchestrationService:
             )
             summary = TurnSummary(completed=False, message=plan.message, commandCount=0)
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            memory.record_turn(
+                user_input=user_input,
+                assistant_message=summary.message,
+                action=plan.action,
+                command_count=0,
+            )
             yield self._result_chunk(
                 self._response(
                     session_id,
@@ -167,6 +183,12 @@ class OrchestrationService:
                 commandCount=0,
             )
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            memory.record_turn(
+                user_input=user_input,
+                assistant_message=summary.message,
+                action=plan.action,
+                command_count=0,
+            )
             yield self._result_chunk(
                 self._response(
                     session_id,
@@ -181,11 +203,11 @@ class OrchestrationService:
             return
 
         if plan.action == "undo":
-            yield from self._stream_undo(session_id, project, history, events)
+            yield from self._stream_undo(session_id, project, history, memory, events, user_input)
             return
 
         if plan.action == "redo":
-            yield from self._stream_redo(session_id, project, history, events)
+            yield from self._stream_redo(session_id, project, history, memory, events, user_input)
             return
 
         yield from self._emit_event(
@@ -228,6 +250,7 @@ class OrchestrationService:
                     events,
                     self._patch_event(session_id, patch, result.command_id),
                 )
+                memory.record_patch(patch, current_project)
 
         self._repository.save(current_project)
         summary = TurnSummary(
@@ -239,6 +262,12 @@ class OrchestrationService:
             commandCount=applied_count,
         )
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+        memory.record_turn(
+            user_input=user_input,
+            assistant_message=summary.message,
+            action=plan.action,
+            command_count=applied_count,
+        )
         yield self._result_chunk(
             self._response(
                 session_id,
@@ -258,6 +287,7 @@ class OrchestrationService:
 
         project = self._repository.get_or_create(project_id)
         history = self._history_for(project.id)
+        memory = self._conversation_memory_for(project.id)
         events = [self._stage_event(session_id, "understanding", "正在解析澄清回答")]
         pending = self._pending_clarifications.get(session_id)
         if not pending:
@@ -275,7 +305,7 @@ class OrchestrationService:
 
         if self._is_clear_scene_confirmation(pending):
             return self._resume_clear_scene_confirmation(
-                project, history, events, pending, session_id, user_input
+                project, history, memory, events, pending, session_id, user_input
             )
 
         selected = self._resolve_clarification_answer(
@@ -337,10 +367,18 @@ class OrchestrationService:
                 self._patch_event(session_id, patch, applied.command_id)
                 for patch in applied.patches
             )
+            for patch in applied.patches:
+                memory.record_patch(patch, result.project)
         self._repository.save(result.project)
         message = f"已根据澄清回答修改 {selected.get('label') or selected.get('elementId')}"
         summary = TurnSummary(completed=True, message=message, commandCount=len(result.applied))
         events.append(self._turn_summary_event(session_id, summary))
+        memory.record_turn(
+            user_input=user_input,
+            assistant_message=summary.message,
+            action="resume_clarification",
+            command_count=len(result.applied),
+        )
         return self._response(
             session_id,
             "COMPLETED",
@@ -355,6 +393,7 @@ class OrchestrationService:
         self,
         project: Project,
         history: HistoryManager,
+        memory: ConversationMemoryManager,
         events: list[dict[str, Any]],
         pending: dict[str, Any],
         session_id: str,
@@ -382,6 +421,12 @@ class OrchestrationService:
         if answer is False:
             summary = TurnSummary(completed=True, message="已取消清空画布", commandCount=0)
             events.append(self._turn_summary_event(session_id, summary))
+            memory.record_turn(
+                user_input=user_input,
+                assistant_message=summary.message,
+                action="cancel_clear_scene",
+                command_count=0,
+            )
             return self._response(
                 session_id,
                 "COMPLETED",
@@ -422,9 +467,17 @@ class OrchestrationService:
                 self._patch_event(session_id, patch, applied.command_id)
                 for patch in applied.patches
             )
+            for patch in applied.patches:
+                memory.record_patch(patch, result.project)
         self._repository.save(result.project)
         summary = TurnSummary(completed=True, message="已清空当前画布", commandCount=1)
         events.append(self._turn_summary_event(session_id, summary))
+        memory.record_turn(
+            user_input=user_input,
+            assistant_message=summary.message,
+            action="clear_scene",
+            command_count=1,
+        )
         return self._response(
             session_id,
             "COMPLETED",
@@ -445,7 +498,9 @@ class OrchestrationService:
         session_id: str,
         project: Project,
         history: HistoryManager,
+        memory: ConversationMemoryManager,
         events: list[dict[str, Any]],
+        user_input: str,
     ) -> Iterator[OrchestrationStreamChunk]:
         yield from self._emit_event(
             events,
@@ -475,8 +530,15 @@ class OrchestrationService:
                 events,
                 self._patch_event(session_id, patch, result.history_entry.command.id),
             )
+            memory.record_patch(patch, result.project)
         summary = TurnSummary(completed=True, message="已撤销上一步操作", commandCount=1)
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+        memory.record_turn(
+            user_input=user_input,
+            assistant_message=summary.message,
+            action="undo",
+            command_count=1,
+        )
         yield self._result_chunk(
             self._response(
                 session_id,
@@ -494,7 +556,9 @@ class OrchestrationService:
         session_id: str,
         project: Project,
         history: HistoryManager,
+        memory: ConversationMemoryManager,
         events: list[dict[str, Any]],
+        user_input: str,
     ) -> Iterator[OrchestrationStreamChunk]:
         yield from self._emit_event(
             events,
@@ -524,8 +588,15 @@ class OrchestrationService:
                 events,
                 self._patch_event(session_id, patch, result.history_entry.command.id),
             )
+            memory.record_patch(patch, result.project)
         summary = TurnSummary(completed=True, message="已重做上一步操作", commandCount=1)
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+        memory.record_turn(
+            user_input=user_input,
+            assistant_message=summary.message,
+            action="redo",
+            command_count=1,
+        )
         yield self._result_chunk(
             self._response(
                 session_id,
@@ -654,6 +725,11 @@ class OrchestrationService:
         if project_id not in self._histories:
             self._histories[project_id] = HistoryManager()
         return self._histories[project_id]
+
+    def _conversation_memory_for(self, project_id: str) -> ConversationMemoryManager:
+        if project_id not in self._conversation_memories:
+            self._conversation_memories[project_id] = ConversationMemoryManager()
+        return self._conversation_memories[project_id]
 
     def _collect_patches(self, applied: list[Any]) -> list[CanvasPatch]:
         return [patch for result in applied for patch in result.patches]
