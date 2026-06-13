@@ -426,3 +426,80 @@ npm run test:prototype
 - `test_demo_command_planner.py`：验证 Demo 语料能生成创建分镜、切换镜头、修改标题和删除镜头命令。
 - `test_orchestration_service.py`：验证真实编排闭环、Project 保存、Patch 返回、History 记录、撤销和重做。
 - `test_api.py`：验证 `/api/orchestrations` 返回真实 Project、Patch、History、Events，并能在同一个 projectId 上连续修改状态。
+
+## PR #待创建：[codex] 修复语义对象尺寸更新同步
+
+- PR 链接：待创建
+- PR 状态：待创建
+- 分支：`codex/sync-semantic-element-size-patches`
+- 基线分支：`main`
+- 提交：本 PR 当前提交 `修复语义对象尺寸更新同步`
+- 创建时间：2026-06-13
+
+### 标题
+
+修复人物、猫、桌子等语义对象的尺寸更新同步。
+
+### 功能描述
+
+本 PR 修复后定义语义对象无法放大或缩小的问题。用户通过“放大猫”“缩小人物”“把桌子变大”等指令触发 `UPDATE_ELEMENT` 后，无论 Planner 输出旧字段 `width/height`，还是输出结构化字段 `transform.width/height`，后端 Project State 和前端本地降级演示都会保持两套字段同步，画布渲染器可以立即读到最新尺寸。
+
+使用方式：
+
+- 后端编排或 LLM Planner 继续生成合法 `UPDATE_ELEMENT` 命令。
+- `patch` 可以使用旧字段 `width/height`，也可以使用 `transform: { width, height }`。
+- 前端原型渲染时继续优先读取 `transform`，旧字段作为兼容输入。
+
+### 实现思路
+
+本次变更保持“小 PR 单一功能”，只修复元素尺寸补丁同步，不新增第三方依赖。
+
+核心实现：
+
+- 后端新增 `application/element_patch.py`，集中处理元素补丁浅合并，并同步 `transform` 与旧字段镜像。
+- `CommandValidator` 和 `CommandExecutor` 共用同一个补丁合并器，避免校验通过但执行结果不同步。
+- 前端新增 `frontend/src/prototype/element-patch.js`，用于本地降级演示命令链路，保证后端不可用时语义插画对象也能缩放。
+- README 和对象模型设计文档同步说明该原创补丁合并能力；本次未新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行后端命令执行回归测试：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_command_executor.py
+```
+
+已运行后端全量测试：
+
+```powershell
+cd backend
+uv run --no-editable pytest
+```
+
+已运行本次变更涉及文件的 lint：
+
+```powershell
+cd backend
+uv run --no-editable ruff check src/voicecanvas/application/element_patch.py src/voicecanvas/application/command_executor.py src/voicecanvas/application/command_validator.py tests/test_command_executor.py
+```
+
+已运行前端原型契约测试：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+测试结果：
+
+- `tests/test_command_executor.py`：9 passed。
+- 后端全量 pytest：74 passed，1 个 FastAPI TestClient 上游弃用 warning。
+- 本次变更涉及文件 ruff：All checks passed。
+- 前端交互原型契约测试通过。
+- 说明：仓库全量 `ruff check .` 和 `mypy src` 当前仍会暴露既有 `llm_command_planner.py`、`render_catalog.py`、`domain/project.py` 等静态检查问题；本 PR 不扩大范围修复这些历史问题，避免破坏“小 PR 单一功能”。
+
+新增测试覆盖：
+
+- `test_executor_keeps_transform_and_legacy_size_in_sync`：验证 `generated_asset` 使用旧字段 `width/height` 和结构化 `transform.width/height` 更新时，两个字段镜像保持一致。
+- `testElementPatchMirrorSync`：验证前端本地补丁合并器在旧字段和结构化字段两种输入下都同步尺寸和图层镜像。

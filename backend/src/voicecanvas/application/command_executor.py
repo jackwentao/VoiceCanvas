@@ -5,6 +5,7 @@ from uuid import uuid4
 from pydantic import BaseModel
 
 from voicecanvas.application.command_validator import CommandValidator
+from voicecanvas.application.element_patch import merge_element_patch
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.history import HistoryEntry
 from voicecanvas.domain.patches import CanvasPatch, PatchType
@@ -311,7 +312,7 @@ class CommandExecutor:
         scene = self._require_scene(project, scene_id)
         element = self._require_element(scene, element_id)
         before = element.model_dump(by_alias=True)
-        merged = self._merge_element_patch(before, patch)
+        merged = merge_element_patch(before, patch)
         updated_element = CanvasElement.model_validate(merged)
         updated_scene = scene.model_copy(
             update={
@@ -620,23 +621,6 @@ class CommandExecutor:
         self, before: dict[str, Any], patch: dict[str, Any]
     ) -> dict[str, Any]:
         return {key: before.get(key) for key in patch if before.get(key) != patch[key]}
-
-    def _merge_element_patch(self, before: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-        merged = dict(before)
-        for key, value in patch.items():
-            if isinstance(value, dict) and isinstance(merged.get(key), dict):
-                merged[key] = {**merged[key], **value}
-            else:
-                merged[key] = value
-            if key == "text":
-                content = dict(merged.get("content") or {})
-                content["text"] = value
-                merged["content"] = content
-            if key == "label":
-                content = dict(merged.get("content") or {})
-                content["label"] = value
-                merged["content"] = content
-        return merged
 
     def _connector_references(self, element: CanvasElement, target_element_id: str) -> bool:
         if element.type != "connector":

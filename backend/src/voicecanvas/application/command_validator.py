@@ -2,6 +2,7 @@ from typing import Any, Generic, TypeVar
 
 from pydantic import BaseModel, Field, ValidationError
 
+from voicecanvas.application.element_patch import merge_element_patch
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import CanvasElement, CanvasSpec, Project, Scene
 
@@ -262,7 +263,7 @@ class CommandValidator:
                     )
                 )
 
-        merged = self._merge_element_patch(element.model_dump(by_alias=True), patch)
+        merged = merge_element_patch(element.model_dump(by_alias=True), patch)
         self._try_model(CanvasElement, merged, f"{path}.payload.patch", issues)
         self._try_model(
             Scene,
@@ -360,23 +361,6 @@ class CommandValidator:
                         str(item["msg"]),
                     )
                 )
-
-    def _merge_element_patch(self, before: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
-        merged = dict(before)
-        for key, value in patch.items():
-            if isinstance(value, dict) and isinstance(merged.get(key), dict):
-                merged[key] = {**merged[key], **value}
-            else:
-                merged[key] = value
-            if key == "text":
-                content = dict(merged.get("content") or {})
-                content["text"] = value
-                merged["content"] = content
-            if key == "label":
-                content = dict(merged.get("content") or {})
-                content["label"] = value
-                merged["content"] = content
-        return merged
 
     def _find_scene(self, project: Project, scene_id: Any) -> Scene | None:
         if not isinstance(scene_id, str):
