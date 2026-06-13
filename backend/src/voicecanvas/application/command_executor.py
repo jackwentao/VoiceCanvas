@@ -311,7 +311,7 @@ class CommandExecutor:
         scene = self._require_scene(project, scene_id)
         element = self._require_element(scene, element_id)
         before = element.model_dump(by_alias=True)
-        merged = {**before, **patch}
+        merged = self._merge_element_patch(before, patch)
         updated_element = CanvasElement.model_validate(merged)
         updated_scene = scene.model_copy(
             update={
@@ -351,8 +351,15 @@ class CommandExecutor:
         element_id = command.payload["elementId"]
         scene = self._require_scene(project, scene_id)
         element = self._require_element(scene, element_id)
+        original_elements = [item.model_dump(by_alias=True) for item in scene.elements]
         updated_scene = scene.model_copy(
-            update={"elements": [item for item in scene.elements if item.id != element_id]}
+            update={
+                "elements": [
+                    self._degrade_connector(command.id, item, element_id)
+                    for item in scene.elements
+                    if item.id != element_id
+                ]
+            }
         )
         next_project = self._replace_scene(project, updated_scene)
         patches = [
@@ -364,11 +371,31 @@ class CommandExecutor:
                 element=element,
             )
         ]
+        for item in scene.elements:
+            if item.id != element_id and self._connector_references(item, element_id):
+                patches.append(
+                    self._patch(
+                        command.id,
+                        PatchType.ELEMENT_UPDATED,
+                        scene_id=scene_id,
+                        element_id=item.id,
+                        patch={
+                            "type": "unknown",
+                            "reason": "invalid_reference",
+                            "label": "连接线目标已删除",
+                            "metadata": {
+                                **(item.metadata or {}),
+                                "invalidConnectorOfDeletedElement": element_id,
+                            },
+                        },
+                    )
+                )
         inverse = self._command(
             command.id,
-            CommandType.ADD_ELEMENT,
-            {"sceneId": scene_id, "element": element.model_dump(by_alias=True)},
-            reason="撤销删除元素",
+            CommandType.UPDATE_SCENE,
+            {"sceneId": scene_id, "patch": {"elements": original_elements}},
+            source="system",
+            reason="撤销删除元素并恢复连接线引用",
         )
         return self._result(
             command,
@@ -593,6 +620,57 @@ class CommandExecutor:
         self, before: dict[str, Any], patch: dict[str, Any]
     ) -> dict[str, Any]:
         return {key: before.get(key) for key in patch if before.get(key) != patch[key]}
+
+    def _merge_element_patch(self, before: dict[str, Any], patch: dict[str, Any]) -> dict[str, Any]:
+        merged = dict(before)
+        for key, value in patch.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = {**merged[key], **value}
+            else:
+                merged[key] = value
+            if key == "text":
+                content = dict(merged.get("content") or {})
+                content["text"] = value
+                merged["content"] = content
+            if key == "label":
+                content = dict(merged.get("content") or {})
+                content["label"] = value
+                merged["content"] = content
+        return merged
+
+    def _connector_references(self, element: CanvasElement, target_element_id: str) -> bool:
+        if element.type != "connector":
+            return False
+        endpoints = [element.from_anchor, element.to_anchor]
+        return any(
+            endpoint is not None and endpoint.referenced_element_id == target_element_id
+            for endpoint in endpoints
+        )
+
+    def _degrade_connector(
+        self, command_id: str, element: CanvasElement, deleted_element_id: str
+    ) -> CanvasElement:
+        if not self._connector_references(element, deleted_element_id):
+            return element
+
+        payload = {
+            **element.model_dump(by_alias=True),
+            "type": "unknown",
+            "label": "连接线目标已删除",
+            "reason": "invalid_reference",
+            "placeholderStyle": {
+                "fill": "#fff8ef",
+                "stroke": "#f15b4a",
+                "strokeWidth": 2,
+                "radius": 8,
+            },
+            "metadata": {
+                **(element.metadata or {}),
+                "invalidatedByCommandId": command_id,
+                "invalidConnectorOfDeletedElement": deleted_element_id,
+            },
+        }
+        return CanvasElement.model_validate(payload)
 
     def _now(self) -> str:
         return datetime.now(UTC).isoformat()

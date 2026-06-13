@@ -14,6 +14,7 @@ from voicecanvas.application.referent_resolver import (
     ReferentResolver,
     resolution_to_next_action,
 )
+from voicecanvas.application.render_catalog import RenderCatalog, get_render_catalog
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import Project
 
@@ -52,6 +53,7 @@ class LLMCommandPlanner:
         fallback_planner: CommandPlanner | None = None,
         validator: CommandValidator | None = None,
         referent_resolver: ReferentResolver | None = None,
+        render_catalog: RenderCatalog | None = None,
         max_attempts: int = 3,
         temperature: float = 0.1,
         timeout_seconds: float = 20,
@@ -62,6 +64,7 @@ class LLMCommandPlanner:
         self._fallback_planner = fallback_planner
         self._validator = validator or CommandValidator()
         self._referent_resolver = referent_resolver or ReferentResolver()
+        self._render_catalog = render_catalog or get_render_catalog()
         self._max_attempts = max_attempts
         self._temperature = temperature
         self._timeout_seconds = timeout_seconds
@@ -215,6 +218,10 @@ class LLMCommandPlanner:
         if "sceneId" in payload and isinstance(payload.get("patch"), dict):
             return self._normalize_scene_patch_with_elements(draft, payload)
 
+        if "sceneId" in payload:
+            scene_source = payload.get("scene") if isinstance(payload.get("scene"), dict) else payload
+            return self._normalize_scene_like_update(draft, payload["sceneId"], scene_source)
+
         scene = payload.get("scene")
         if not isinstance(scene, dict):
             return [(draft.type, payload, draft.reason)]
@@ -250,6 +257,44 @@ class LLMCommandPlanner:
                     )
 
         return commands or [(draft.type, payload, draft.reason)]
+
+    def _normalize_scene_like_update(
+        self,
+        draft: LLMCommandDraft,
+        scene_id: str,
+        scene_source: dict[str, Any],
+    ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
+        patch = {
+            key: scene_source[key]
+            for key in ("name", "description", "canvas")
+            if key in scene_source
+        }
+        commands: list[tuple[CommandType, dict[str, Any], str | None]] = []
+        if patch:
+            commands.append(
+                (
+                    CommandType.UPDATE_SCENE,
+                    {"sceneId": scene_id, "patch": patch},
+                    draft.reason,
+                )
+            )
+
+        elements = scene_source.get("elements")
+        if isinstance(elements, list):
+            for element in elements:
+                if isinstance(element, dict):
+                    commands.append(
+                        (
+                            CommandType.ADD_ELEMENT,
+                            {
+                                "sceneId": scene_id,
+                                "element": self._normalize_element(element),
+                            },
+                            "补充镜头元素",
+                        )
+                    )
+
+        return commands or [(draft.type, {"sceneId": scene_id, "patch": {}}, draft.reason)]
 
     def _normalize_scene_patch_with_elements(
         self,
@@ -343,8 +388,14 @@ class LLMCommandPlanner:
 
         if require_id:
             normalized.setdefault("id", f"el_ai_{uuid4().hex[:12]}")
-        if "content" in normalized and "text" not in normalized:
+        if "textContent" in normalized and "text" not in normalized:
+            normalized["text"] = normalized.pop("textContent")
+        if isinstance(normalized.get("content"), str) and "text" not in normalized:
             normalized["text"] = normalized.pop("content")
+        if isinstance(normalized.get("content"), dict) and "text" not in normalized:
+            content_text = normalized["content"].get("text")
+            if isinstance(content_text, str):
+                normalized["text"] = content_text
         if "shapeType" in normalized and "shape" not in normalized:
             normalized["shape"] = normalized.pop("shapeType")
         if "backgroundColor" in normalized:
@@ -357,10 +408,146 @@ class LLMCommandPlanner:
                 if key in properties:
                     style[key] = properties[key]
 
+        asset = normalized.get("asset")
+        if isinstance(asset, dict) and "placeholderStyle" in asset and "placeholderStyle" not in normalized:
+            normalized["placeholderStyle"] = asset.pop("placeholderStyle")
+
         normalized.setdefault("zIndex", 5)
         if style:
             normalized["style"] = style
+        normalized = self._normalize_semantic_asset(normalized)
         return normalized
+
+    def _normalize_semantic_asset(self, element: dict[str, Any]) -> dict[str, Any]:
+        """把真实世界物体从普通 shape 升级为可语义渲染的生成素材占位。"""
+
+        if element.get("type") in {"text", "connector"}:
+            return element
+
+        name_text = " ".join(
+            str(value)
+            for value in (
+                element.get("name"),
+                element.get("text"),
+                element.get("label"),
+                element.get("content"),
+            )
+            if value
+        ).lower()
+        object_kind = self._semantic_asset_kind(name_text)
+        if object_kind is None:
+            return element
+
+        display_name = element.get("name") or object_kind["label"]
+        content = element.get("content") if isinstance(element.get("content"), dict) else {}
+        asset = element.get("asset") if isinstance(element.get("asset"), dict) else {}
+        subject = element.get("subject") if isinstance(element.get("subject"), dict) else {}
+
+        normalized = {
+            **element,
+            "type": "generated_asset",
+            "name": display_name,
+            "content": {
+                **content,
+                "alt": content.get("alt") or display_name,
+            },
+            "asset": {
+                "kind": object_kind.get("assetKind", object_kind["kind"]),
+                "status": asset.get("status") or "pending",
+                "prompt": asset.get("prompt")
+                or f"{display_name}，清晰简洁的画布插画风格，适合演示画布",
+                "provider": asset.get("provider") or "mock",
+            },
+            "subject": {
+                **subject,
+                object_kind.get("subjectType", object_kind["kind"]): {
+                    "category": object_kind["label"],
+                    "keyFeatures": object_kind["features"],
+                    **({"gender": object_kind["gender"]} if object_kind.get("gender") else {}),
+                    **({"variant": object_kind["renderVariant"]} if object_kind.get("renderVariant") else {}),
+                    "renderKey": object_kind["renderKey"],
+                },
+            },
+            "metadata": {
+                **(element.get("metadata") if isinstance(element.get("metadata"), dict) else {}),
+                "renderKey": object_kind["renderKey"],
+                "renderHint": object_kind["renderHint"],
+                "renderMode": "direct" if object_kind.get("directRender") else "placeholder",
+                **(
+                    {"renderVariant": object_kind["renderVariant"]}
+                    if object_kind.get("renderVariant")
+                    else {}
+                ),
+            },
+            "placeholderStyle": element.get("placeholderStyle")
+            or {
+                "fill": "#ffffff",
+                "stroke": "#1f8a5b",
+                "strokeWidth": 2,
+                "radius": 12,
+            },
+        }
+        normalized.pop("shape", None)
+        return normalized
+
+    def _semantic_asset_kind(self, text: str) -> dict[str, Any] | None:
+        match = self._render_catalog.resolve(text)
+        if match is None:
+            return None
+        return {
+            "kind": match.subject_type,
+            "assetKind": match.asset_kind,
+            "subjectType": match.subject_type,
+            "label": match.display_name,
+            "features": [match.display_name],
+            "renderKey": match.render_key,
+            "renderHint": match.render_key,
+            "directRender": match.direct_render,
+            **({"gender": match.variant} if match.variant else {}),
+            **({"renderVariant": match.variant} if match.variant else {}),
+        }
+        if any(keyword in text for keyword in ("男生", "男孩", "男人", "男性", "boy", "man")):
+            return {
+                "kind": "character",
+                "label": "男生",
+                "features": ["短发", "上衣", "人物姿态"],
+                "gender": "male",
+                "renderHint": "character",
+                "renderVariant": "male",
+            }
+        if any(keyword in text for keyword in ("女生", "女孩", "女人", "女性", "girl", "woman")):
+            return {
+                "kind": "character",
+                "label": "女生",
+                "features": ["头发", "裙装", "人物姿态"],
+                "gender": "female",
+                "renderHint": "character",
+                "renderVariant": "female",
+            }
+        if any(keyword in text for keyword in ("人物", "人像", "人", "person", "character")):
+            return {
+                "kind": "character",
+                "label": "人物",
+                "features": ["头部", "身体", "人物姿态"],
+                "gender": "neutral",
+                "renderHint": "character",
+                "renderVariant": "neutral",
+            }
+        if any(keyword in text for keyword in ("猫", "cat", "小猫")):
+            return {
+                "kind": "character",
+                "label": "猫",
+                "features": ["尖耳朵", "尾巴", "胡须"],
+                "renderHint": "cat",
+            }
+        if any(keyword in text for keyword in ("桌", "桌子", "table", "desk")):
+            return {
+                "kind": "product",
+                "label": "桌子",
+                "features": ["桌面", "桌腿"],
+                "renderHint": "table",
+            }
+        return None
 
     def _find_scene_id_by_element(self, project: Project, element_id: str) -> str | None:
         for scene in project.scenes:
@@ -500,7 +687,14 @@ class LLMCommandPlanner:
 
     def _system_prompt(self) -> str:
         command_types = ", ".join(command.value for command in CommandType)
+        render_catalog = self._render_catalog.prompt_manifest()
         return f"""
+Render Catalog（前端本地绘制能力清单）：
+{render_catalog}
+- direct 对象可以写 metadata.renderKey/renderVariant 让前端本地渲染。
+- placeholder 对象只能作为 generated_asset 占位等待生成，不要猜成其他 renderKey。
+- 用户说法和预存名称不一致时，先按 aliases/variants 归一化；目录外对象保留原始描述到 asset.prompt。
+
 你是 VoiceCanvas 的画布指令规划器。你只负责把中文用户输入转换成受控 JSON，不能直接覆盖 Project。
 
 必须只返回一个 JSON 对象，格式如下：
@@ -524,6 +718,8 @@ class LLMCommandPlanner:
 - 同一批 commands 不能引用本批刚创建的 sceneId 或 elementId。
 - 新增元素时 element 至少包含 type、x、y、width、height、zIndex。
 - 文本元素 type 使用 "text"，形状元素 type 使用 "shape"，连接线 type 使用 "connector"。
+- 画真实世界物体，例如猫、人物、桌子、产品、背景时，优先使用 type="generated_asset"。
+- generated_asset 必须包含 asset.kind、asset.status="pending"、asset.prompt 和 placeholderStyle。
 - 不确定用户目标时返回 respond，并在 message 中说明需要用户补充什么。
 - 删除、修改、切换必须优先使用上下文中已有的 sceneId/elementId。
 

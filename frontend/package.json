@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "prototype": "node scripts/serve-prototype.mjs",
+    "test": "npm run test:prototype",
     "test:prototype": "node tests/prototype/prototype-contract.test.mjs"
   },
   "dependencies": {

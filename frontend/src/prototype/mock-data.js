@@ -188,9 +188,23 @@ export const initialProject = {
         {
           id: "el_person_hook",
           name: "犹豫的顾客",
-          type: "unknown",
-          label: "顾客",
-          reason: "unsupported_object",
+          type: "generated_asset",
+          content: {
+            alt: "犹豫看着奶茶的年轻顾客"
+          },
+          asset: {
+            kind: "character",
+            status: "pending",
+            prompt: "年轻顾客看着奶茶，表情犹豫，清爽电商插画风格",
+            provider: "mock"
+          },
+          subject: {
+            character: {
+              role: "顾客",
+              pose: "站立思考",
+              expression: "犹豫"
+            }
+          },
           x: 116,
           y: 184,
           width: 170,
@@ -209,6 +223,9 @@ export const initialProject = {
           id: "el_product_hook",
           name: "奶茶产品",
           type: "shape",
+          content: {
+            label: "奶茶"
+          },
           shape: "rounded_rectangle",
           x: 560,
           y: 138,
