@@ -2,7 +2,15 @@ export const DEFAULT_PROJECT_ID = "project_demo_voicecanvas";
 export const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
 
 function apiBaseUrl() {
-  return window.VOICECANVAS_API_BASE_URL || DEFAULT_API_BASE_URL;
+  const queryBaseUrl = new URLSearchParams(window.location.search).get("apiBaseUrl");
+  return window.VOICECANVAS_API_BASE_URL || queryBaseUrl || DEFAULT_API_BASE_URL;
+}
+
+function streamStepDelayMs() {
+  const queryDelay = new URLSearchParams(window.location.search).get("streamStepDelayMs");
+  const configuredDelay = window.VOICECANVAS_STREAM_STEP_DELAY_MS ?? queryDelay ?? 80;
+  const delay = Number(configuredDelay);
+  return Number.isFinite(delay) && delay >= 0 ? delay : 80;
 }
 
 async function requestJson(path, options = {}) {
@@ -67,6 +75,34 @@ export function startOrchestration(projectId, userInput) {
   });
 }
 
+export async function startOrchestrationStream(projectId, userInput, handlers = {}) {
+  if (typeof fetch !== "function" || typeof ReadableStream === "undefined") {
+    return startOrchestration(projectId, userInput);
+  }
+
+  const response = await fetch(`${apiBaseUrl()}/api/orchestrations/stream`, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json"
+    },
+    body: JSON.stringify({
+      projectId,
+      userInput
+    })
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`后端请求失败：${response.status} ${body || response.statusText}`);
+  }
+
+  if (!response.body?.getReader) {
+    return startOrchestration(projectId, userInput);
+  }
+
+  return readSseStream(response.body, handlers);
+}
+
 export function resumeOrchestration(projectId, sessionId, answer) {
   return requestJson(`/api/orchestrations/${encodeURIComponent(sessionId)}/resume`, {
     method: "POST",
@@ -75,4 +111,80 @@ export function resumeOrchestration(projectId, sessionId, answer) {
       answer
     })
   });
+}
+
+async function readSseStream(body, handlers) {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let finalResult = null;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+    const blocks = buffer.split("\n\n");
+    buffer = blocks.pop() || "";
+
+    for (const block of blocks) {
+      finalResult = (await dispatchSseBlock(block, handlers)) || finalResult;
+    }
+
+    if (done) break;
+  }
+
+  if (buffer.trim()) {
+    finalResult = (await dispatchSseBlock(buffer, handlers)) || finalResult;
+  }
+
+  return finalResult;
+}
+
+async function dispatchSseBlock(block, handlers) {
+  const message = parseSseBlock(block);
+  if (!message) return null;
+
+  if (message.event === "orchestration.event") {
+    await handlers.onEvent?.(message.data);
+    await yieldToBrowserPaint();
+    return null;
+  }
+
+  if (message.event === "orchestration.result") {
+    await handlers.onResult?.(message.data);
+    await yieldToBrowserPaint();
+    return message.data;
+  }
+
+  return null;
+}
+
+async function yieldToBrowserPaint() {
+  if (typeof requestAnimationFrame === "function") {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+
+  const delay = streamStepDelayMs();
+  if (delay > 0) {
+    await new Promise((resolve) => window.setTimeout(resolve, delay));
+  }
+}
+
+function parseSseBlock(block) {
+  let event = "message";
+  const dataLines = [];
+
+  for (const line of block.split(/\r?\n/)) {
+    if (line.startsWith("event:")) {
+      event = line.slice("event:".length).trim();
+    }
+    if (line.startsWith("data:")) {
+      dataLines.push(line.slice("data:".length).trimStart());
+    }
+  }
+
+  if (!dataLines.length) return null;
+  return {
+    event,
+    data: JSON.parse(dataLines.join("\n"))
+  };
 }

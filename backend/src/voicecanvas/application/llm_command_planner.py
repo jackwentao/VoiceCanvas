@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from voicecanvas.adapters.llm.base import LLMClient, LLMClientError, LLMMessage
+from voicecanvas.application.command_executor import CommandExecutor
 from voicecanvas.application.command_planner import CommandPlan, CommandPlanner, PlannerAttempt
 from voicecanvas.application.command_validator import CommandValidator
 from voicecanvas.application.referent_resolver import (
@@ -63,6 +64,7 @@ class LLMCommandPlanner:
         self._client = client
         self._fallback_planner = fallback_planner
         self._validator = validator or CommandValidator()
+        self._executor = CommandExecutor(self._validator)
         self._referent_resolver = referent_resolver or ReferentResolver()
         self._render_catalog = render_catalog or get_render_catalog()
         self._max_attempts = max_attempts
@@ -154,24 +156,30 @@ class LLMCommandPlanner:
             return CommandPlan(output.action, [], output.message, attempts=attempts)
 
         commands: list[CanvasCommand] = []
+        element_aliases = self._element_aliases_from_project(project)
         for index, draft in enumerate(output.commands):
-            for command_type, payload, reason in self._normalize_draft(draft, project, index):
-                commands.append(
-                    CanvasCommand(
-                        id=f"cmd_{uuid4().hex[:12]}",
-                        type=command_type,
-                        source="ai",
-                        payload=payload,
-                        reason=reason,
-                        createdAt=datetime.now(UTC).isoformat(),
-                    )
+            for command_type, payload, reason in self._normalize_draft(
+                draft,
+                project,
+                index,
+                element_aliases,
+            ):
+                command = CanvasCommand(
+                    id=f"cmd_{uuid4().hex[:12]}",
+                    type=command_type,
+                    source="ai",
+                    payload=payload,
+                    reason=reason,
+                    createdAt=datetime.now(UTC).isoformat(),
                 )
-        validation = self._validator.validate(commands, project)
-        if not validation.ok:
-            issue_text = "；".join(
-                f"{issue.path}: {issue.code}: {issue.message}" for issue in validation.issues
-            )
-            raise ValueError(f"LLM 命令未通过业务校验：{issue_text}")
+                commands.append(command)
+                if command.type == CommandType.ADD_ELEMENT:
+                    self._register_element_aliases(
+                        element_aliases,
+                        command.payload.get("element"),
+                    )
+
+        self._validate_commands_sequentially(commands, project)
 
         return CommandPlan("commands", commands, output.message, attempts=attempts)
 
@@ -180,23 +188,32 @@ class LLMCommandPlanner:
         draft: LLMCommandDraft,
         project: Project,
         index: int,
+        element_aliases: dict[str, str],
     ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
         payload = deepcopy(draft.payload)
 
         if draft.type == CommandType.ADD_ELEMENT:
             payload.setdefault("sceneId", project.active_scene_id)
             if isinstance(payload.get("element"), dict):
-                payload["element"] = self._normalize_element(payload["element"])
+                payload["element"] = self._normalize_element(
+                    payload["element"],
+                    require_id=True,
+                    element_aliases=element_aliases,
+                )
             return [(draft.type, payload, draft.reason)]
 
         if draft.type == CommandType.CREATE_SCENE:
             if isinstance(payload.get("scene"), dict):
                 next_order = max(scene.order for scene in project.scenes) + index + 1
-                payload["scene"] = self._normalize_scene(payload["scene"], next_order)
+                payload["scene"] = self._normalize_scene(
+                    payload["scene"],
+                    next_order,
+                    element_aliases,
+                )
             return [(draft.type, payload, draft.reason)]
 
         if draft.type == CommandType.UPDATE_SCENE:
-            return self._normalize_update_scene(draft, payload, project)
+            return self._normalize_update_scene(draft, payload, project, element_aliases)
 
         if draft.type == CommandType.UPDATE_ELEMENT:
             return [
@@ -214,13 +231,23 @@ class LLMCommandPlanner:
         draft: LLMCommandDraft,
         payload: dict[str, Any],
         project: Project,
+        element_aliases: dict[str, str],
     ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
         if "sceneId" in payload and isinstance(payload.get("patch"), dict):
-            return self._normalize_scene_patch_with_elements(draft, payload)
+            return self._normalize_scene_patch_with_elements(draft, payload, element_aliases)
 
         if "sceneId" in payload:
-            scene_source = payload.get("scene") if isinstance(payload.get("scene"), dict) else payload
-            return self._normalize_scene_like_update(draft, payload["sceneId"], scene_source)
+            scene_source = (
+                payload.get("scene")
+                if isinstance(payload.get("scene"), dict)
+                else payload
+            )
+            return self._normalize_scene_like_update(
+                draft,
+                payload["sceneId"],
+                scene_source,
+                element_aliases,
+            )
 
         scene = payload.get("scene")
         if not isinstance(scene, dict):
@@ -245,16 +272,22 @@ class LLMCommandPlanner:
         if isinstance(elements, list):
             for element in elements:
                 if isinstance(element, dict):
+                    normalized_element = self._normalize_element(
+                        element,
+                        require_id=True,
+                        element_aliases=element_aliases,
+                    )
                     commands.append(
                         (
                             CommandType.ADD_ELEMENT,
                             {
                                 "sceneId": project.active_scene_id,
-                                "element": self._normalize_element(element),
+                                "element": normalized_element,
                             },
                             "补充镜头元素",
                         )
                     )
+                    self._register_element_aliases(element_aliases, normalized_element)
 
         return commands or [(draft.type, payload, draft.reason)]
 
@@ -263,6 +296,7 @@ class LLMCommandPlanner:
         draft: LLMCommandDraft,
         scene_id: str,
         scene_source: dict[str, Any],
+        element_aliases: dict[str, str],
     ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
         patch = {
             key: scene_source[key]
@@ -283,16 +317,22 @@ class LLMCommandPlanner:
         if isinstance(elements, list):
             for element in elements:
                 if isinstance(element, dict):
+                    normalized_element = self._normalize_element(
+                        element,
+                        require_id=True,
+                        element_aliases=element_aliases,
+                    )
                     commands.append(
                         (
                             CommandType.ADD_ELEMENT,
                             {
                                 "sceneId": scene_id,
-                                "element": self._normalize_element(element),
+                                "element": normalized_element,
                             },
                             "补充镜头元素",
                         )
                     )
+                    self._register_element_aliases(element_aliases, normalized_element)
 
         return commands or [(draft.type, {"sceneId": scene_id, "patch": {}}, draft.reason)]
 
@@ -300,6 +340,7 @@ class LLMCommandPlanner:
         self,
         draft: LLMCommandDraft,
         payload: dict[str, Any],
+        element_aliases: dict[str, str],
     ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
         scene_id = payload["sceneId"]
         source_patch = deepcopy(payload["patch"])
@@ -323,16 +364,22 @@ class LLMCommandPlanner:
         if isinstance(elements, list):
             for element in elements:
                 if isinstance(element, dict):
+                    normalized_element = self._normalize_element(
+                        element,
+                        require_id=True,
+                        element_aliases=element_aliases,
+                    )
                     commands.append(
                         (
                             CommandType.ADD_ELEMENT,
                             {
                                 "sceneId": scene_id,
-                                "element": self._normalize_element(element),
+                                "element": normalized_element,
                             },
                             "补充镜头元素",
                         )
                     )
+                    self._register_element_aliases(element_aliases, normalized_element)
 
         return commands or [(draft.type, payload, draft.reason)]
 
@@ -363,17 +410,30 @@ class LLMCommandPlanner:
 
         return payload
 
-    def _normalize_scene(self, scene: dict[str, Any], order: int) -> dict[str, Any]:
+    def _normalize_scene(
+        self,
+        scene: dict[str, Any],
+        order: int,
+        element_aliases: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         normalized = deepcopy(scene)
         normalized.setdefault("id", f"scene_ai_{uuid4().hex[:12]}")
         normalized.setdefault("order", order)
         elements = normalized.get("elements")
         if isinstance(elements, list):
-            normalized["elements"] = [
-                self._normalize_element(element, require_id=True)
-                for element in elements
-                if isinstance(element, dict)
-            ]
+            scene_aliases = dict(element_aliases or {})
+            normalized_elements = []
+            for element in elements:
+                if not isinstance(element, dict):
+                    continue
+                normalized_element = self._normalize_element(
+                    element,
+                    require_id=True,
+                    element_aliases=scene_aliases,
+                )
+                normalized_elements.append(normalized_element)
+                self._register_element_aliases(scene_aliases, normalized_element)
+            normalized["elements"] = normalized_elements
         return normalized
 
     def _normalize_element(
@@ -381,6 +441,7 @@ class LLMCommandPlanner:
         element: dict[str, Any],
         *,
         require_id: bool = False,
+        element_aliases: dict[str, str] | None = None,
     ) -> dict[str, Any]:
         normalized = deepcopy(element)
         properties = normalized.pop("properties", None)
@@ -409,14 +470,233 @@ class LLMCommandPlanner:
                     style[key] = properties[key]
 
         asset = normalized.get("asset")
-        if isinstance(asset, dict) and "placeholderStyle" in asset and "placeholderStyle" not in normalized:
+        if (
+            isinstance(asset, dict)
+            and "placeholderStyle" in asset
+            and "placeholderStyle" not in normalized
+        ):
             normalized["placeholderStyle"] = asset.pop("placeholderStyle")
 
         normalized.setdefault("zIndex", 5)
         if style:
             normalized["style"] = style
+        normalized = self._normalize_connector(normalized, element_aliases or {})
         normalized = self._normalize_semantic_asset(normalized)
         return normalized
+
+    def _normalize_connector(
+        self,
+        element: dict[str, Any],
+        element_aliases: dict[str, str],
+    ) -> dict[str, Any]:
+        if element.get("type") != "connector":
+            return element
+
+        connector = dict(element.get("connector") or {})
+        connector.setdefault("kind", element.get("connectorType") or element.get("kind") or "line")
+        connector.setdefault("routing", "straight")
+
+        from_source = self._first_present(
+            connector,
+            element,
+            [
+                "from",
+                "fromElement",
+                "fromElementId",
+                "source",
+                "sourceElement",
+                "sourceElementId",
+                "start",
+                "startElement",
+                "startElementId",
+            ],
+        )
+        to_source = self._first_present(
+            connector,
+            element,
+            [
+                "to",
+                "toElement",
+                "toElementId",
+                "target",
+                "targetElement",
+                "targetElementId",
+                "end",
+                "endElement",
+                "endElementId",
+            ],
+        )
+        from_endpoint = self._normalize_connector_endpoint(
+            from_source,
+            element_aliases,
+            default_anchor="right",
+        )
+        to_endpoint = self._normalize_connector_endpoint(
+            to_source,
+            element_aliases,
+            default_anchor="left",
+        )
+        if from_endpoint is not None:
+            connector["from"] = from_endpoint
+            element["from"] = from_endpoint
+        if to_endpoint is not None:
+            connector["to"] = to_endpoint
+            element["to"] = to_endpoint
+
+        if "label" in element and "content" not in element:
+            element["content"] = {"label": element["label"]}
+        element["connector"] = connector
+        return element
+
+    def _first_present(
+        self,
+        primary: dict[str, Any],
+        secondary: dict[str, Any],
+        keys: list[str],
+    ) -> Any:
+        for key in keys:
+            if key in primary:
+                return primary[key]
+            if key in secondary:
+                return secondary[key]
+        return None
+
+    def _normalize_connector_endpoint(
+        self,
+        source: Any,
+        element_aliases: dict[str, str],
+        *,
+        default_anchor: str,
+    ) -> dict[str, Any] | None:
+        if source is None:
+            return None
+
+        if isinstance(source, str):
+            element_id = self._resolve_element_alias(source, element_aliases)
+            if element_id is None:
+                return None
+            return {
+                "target": {"type": "element", "elementId": element_id},
+                "anchor": default_anchor,
+            }
+
+        if isinstance(source, dict):
+            endpoint = deepcopy(source)
+            target = endpoint.get("target")
+            if isinstance(target, dict):
+                element_id = self._resolve_element_alias(target.get("elementId"), element_aliases)
+                if element_id is not None:
+                    target["elementId"] = element_id
+                return endpoint
+
+            point = endpoint.get("point")
+            if isinstance(point, dict) and {"x", "y"}.issubset(point):
+                return {
+                    "target": {"type": "point", "point": point},
+                    "anchor": endpoint.get("anchor"),
+                }
+
+            if {"x", "y"}.issubset(endpoint):
+                return {
+                    "target": {
+                        "type": "point",
+                        "point": {"x": endpoint["x"], "y": endpoint["y"]},
+                    }
+                }
+
+            raw_element = (
+                endpoint.get("elementId")
+                or endpoint.get("id")
+                or endpoint.get("name")
+                or endpoint.get("element")
+                or endpoint.get("label")
+            )
+            element_id = self._resolve_element_alias(raw_element, element_aliases)
+            if element_id is None:
+                return None
+            return {
+                "target": {"type": "element", "elementId": element_id},
+                "anchor": endpoint.get("anchor") or default_anchor,
+            }
+
+        return None
+
+    def _element_aliases_from_project(self, project: Project) -> dict[str, str]:
+        aliases: dict[str, str] = {}
+        for scene in project.scenes:
+            for element in scene.elements:
+                self._register_element_aliases(aliases, element.model_dump(by_alias=True))
+        return aliases
+
+    def _register_element_aliases(
+        self,
+        aliases: dict[str, str],
+        element: Any,
+    ) -> None:
+        if not isinstance(element, dict):
+            return
+        element_id = element.get("id")
+        if not isinstance(element_id, str):
+            return
+
+        values = [element_id, element.get("name"), element.get("text"), element.get("label")]
+        content = element.get("content")
+        if isinstance(content, dict):
+            values.extend([content.get("text"), content.get("label"), content.get("alt")])
+
+        for value in values:
+            key = self._alias_key(value)
+            if key:
+                aliases[key] = element_id
+
+    def _resolve_element_alias(
+        self,
+        value: Any,
+        aliases: dict[str, str],
+    ) -> str | None:
+        key = self._alias_key(value)
+        if not key:
+            return None
+        if key in aliases:
+            return aliases[key]
+
+        sorted_aliases = sorted(aliases.items(), key=lambda item: len(item[0]), reverse=True)
+        for alias_key, element_id in sorted_aliases:
+            if key in alias_key or alias_key in key:
+                return element_id
+        return None
+
+    def _alias_key(self, value: Any) -> str:
+        return (
+            str(value or "")
+            .strip()
+            .replace(" ", "")
+            .replace("，", "")
+            .replace("。", "")
+            .replace("：", "")
+            .replace(":", "")
+            .lower()
+        )
+
+    def _validate_commands_sequentially(
+        self,
+        commands: list[CanvasCommand],
+        project: Project,
+    ) -> None:
+        current_project = project
+        for command in commands:
+            validation = self._validator.validate([command], current_project)
+            if not validation.ok:
+                issue_text = "；".join(
+                    f"{issue.path}: {issue.code}: {issue.message}"
+                    for issue in validation.issues
+                )
+                raise ValueError(f"LLM 命令未通过业务校验：{issue_text}")
+            try:
+                result = self._executor.execute(command, current_project)
+            except ValueError as error:
+                raise ValueError(f"LLM 命令执行预检失败：{error}") from error
+            current_project = result.project
 
     def _normalize_semantic_asset(self, element: dict[str, Any]) -> dict[str, Any]:
         """把真实世界物体从普通 shape 升级为可语义渲染的生成素材占位。"""
@@ -464,7 +744,11 @@ class LLMCommandPlanner:
                     "category": object_kind["label"],
                     "keyFeatures": object_kind["features"],
                     **({"gender": object_kind["gender"]} if object_kind.get("gender") else {}),
-                    **({"variant": object_kind["renderVariant"]} if object_kind.get("renderVariant") else {}),
+                    **(
+                        {"variant": object_kind["renderVariant"]}
+                        if object_kind.get("renderVariant")
+                        else {}
+                    ),
                     "renderKey": object_kind["renderKey"],
                 },
             },
@@ -715,9 +999,15 @@ Render Catalog（前端本地绘制能力清单）：
 - action=commands 时 commands 必须至少 1 条；undo、redo、respond 时 commands 必须为空数组。
 - 不要输出 id、source、createdAt，系统会补齐。
 - 不要编造当前项目不存在的 sceneId 或 elementId。
-- 同一批 commands 不能引用本批刚创建的 sceneId 或 elementId。
+- 同一批 commands 可以先 ADD_ELEMENT 再用后续 connector 引用前面元素的 name 或 id。
 - 新增元素时 element 至少包含 type、x、y、width、height、zIndex。
 - 文本元素 type 使用 "text"，形状元素 type 使用 "shape"，连接线 type 使用 "connector"。
+- 连接线必须提供 connector.from 和 connector.to。
+- 也可以用 from/to/source/target 写元素名称，系统会归一化为 elementId。
+- connector 示例：
+  {{"type":"connector","name":"箭头","from":"小女孩","to":"猫",
+    "content":{{"label":"指向"}},"x":0,"y":0,"width":1,"height":1,"zIndex":8}}。
+- 用户一句话里有多个对象、文字或指向关系时，要逐项生成命令，不要省略其中任何关系。
 - 画真实世界物体，例如猫、人物、桌子、产品、背景时，优先使用 type="generated_asset"。
 - generated_asset 必须包含 asset.kind、asset.status="pending"、asset.prompt 和 placeholderStyle。
 - 不确定用户目标时返回 respond，并在 message 中说明需要用户补充什么。

@@ -1,3 +1,5 @@
+import { mergeElementPatch } from "./element-patch.js";
+
 const CANVAS_PATCH_EVENT = "CANVAS_PATCH_APPLIED";
 const CLARIFICATION_EVENT = "CLARIFICATION_REQUESTED";
 
@@ -147,6 +149,58 @@ export function applyBackendResponse(state, response, options = {}) {
   }
 }
 
+export function applyBackendEvent(state, event, options = {}) {
+  const normalized = normalizeEvent(event);
+  if (normalized.sessionId) {
+    state.session.id = normalized.sessionId;
+  }
+
+  if (normalized.type === "STAGE_CHANGED") {
+    state.session.stage = normalized.stage || state.session.stage;
+    state.session.status = normalized.stage === "failed" ? "FAILED" : "RUNNING";
+    state.session.progress = {
+      ...(state.session.progress || {}),
+      message: normalized.message || state.session.progress?.message || "正在处理后端事件"
+    };
+    state.voiceStatus = normalized.message || state.voiceStatus;
+  }
+
+  if (normalized.type === CANVAS_PATCH_EVENT && normalized.patch) {
+    applyCanvasPatch(state.project, normalized.patch);
+    state.session.progress = {
+      ...(state.session.progress || {}),
+      completedSteps: (state.session.progress?.completedSteps || 0) + 1,
+      totalSteps: Math.max(
+        state.session.progress?.totalSteps || 0,
+        (state.session.progress?.completedSteps || 0) + 1
+      ),
+      message: normalized.patch.type
+    };
+  }
+
+  if (normalized.type === CLARIFICATION_EVENT) {
+    state.session.status = "WAITING_FOR_USER";
+    state.session.stage = "waiting_for_user";
+    state.session.pendingClarification = pendingClarificationFrom(
+      { sessionId: normalized.sessionId },
+      [normalized]
+    );
+    state.voiceStatus = normalized.question || "需要进一步确认";
+  }
+
+  if (normalized.type === "TURN_SUMMARY") {
+    state.session.lastSummary = normalizeSummary(
+      normalized.summary,
+      [],
+      options.userInput || state.session.currentUserInput || "",
+      state.session.stage
+    );
+    state.voiceStatus = summaryMessage(normalized.summary);
+  }
+
+  state.eventLog = [normalized].concat(state.eventLog).slice(0, 14);
+}
+
 export function appendBackendError(state, error) {
   state.eventLog.unshift(
     normalizeEvent({
@@ -156,4 +210,59 @@ export function appendBackendError(state, error) {
   );
   state.eventLog = state.eventLog.slice(0, 14);
   state.voiceStatus = "后端不可用，已切换本地演示";
+}
+
+function applyCanvasPatch(project, patch) {
+  if (!patch || !project?.scenes) return;
+
+  if (patch.type === "SCENE_CREATED" && patch.scene) {
+    if (!project.scenes.some((scene) => scene.id === patch.scene.id)) {
+      project.scenes.push(structuredClone(patch.scene));
+    }
+  }
+
+  if (patch.type === "SCENE_UPDATED") {
+    const scene = findScene(project, patch.sceneId);
+    if (scene) Object.assign(scene, patch.patch || {});
+  }
+
+  if (patch.type === "SCENE_DELETED") {
+    project.scenes = project.scenes.filter((scene) => scene.id !== patch.sceneId);
+  }
+
+  if (patch.type === "SCENE_CLEARED") {
+    const scene = findScene(project, patch.sceneId);
+    if (scene) {
+      scene.elements = [];
+      scene.description = null;
+    }
+  }
+
+  if (patch.type === "ACTIVE_SCENE_CHANGED" && patch.sceneId) {
+    project.activeSceneId = patch.sceneId;
+  }
+
+  if (patch.type === "ELEMENT_ADDED" && patch.element) {
+    const scene = findScene(project, patch.sceneId);
+    if (scene && !scene.elements.some((element) => element.id === patch.element.id)) {
+      scene.elements.push(structuredClone(patch.element));
+    }
+  }
+
+  if (patch.type === "ELEMENT_UPDATED") {
+    const scene = findScene(project, patch.sceneId);
+    const element = scene?.elements.find((item) => item.id === patch.elementId);
+    if (element) Object.assign(element, mergeElementPatch(element, patch.patch || {}));
+  }
+
+  if (patch.type === "ELEMENT_DELETED") {
+    const scene = findScene(project, patch.sceneId);
+    if (scene) {
+      scene.elements = scene.elements.filter((element) => element.id !== patch.elementId);
+    }
+  }
+}
+
+function findScene(project, sceneId) {
+  return project.scenes.find((scene) => scene.id === sceneId);
 }
