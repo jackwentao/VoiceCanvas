@@ -8,7 +8,12 @@ from pydantic import BaseModel, Field, ValidationError, model_validator
 
 from voicecanvas.adapters.llm.base import LLMClient, LLMClientError, LLMMessage
 from voicecanvas.application.command_executor import CommandExecutor
-from voicecanvas.application.command_planner import CommandPlan, CommandPlanner, PlannerAttempt
+from voicecanvas.application.command_planner import (
+    CommandPlan,
+    CommandPlanner,
+    PlannerAttempt,
+    PlanningContext,
+)
 from voicecanvas.application.command_validator import CommandValidator
 from voicecanvas.application.referent_resolver import (
     ElementCandidate,
@@ -71,10 +76,16 @@ class LLMCommandPlanner:
         self._temperature = temperature
         self._timeout_seconds = timeout_seconds
 
-    def plan(self, user_input: str, project: Project) -> CommandPlan:
+    def plan(
+        self,
+        user_input: str,
+        project: Project,
+        *,
+        context: PlanningContext | None = None,
+    ) -> CommandPlan:
         attempts: list[PlannerAttempt] = []
         feedback: list[str] = []
-        resolved_target = self._resolve_referent_before_llm(user_input, project)
+        resolved_target = self._resolve_referent_before_llm(user_input, project, context)
         if isinstance(resolved_target, CommandPlan):
             return resolved_target
 
@@ -82,7 +93,7 @@ class LLMCommandPlanner:
             raw_output: str | None = None
             try:
                 completion = self._client.complete_json(
-                    self._messages(user_input, project, feedback, resolved_target),
+                    self._messages(user_input, project, feedback, resolved_target, context),
                     temperature=self._temperature,
                     timeout_seconds=self._timeout_seconds,
                 )
@@ -122,8 +133,10 @@ class LLMCommandPlanner:
         self,
         user_input: str,
         project: Project,
+        context: PlanningContext | None = None,
     ) -> ElementCandidate | CommandPlan | None:
-        resolution = self._referent_resolver.resolve(user_input, project)
+        memory = context.conversation if context is not None else None
+        resolution = self._referent_resolver.resolve(user_input, project, memory)
         if resolution is None:
             return None
         if resolution.status == "matched":
@@ -909,13 +922,18 @@ class LLMCommandPlanner:
         project: Project,
         feedback: list[str],
         resolved_target: ElementCandidate | None = None,
+        context: PlanningContext | None = None,
     ) -> list[LLMMessage]:
+        conversation = context.conversation if context is not None else None
         user_payload = {
             "userInput": user_input,
             "project": self._project_context(project),
             "feedback": feedback,
             "resolvedTarget": resolved_target.model_dump(by_alias=True)
             if resolved_target is not None
+            else None,
+            "conversationContext": conversation.model_dump(by_alias=True)
+            if conversation is not None
             else None,
         }
         return [
@@ -1021,6 +1039,9 @@ Render Catalog（前端本地绘制能力清单）：
 - 用户要求“加标题，写...”时，在 activeSceneId 添加 text 元素。
 - 用户要求“把标题改成...”时，查找当前 activeScene 中名称或文本像标题的 text 元素并更新。
 - 如果输入里已经有 resolvedTarget，修改/删除/移动等操作必须使用其中的 sceneId 和 elementId。
+- 如果输入里有 conversationContext，优先把 focusStack 作为
+  “它、这个、刚才那个、往左移一点”等省略表达的近期语境。
+- recentTurns 只用于理解最近对话，不要把已过期或不存在的元素编造成可操作对象。
 """.strip()
 
     def _extract_json(self, raw_output: str) -> str:

@@ -2,11 +2,13 @@ import json
 
 from voicecanvas.adapters.llm.base import LLMClientError
 from voicecanvas.adapters.llm.fake import FakeLLMClient
+from voicecanvas.application.command_planner import PlanningContext
 from voicecanvas.application.demo_command_planner import DemoCommandPlanner
 from voicecanvas.application.llm_command_planner import LLMCommandPlanner
 from voicecanvas.application.orchestration_service import OrchestrationService
 from voicecanvas.application.project_repository import InMemoryProjectRepository
 from voicecanvas.domain.commands import CommandType
+from voicecanvas.domain.conversation import ConversationMemorySnapshot, ElementMemory
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
 
 
@@ -562,6 +564,78 @@ def test_llm_planner_asks_clarification_for_ambiguous_referent_without_calling_l
     assert plan.next_action["type"] == "ASK_CLARIFICATION"
     assert len(plan.next_action["options"]) == 2
     assert client.calls == []
+
+
+def test_llm_planner_sends_conversation_context_and_resolved_focus() -> None:
+    project = Project(
+        id="project_dog",
+        title="Dog",
+        mode="free_canvas",
+        scenes=[
+            Scene(
+                id="scene_1",
+                name="主画布",
+                order=1,
+                elements=[
+                    CanvasElement(
+                        id="el_dog",
+                        type=ElementType.GENERATED_ASSET,
+                        name="狗",
+                        x=240,
+                        y=260,
+                        width=180,
+                        height=120,
+                        zIndex=5,
+                        asset={"kind": "character", "status": "pending", "prompt": "一只狗"},
+                        placeholderStyle={"fill": "#ffffff"},
+                    )
+                ],
+            )
+        ],
+        activeSceneId="scene_1",
+    )
+    context = PlanningContext(
+        conversation=ConversationMemorySnapshot(
+            focusStack=[
+                ElementMemory(
+                    sceneId="scene_1",
+                    elementId="el_dog",
+                    type="generated_asset",
+                    name="狗",
+                    bounds={"x": 240, "y": 260, "width": 180, "height": 120},
+                    source="element_added",
+                    lastTouchedAt="2026-06-13T00:00:00+00:00",
+                )
+            ]
+        )
+    )
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "移动狗",
+                    "commands": [
+                        {
+                            "type": "UPDATE_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "elementId": "el_dog",
+                                "patch": {"x": 200},
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("往左移一点", project, context=context)
+    payload = json.loads(client.calls[0][-1].content)
+
+    assert plan.action == "commands"
+    assert payload["conversationContext"]["focusStack"][0]["elementId"] == "el_dog"
+    assert payload["resolvedTarget"]["elementId"] == "el_dog"
 
 
 def test_orchestration_service_reports_planner_warning_when_llm_falls_back() -> None:

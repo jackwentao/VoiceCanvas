@@ -1,4 +1,5 @@
 from voicecanvas.application.referent_resolver import ReferentResolver, resolution_to_next_action
+from voicecanvas.domain.conversation import ConversationMemorySnapshot, ElementMemory
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
 
 
@@ -97,3 +98,34 @@ def test_resolution_to_next_action_carries_candidates_for_resume() -> None:
     assert action["resumePolicy"]["sessionId"] == "session_test"
     assert action["resumePolicy"]["resumeWith"]["type"] == "REFERENT_CLARIFICATION_RESULT"
     assert len(action["options"]) == 2
+
+
+def test_resolver_uses_recent_focus_for_implicit_move() -> None:
+    dog = _element("el_dog", "狗", 320)
+    title = _element(
+        "el_title",
+        "标题",
+        80,
+        element_type=ElementType.TEXT,
+        text="标题",
+    )
+    project = _project([dog, title])
+    memory = ConversationMemorySnapshot(
+        focusStack=[
+            ElementMemory(
+                sceneId="scene_1",
+                elementId="el_dog",
+                type="shape",
+                name="狗",
+                bounds={"x": 320, "y": 120, "width": 120, "height": 160},
+                source="element_added",
+                lastTouchedAt="2026-06-13T00:00:00+00:00",
+            )
+        ]
+    )
+
+    result = ReferentResolver().resolve("往左移一点", project, memory)
+
+    assert result is not None
+    assert result.status == "matched"
+    assert result.candidates[0].element_id == "el_dog"
