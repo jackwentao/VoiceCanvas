@@ -92,6 +92,42 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - [比赛冲刺行动计划](./docs/比赛冲刺行动计划.md)
 - [PR 提交记录](./docs/PR提交记录.md)
 
+## 参赛有效性与协作规则
+
+本项目的 README、PR 描述和依赖声明直接关系到参赛作品有效性，后续开发必须遵守以下规则：
+
+- 新功能和功能修改必须基于 PR 合入。
+- 每个 PR 只做一件事，只实现或修改单一功能；大功能拆分为多个独立小 PR 分步提交。
+- PR 标题需用一句话说明新增或修改内容。
+- PR 描述必须包含功能描述、实现思路和测试方式。
+- 每次合并后主分支必须保持可运行，评委在任意时间查看都应能按本 README 复现演示效果。
+- 新增第三方库、框架、SDK 或外部服务时，必须同步更新本 README 和 [技术选型与依赖声明](./docs/技术选型与依赖声明.md)，列明依赖名称、用途、使用边界、降级方案和测试方式。
+
+当前第三方依赖概览：
+
+| 位置 | 依赖 | 用途 |
+| --- | --- | --- |
+| `frontend/package.json` | `express`、`cors`、`zod` | 原型静态服务、本地跨端口调试准备、前端契约或输入校验准备 |
+| `frontend/package.json` | `typescript`、`tsx`、`vitest`、`supertest` 及类型包 | 后续正式前端类型、脚本与测试工具 |
+| `backend/pyproject.toml` | `fastapi`、`uvicorn[standard]` | 后端 HTTP API 与本地服务运行 |
+| `backend/pyproject.toml` | `pydantic` | 领域模型、请求响应和命令校验 |
+| `backend/pyproject.toml` | `langgraph`、`langchain-core` | 可恢复 AI 编排与 LLM 适配基础类型 |
+| `backend/pyproject.toml` | `httpx`、`python-dotenv` | 外部服务 HTTP 调用与本地环境变量加载 |
+| `backend/pyproject.toml` | `pytest`、`pytest-asyncio`、`respx`、`ruff`、`mypy` | 后端测试、外部 HTTP Mock、lint 与类型检查 |
+| 外部服务 | DeepSeek OpenAI-compatible API | 真实 LLM Planner 的自然语言理解能力；仅通过 `adapters/llm` 接入，可降级到 Demo Planner |
+
+当前原创功能部分：
+
+- 语音到可编辑分镜草稿的产品工作流设计。
+- 结构化画布、镜头、元素、连接线和历史记录的项目数据模型。
+- 命令校验、命令执行、历史记录和项目状态更新链路。
+- 面向可恢复 AI 编排的应用层接口、演示 Planner、真实 LLM Planner 输出校验与降级链路。
+- 面向“左边那个杯子 / 那个标签 / 它”等用户表达的指代消解、候选澄清和恢复上下文设计。
+- 并行工具结果聚合后统一回灌 Orchestrator 的应用层缓冲机制。
+- 前端原型中的画布投影、历史区、AI 交互栏和导出入口设计。
+
+第三方框架只作为服务运行、模型校验、编排基础设施和测试工具使用；VoiceCanvas 的业务规则、画布状态变更、命令语义和演示工作流为本项目原创实现。
+
 ## 项目结构
 
 ```text
@@ -157,7 +193,7 @@ Invoke-RestMethod `
   -Body '{"projectId":"project_demo","userInput":"创建一个三镜头的珍珠奶茶带货分镜"}'
 ```
 
-当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager` 和内存项目仓库；自然语言理解暂由 `DemoCommandPlanner` 覆盖比赛演示语料，后续可替换为真实 LLM Adapter。
+当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager` 和内存项目仓库；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
 
 ## 当前状态
 

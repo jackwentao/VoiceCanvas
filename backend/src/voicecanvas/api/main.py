@@ -6,11 +6,12 @@ from voicecanvas.api.schemas import (
     StartOrchestrationRequest,
 )
 from voicecanvas.application.orchestration_service import OrchestrationService
+from voicecanvas.application.planner_factory import create_planner_from_env
 
 
 def create_app(orchestration_service: OrchestrationService | None = None) -> FastAPI:
     app = FastAPI(title="VoiceCanvas Backend", version="0.1.0")
-    service = orchestration_service or OrchestrationService()
+    service = orchestration_service or OrchestrationService(planner=create_planner_from_env())
 
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:

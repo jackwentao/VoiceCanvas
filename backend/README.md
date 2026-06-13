@@ -33,7 +33,51 @@ Invoke-RestMethod `
 - `events`：阶段、画布 Patch 和本轮总结事件。
 - `summary`：本轮是否完成及执行命令数量。
 
-说明：本阶段自然语言理解由 `DemoCommandPlanner` 覆盖比赛演示语料，暂未接真实 LLM、ASR、SSE 和持久化数据库。
+说明：默认自然语言理解由 `DemoCommandPlanner` 覆盖比赛演示语料；设置环境变量后可启用真实 LLM Planner，并在失败时重试、提醒错误原因，再按配置降级。
+
+## 真实 LLM Planner
+
+真实 LLM 只负责把用户输入转换为结构化命令，不直接覆盖 `Project`。后端会先用 Pydantic 校验 LLM JSON 输出，再用 `CommandValidator` 校验命令是否能在当前项目执行，最后才交给 `CommandExecutor`。
+
+```powershell
+$env:VOICECANVAS_PLANNER="hybrid"
+$env:VOICECANVAS_LLM_BASE_URL="https://你的-openai-compatible-endpoint/v1"
+$env:VOICECANVAS_LLM_MODEL="你的模型名"
+$env:VOICECANVAS_LLM_API_KEY="你的 API Key"
+$env:VOICECANVAS_LLM_MAX_ATTEMPTS="3"
+$env:VOICECANVAS_LLM_TIMEOUT_SECONDS="20"
+uv run --no-editable uvicorn voicecanvas.api.main:app --reload
+```
+
+Planner 模式：
+
+- `demo`：默认模式，只使用本地 Demo Planner。
+- `llm`：只使用真实 LLM；重试后仍失败会返回错误提醒，不执行降级命令。
+- `hybrid`：优先真实 LLM；额度不足、网络失败、超时、格式错误或业务校验失败且重试耗尽后，降级到 Demo Planner，并在响应事件中返回 `PLANNER_WARNING`。
+
+真实 LLM 输出验收测试默认跳过。需要真实调用时显式开启：
+
+```powershell
+$env:VOICECANVAS_RUN_REAL_LLM_TESTS="1"
+$env:VOICECANVAS_LLM_BASE_URL="https://你的-openai-compatible-endpoint/v1"
+$env:VOICECANVAS_LLM_MODEL="你的模型名"
+$env:VOICECANVAS_LLM_API_KEY="你的 API Key"
+uv run --no-editable pytest tests/test_real_llm_command_planner.py -s
+```
+
+测试会使用规定好的真实命令：
+
+- `创建一个三镜头的珍珠奶茶带货分镜`
+- `加标题，写新品上市`
+- `把标题改成低糖也好喝`
+
+每次真实测试会把 LLM 原始输出、最终命令、重试次数和分析保存到：
+
+```text
+backend/artifacts/llm/<timestamp>/
+```
+
+其中每个用例有独立 JSON 文件，并生成 `summary.md` 便于人工复盘。
 
 ## 测试
 
