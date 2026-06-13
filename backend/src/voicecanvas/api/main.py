@@ -1,5 +1,10 @@
+import json
+from collections.abc import Iterator
+from typing import Any
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 
 from voicecanvas.api.schemas import (
     HealthResponse,
@@ -8,8 +13,27 @@ from voicecanvas.api.schemas import (
     ResumeOrchestrationRequest,
     StartOrchestrationRequest,
 )
-from voicecanvas.application.orchestration_service import OrchestrationService
+from voicecanvas.application.orchestration_service import (
+    OrchestrationService,
+    OrchestrationStreamChunk,
+)
 from voicecanvas.application.planner_factory import create_planner_from_env
+
+
+def _sse_event(event_name: str, data: dict[str, Any]) -> str:
+    payload = json.dumps(data, ensure_ascii=False)
+    return f"event: {event_name}\ndata: {payload}\n\n"
+
+
+def _orchestration_sse_stream(chunks: Iterator[OrchestrationStreamChunk]) -> Iterator[str]:
+    for chunk in chunks:
+        if chunk.type == "EVENT" and chunk.event is not None:
+            yield _sse_event("orchestration.event", chunk.event)
+        if chunk.type == "RESULT" and chunk.response is not None:
+            yield _sse_event(
+                "orchestration.result",
+                chunk.response.model_dump(by_alias=True),
+            )
 
 
 def create_app(orchestration_service: OrchestrationService | None = None) -> FastAPI:
@@ -58,6 +82,19 @@ def create_app(orchestration_service: OrchestrationService | None = None) -> Fas
             history=[entry.model_dump(by_alias=True) for entry in result.history],
             events=result.events,
             summary=result.summary.model_dump(by_alias=True),
+        )
+
+    @app.post("/api/orchestrations/stream")
+    async def stream_orchestration(request: StartOrchestrationRequest) -> StreamingResponse:
+        chunks = service.stream_user_input(request.project_id, request.user_input)
+
+        return StreamingResponse(
+            _orchestration_sse_stream(chunks),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no",
+            },
         )
 
     @app.get("/api/projects/{project_id}", response_model=ProjectStateResponse)

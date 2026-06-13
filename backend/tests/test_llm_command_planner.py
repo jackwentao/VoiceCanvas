@@ -331,6 +331,96 @@ def test_llm_planner_normalizes_boy_as_male_character() -> None:
     assert element["subject"]["character"]["gender"] == "male"
 
 
+def test_llm_planner_normalizes_same_batch_connector_references() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "添加小女孩、猫和箭头",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "generated_asset",
+                                    "name": "小女孩",
+                                    "x": 240,
+                                    "y": 260,
+                                    "width": 180,
+                                    "height": 240,
+                                    "zIndex": 4,
+                                    "asset": {
+                                        "kind": "character",
+                                        "status": "pending",
+                                        "prompt": "一个小女孩",
+                                    },
+                                    "placeholderStyle": {
+                                        "fill": "#ffffff",
+                                        "stroke": "#1f8a5b",
+                                        "strokeWidth": 2,
+                                    },
+                                },
+                            },
+                        },
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "shape",
+                                    "name": "猫",
+                                    "x": 700,
+                                    "y": 360,
+                                    "width": 180,
+                                    "height": 140,
+                                    "zIndex": 5,
+                                },
+                            },
+                        },
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "connector",
+                                    "name": "小女孩指向猫",
+                                    "from": "小女孩",
+                                    "to": "猫",
+                                    "content": {"label": "指向猫"},
+                                    "x": 0,
+                                    "y": 0,
+                                    "width": 1,
+                                    "height": 1,
+                                    "zIndex": 8,
+                                },
+                            },
+                        },
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("画一个小女孩旁边有一只猫，让小女孩指向猫", _project())
+
+    assert plan.action == "commands"
+    assert [command.type for command in plan.commands] == [
+        CommandType.ADD_ELEMENT,
+        CommandType.ADD_ELEMENT,
+        CommandType.ADD_ELEMENT,
+    ]
+    girl = plan.commands[0].payload["element"]
+    cat = plan.commands[1].payload["element"]
+    connector = plan.commands[2].payload["element"]
+    assert girl["id"].startswith("el_ai_")
+    assert cat["metadata"]["renderHint"] == "cat"
+    assert connector["connector"]["from"]["target"]["elementId"] == girl["id"]
+    assert connector["connector"]["to"]["target"]["elementId"] == cat["id"]
+    assert plan.attempts[-1].validated
+
+
 def test_llm_planner_keeps_structured_text_content_valid() -> None:
     client = FakeLLMClient(
         [

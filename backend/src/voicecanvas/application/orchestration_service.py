@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from copy import deepcopy
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -39,6 +40,14 @@ class OrchestrationServiceResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class OrchestrationStreamChunk(BaseModel):
+    """编排流式片段：事件用于即时更新，结果用于收口同步状态。"""
+
+    type: Literal["EVENT", "RESULT"]
+    event: dict[str, Any] | None = None
+    response: OrchestrationServiceResponse | None = None
+
+
 class ProjectState(BaseModel):
     project: Project
     history: list[HistoryEntry]
@@ -63,12 +72,29 @@ class OrchestrationService:
         self._pending_clarifications: dict[str, dict[str, Any]] = {}
 
     def handle_user_input(self, project_id: str, user_input: str) -> OrchestrationServiceResponse:
+        final_response: OrchestrationServiceResponse | None = None
+        for chunk in self.stream_user_input(project_id, user_input):
+            if chunk.type == "RESULT":
+                final_response = chunk.response
+
+        if final_response is None:
+            raise RuntimeError("编排流程没有产生最终结果")
+        return final_response
+
+    def stream_user_input(
+        self, project_id: str, user_input: str
+    ) -> Iterator[OrchestrationStreamChunk]:
+        """流式编排用户输入，每产生一个事件就立即返回一个片段。"""
+
         session_id = f"session_{uuid4().hex[:12]}"
         project = self._repository.get_or_create(project_id)
         history = self._history_for(project.id)
-        events = [
+        patches: list[CanvasPatch] = []
+        events: list[dict[str, Any]] = []
+        yield from self._emit_event(
+            events,
             self._stage_event(session_id, "understanding", "正在理解用户输入"),
-        ]
+        )
         if self._is_clear_scene_request(user_input):
             next_action = self._next_action_with_session_id(
                 self._clear_scene_next_action(project.active_scene_id),
@@ -80,23 +106,32 @@ class OrchestrationService:
                 "nextAction": deepcopy(next_action),
             }
             message = "清空当前画布会删除当前镜头里的所有元素，请确认是否继续"
-            events.append(self._clarification_event(session_id, next_action, message))
-            summary = TurnSummary(completed=False, message=message, commandCount=0)
-            events.append(self._turn_summary_event(session_id, summary))
-            return self._response(
-                session_id,
-                "WAITING_FOR_USER",
-                project,
-                [],
-                history.entries(),
+            yield from self._emit_event(
                 events,
-                summary,
-                next_action=next_action,
+                self._clarification_event(session_id, next_action, message),
             )
+            summary = TurnSummary(completed=False, message=message, commandCount=0)
+            yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            yield self._result_chunk(
+                self._response(
+                    session_id,
+                    "WAITING_FOR_USER",
+                    project,
+                    patches,
+                    history.entries(),
+                    events,
+                    summary,
+                    next_action=next_action,
+                )
+            )
+            return
 
         plan = self._planner.plan(user_input, project)
         if plan.notice:
-            events.append(self._planner_warning_event(session_id, plan.notice))
+            yield from self._emit_event(
+                events,
+                self._planner_warning_event(session_id, plan.notice),
+            )
 
         if plan.action == "ask_clarification":
             next_action = self._next_action_with_session_id(plan.next_action, session_id)
@@ -105,19 +140,25 @@ class OrchestrationService:
                 "originalInput": user_input,
                 "nextAction": deepcopy(next_action),
             }
-            events.append(self._clarification_event(session_id, next_action, plan.message))
-            summary = TurnSummary(completed=False, message=plan.message, commandCount=0)
-            events.append(self._turn_summary_event(session_id, summary))
-            return self._response(
-                session_id,
-                "WAITING_FOR_USER",
-                project,
-                [],
-                history.entries(),
+            yield from self._emit_event(
                 events,
-                summary,
-                next_action=next_action,
+                self._clarification_event(session_id, next_action, plan.message),
             )
+            summary = TurnSummary(completed=False, message=plan.message, commandCount=0)
+            yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            yield self._result_chunk(
+                self._response(
+                    session_id,
+                    "WAITING_FOR_USER",
+                    project,
+                    patches,
+                    history.entries(),
+                    events,
+                    summary,
+                    next_action=next_action,
+                )
+            )
+            return
 
         if plan.action == "respond":
             summary = TurnSummary(
@@ -125,86 +166,89 @@ class OrchestrationService:
                 message=self._message_with_notice(plan.message, plan.notice),
                 commandCount=0,
             )
-            events.append(self._turn_summary_event(session_id, summary))
-            return self._response(
-                session_id,
-                "COMPLETED",
-                project,
-                [],
-                history.entries(),
-                events,
-                summary,
+            yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            yield self._result_chunk(
+                self._response(
+                    session_id,
+                    "COMPLETED",
+                    project,
+                    patches,
+                    history.entries(),
+                    events,
+                    summary,
+                )
             )
+            return
 
         if plan.action == "undo":
-            return self._undo(session_id, project, history, events)
+            yield from self._stream_undo(session_id, project, history, events)
+            return
 
         if plan.action == "redo":
-            return self._redo(session_id, project, history, events)
+            yield from self._stream_redo(session_id, project, history, events)
+            return
 
-        events.append(self._stage_event(session_id, "executing", "正在执行画布命令"))
-        validation = self._validator.validate(plan.commands, project)
-        if not validation.ok:
-            message = "；".join(issue.message for issue in validation.issues)
-            summary = TurnSummary(
-                completed=False,
-                message=self._message_with_notice(message, plan.notice),
-                commandCount=0,
-            )
-            events.append(self._turn_summary_event(session_id, summary))
-            return self._response(
-                session_id,
-                "FAILED",
-                project,
-                [],
-                history.entries(),
-                events,
-                summary,
-            )
+        yield from self._emit_event(
+            events,
+            self._stage_event(session_id, "executing", "正在执行画布命令"),
+        )
 
-        result = self._executor.execute_batch(plan.commands, project)
-        for applied in result.applied:
-            history.record(applied.history_entry)
-            events.extend(
-                self._patch_event(session_id, patch, applied.command_id)
-                for patch in applied.patches
-            )
+        current_project = project
+        applied_count = 0
+        for command in plan.commands:
+            try:
+                result = self._executor.execute(command, current_project)
+            except ValueError as error:
+                self._repository.save(current_project)
+                summary = TurnSummary(
+                    completed=False,
+                    message=self._message_with_notice(str(error), plan.notice),
+                    commandCount=applied_count,
+                )
+                yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+                yield self._result_chunk(
+                    self._response(
+                        session_id,
+                        "FAILED",
+                        current_project,
+                        patches,
+                        history.entries(),
+                        events,
+                        summary,
+                    )
+                )
+                return
 
-        self._repository.save(result.project)
-        if result.failed is not None:
-            summary = TurnSummary(
-                completed=False,
-                message=self._message_with_notice(result.failed.error, plan.notice),
-                commandCount=len(result.applied),
-            )
-            events.append(self._turn_summary_event(session_id, summary))
-            return self._response(
-                session_id,
-                "FAILED",
-                result.project,
-                self._collect_patches(result.applied),
-                history.entries(),
-                events,
-                summary,
-            )
+            history.record(result.history_entry)
+            current_project = result.project
+            patches.extend(result.patches)
+            applied_count += 1
+            for patch in result.patches:
+                yield from self._emit_event(
+                    events,
+                    self._patch_event(session_id, patch, result.command_id),
+                )
 
+        self._repository.save(current_project)
         summary = TurnSummary(
             completed=True,
             message=self._message_with_notice(
-                f"已执行 {len(result.applied)} 条命令",
+                f"已执行 {applied_count} 条命令",
                 plan.notice,
             ),
-            commandCount=len(result.applied),
+            commandCount=applied_count,
         )
-        events.append(self._turn_summary_event(session_id, summary))
-        return self._response(
-            session_id,
-            "COMPLETED",
-            result.project,
-            self._collect_patches(result.applied),
-            history.entries(),
-            events,
-            summary,
+        yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+        yield self._result_chunk(
+            self._response(
+                session_id,
+                "COMPLETED",
+                current_project,
+                patches,
+                history.entries(),
+                events,
+                summary,
+            )
         )
 
     def resume_user_input(
@@ -396,6 +440,104 @@ class OrchestrationService:
         history = self._history_for(project.id)
         return ProjectState(project=project, history=history.entries(), events=[])
 
+    def _stream_undo(
+        self,
+        session_id: str,
+        project: Project,
+        history: HistoryManager,
+        events: list[dict[str, Any]],
+    ) -> Iterator[OrchestrationStreamChunk]:
+        yield from self._emit_event(
+            events,
+            self._stage_event(session_id, "executing", "正在撤销上一步操作"),
+        )
+        try:
+            result = history.undo(project, self._executor.apply_without_recording)
+        except ValueError as error:
+            summary = TurnSummary(completed=False, message=str(error), commandCount=0)
+            yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            yield self._result_chunk(
+                self._response(
+                    session_id,
+                    "FAILED",
+                    project,
+                    [],
+                    history.entries(),
+                    events,
+                    summary,
+                )
+            )
+            return
+
+        self._repository.save(result.project)
+        for patch in result.patches:
+            yield from self._emit_event(
+                events,
+                self._patch_event(session_id, patch, result.history_entry.command.id),
+            )
+        summary = TurnSummary(completed=True, message="已撤销上一步操作", commandCount=1)
+        yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+        yield self._result_chunk(
+            self._response(
+                session_id,
+                "COMPLETED",
+                result.project,
+                result.patches,
+                history.entries(),
+                events,
+                summary,
+            )
+        )
+
+    def _stream_redo(
+        self,
+        session_id: str,
+        project: Project,
+        history: HistoryManager,
+        events: list[dict[str, Any]],
+    ) -> Iterator[OrchestrationStreamChunk]:
+        yield from self._emit_event(
+            events,
+            self._stage_event(session_id, "executing", "正在重做上一步操作"),
+        )
+        try:
+            result = history.redo(project, self._executor.apply_without_recording)
+        except ValueError as error:
+            summary = TurnSummary(completed=False, message=str(error), commandCount=0)
+            yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+            yield self._result_chunk(
+                self._response(
+                    session_id,
+                    "FAILED",
+                    project,
+                    [],
+                    history.entries(),
+                    events,
+                    summary,
+                )
+            )
+            return
+
+        self._repository.save(result.project)
+        for patch in result.patches:
+            yield from self._emit_event(
+                events,
+                self._patch_event(session_id, patch, result.history_entry.command.id),
+            )
+        summary = TurnSummary(completed=True, message="已重做上一步操作", commandCount=1)
+        yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
+        yield self._result_chunk(
+            self._response(
+                session_id,
+                "COMPLETED",
+                result.project,
+                result.patches,
+                history.entries(),
+                events,
+                summary,
+            )
+        )
+
     def _undo(
         self,
         session_id: str,
@@ -498,6 +640,15 @@ class OrchestrationService:
             summary=summary,
             nextAction=next_action,
         )
+
+    def _emit_event(
+        self, events: list[dict[str, Any]], event: dict[str, Any]
+    ) -> Iterator[OrchestrationStreamChunk]:
+        events.append(event)
+        yield OrchestrationStreamChunk(type="EVENT", event=event)
+
+    def _result_chunk(self, response: OrchestrationServiceResponse) -> OrchestrationStreamChunk:
+        return OrchestrationStreamChunk(type="RESULT", response=response)
 
     def _history_for(self, project_id: str) -> HistoryManager:
         if project_id not in self._histories:

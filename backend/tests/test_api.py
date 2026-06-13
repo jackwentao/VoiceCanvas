@@ -1,3 +1,5 @@
+import json
+
 from fastapi.testclient import TestClient
 
 from voicecanvas.api.main import create_app
@@ -6,6 +8,21 @@ from voicecanvas.application.orchestration_service import OrchestrationService
 
 def _client() -> TestClient:
     return TestClient(create_app(OrchestrationService()))
+
+
+def _parse_sse_blocks(text: str) -> list[dict[str, object]]:
+    blocks = []
+    for raw_block in text.strip().split("\n\n"):
+        event_name = None
+        data = None
+        for line in raw_block.splitlines():
+            if line.startswith("event: "):
+                event_name = line.removeprefix("event: ")
+            if line.startswith("data: "):
+                data = json.loads(line.removeprefix("data: "))
+        if event_name and data is not None:
+            blocks.append({"event": event_name, "data": data})
+    return blocks
 
 
 def test_health_endpoint() -> None:
@@ -39,6 +56,35 @@ def test_start_orchestration_returns_real_project_patches_and_history() -> None:
     assert body["nextAction"] is None
     assert any(event["type"] == "CANVAS_PATCH_APPLIED" for event in body["events"])
     assert body["events"][-1]["type"] == "TURN_SUMMARY"
+
+
+def test_stream_orchestration_returns_sse_events_and_final_result() -> None:
+    client = _client()
+
+    response = client.post(
+        "/api/orchestrations/stream",
+        json={
+            "projectId": "project_demo",
+            "userInput": "创建一个三镜头的珍珠奶茶带货分镜",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    blocks = _parse_sse_blocks(response.text)
+    assert blocks[0]["event"] == "orchestration.event"
+    assert blocks[0]["data"]["type"] == "STAGE_CHANGED"
+
+    patch_blocks = [
+        block
+        for block in blocks
+        if block["event"] == "orchestration.event"
+        and block["data"]["type"] == "CANVAS_PATCH_APPLIED"
+    ]
+    assert len(patch_blocks) >= 3
+    assert blocks[-1]["event"] == "orchestration.result"
+    assert blocks[-1]["data"]["status"] == "COMPLETED"
+    assert len(blocks[-1]["data"]["patches"]) == len(patch_blocks)
 
 
 def test_get_project_returns_backend_project_state_and_history() -> None:

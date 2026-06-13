@@ -18,6 +18,124 @@ def test_service_creates_storyboard_with_real_execution_pipeline() -> None:
     assert any(event["type"] == "CANVAS_PATCH_APPLIED" for event in response.events)
 
 
+def test_service_streams_each_patch_before_final_response() -> None:
+    service = OrchestrationService()
+
+    chunks = list(service.stream_user_input("project_demo", "创建一个三镜头的珍珠奶茶带货分镜"))
+
+    event_chunks = [chunk for chunk in chunks if chunk.type == "EVENT"]
+    result_chunk = chunks[-1]
+    patch_events = [
+        chunk.event
+        for chunk in event_chunks
+        if chunk.event is not None and chunk.event["type"] == "CANVAS_PATCH_APPLIED"
+    ]
+    assert event_chunks[0].event is not None
+    assert event_chunks[0].event["type"] == "STAGE_CHANGED"
+    assert event_chunks[0].event["stage"] == "understanding"
+    assert len(patch_events) >= 3
+    assert result_chunk.type == "RESULT"
+    assert result_chunk.response is not None
+    assert result_chunk.response.status == "COMPLETED"
+    assert len(result_chunk.response.patches) == len(patch_events)
+    assert result_chunk.response.events[-1]["type"] == "TURN_SUMMARY"
+
+
+def test_service_stream_executes_same_batch_connector_after_new_elements() -> None:
+    client = FakeLLMClient(
+        [
+            json.dumps(
+                {
+                    "action": "commands",
+                    "message": "添加小女孩、猫和箭头",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "generated_asset",
+                                    "name": "小女孩",
+                                    "x": 240,
+                                    "y": 260,
+                                    "width": 180,
+                                    "height": 240,
+                                    "zIndex": 4,
+                                    "asset": {
+                                        "kind": "character",
+                                        "status": "pending",
+                                        "prompt": "一个小女孩",
+                                    },
+                                    "placeholderStyle": {
+                                        "fill": "#ffffff",
+                                        "stroke": "#1f8a5b",
+                                        "strokeWidth": 2,
+                                    },
+                                },
+                            },
+                        },
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "shape",
+                                    "name": "猫",
+                                    "x": 700,
+                                    "y": 360,
+                                    "width": 180,
+                                    "height": 140,
+                                    "zIndex": 5,
+                                },
+                            },
+                        },
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "connector",
+                                    "name": "小女孩指向猫",
+                                    "from": "小女孩",
+                                    "to": "猫",
+                                    "content": {"label": "指向猫"},
+                                    "x": 0,
+                                    "y": 0,
+                                    "width": 1,
+                                    "height": 1,
+                                    "zIndex": 8,
+                                },
+                            },
+                        },
+                    ],
+                },
+                ensure_ascii=False,
+            )
+        ]
+    )
+    service = OrchestrationService(planner=LLMCommandPlanner(client))
+
+    chunks = list(
+        service.stream_user_input(
+            "project_stream_connector",
+            "画一个小女孩旁边有一只猫，让小女孩指向猫",
+        )
+    )
+
+    patch_events = [
+        chunk.event
+        for chunk in chunks
+        if chunk.type == "EVENT"
+        and chunk.event is not None
+        and chunk.event["type"] == "CANVAS_PATCH_APPLIED"
+    ]
+    result = chunks[-1].response
+    assert result is not None
+    assert result.status == "COMPLETED"
+    assert len(patch_events) == 3
+    assert result.project.scenes[0].elements[-1].type == "connector"
+
+
 def test_service_switches_to_second_scene_after_create() -> None:
     service = OrchestrationService()
     service.handle_user_input("project_demo", "创建一个三镜头的珍珠奶茶带货分镜")

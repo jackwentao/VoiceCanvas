@@ -44,6 +44,43 @@ Invoke-RestMethod `
 
 `GET /api/projects/{projectId}` 返回当前可信 `project`、该项目 `history` 和可扩展的 `events` 数组，前端原型启动时用它初始化画布、历史区和 AI 交互栏状态。
 
+流式编排接口：
+
+```powershell
+$body = @{
+  projectId = "project_demo"
+  userInput = "创建一个三镜头的珍珠奶茶带货分镜"
+} | ConvertTo-Json -Compress
+
+curl.exe -N `
+  -X POST "http://127.0.0.1:8000/api/orchestrations/stream" `
+  -H "Content-Type: application/json" `
+  --data $body
+```
+
+`POST /api/orchestrations/stream` 使用 `text/event-stream` 返回 SSE：
+
+- `event: orchestration.event`：阶段变化、画布 Patch、澄清请求和本轮总结等即时事件；复杂命令会在每条命令执行并产生 Patch 后立刻返回。
+- `event: orchestration.result`：本轮最终完整结果，结构与同步 `POST /api/orchestrations` 响应一致，便于前端在流结束时收口同步状态。
+
+前端原型默认连接 `http://127.0.0.1:8000`；如果新版后端临时跑在其他端口，可以通过查询参数切换：
+
+```text
+http://127.0.0.1:4178/index.html?apiBaseUrl=http://127.0.0.1:8001
+```
+
+本功能未新增第三方依赖，复用项目既有依赖与浏览器原生能力：
+
+- FastAPI / Starlette：提供 `StreamingResponse`，仅负责 HTTP `text/event-stream` 传输边界。
+- Pydantic：继续负责 `Project`、`CanvasElement`、`CanvasPatch` 等领域模型校验。
+- 浏览器 Fetch / ReadableStream：前端原型消费 SSE 文本流，不引入额外前端框架。
+
+原创功能边界：
+
+- 后端原创实现 `orchestration.event` / `orchestration.result` 事件协议，按画布 Patch 粒度推送复杂命令执行结果。
+- 后端原创实现 LLM 命令归一化，把同批新增元素名称引用转换为合法 `connector.from` / `connector.to`。
+- 前端原创实现流式事件消费与画布状态投影，把收到的 Patch 逐步应用到本地 Project State。
+
 说明：默认自然语言理解由 `DemoCommandPlanner` 覆盖比赛演示语料；设置环境变量后可启用真实 LLM Planner，并在失败时重试、提醒错误原因，再按配置降级。
 
 ## 真实 LLM Planner
@@ -108,6 +145,7 @@ backend/artifacts/llm/<timestamp>/
 
 ```powershell
 uv run --no-editable pytest
+uv run --no-editable pytest tests/test_api.py tests/test_orchestration_service.py
 uv run --no-editable ruff check .
 uv run --no-editable mypy src
 ```

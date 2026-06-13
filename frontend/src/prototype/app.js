@@ -3,9 +3,10 @@ import {
   DEFAULT_PROJECT_ID,
   loadProjectState,
   resumeOrchestration,
-  startOrchestration
+  startOrchestrationStream
 } from "./backend-client.js";
 import {
+  applyBackendEvent,
   appendBackendError,
   applyBackendResponse,
   createBackendPendingSession
@@ -322,8 +323,18 @@ async function runBackendInput(userInput, fallback) {
   render();
 
   try {
-    const response = await startOrchestration(state.backend.projectId, userInput);
-    applyBackendResponse(state, response, { userInput });
+    const response = await startOrchestrationStream(state.backend.projectId, userInput, {
+      onEvent: (event) => {
+        applyBackendEvent(state, event, { userInput });
+        state.backend.connected = true;
+        state.backend.lastError = null;
+        render();
+      }
+    });
+    if (!response) {
+      throw new Error("后端流式响应缺少最终结果");
+    }
+    applyBackendResponse(state, { ...response, events: [] }, { userInput });
     state.backend.connected = true;
     state.backend.lastError = null;
     render();
