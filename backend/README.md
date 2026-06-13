@@ -81,6 +81,13 @@ http://127.0.0.1:4178/index.html?apiBaseUrl=http://127.0.0.1:8001
 - 后端原创实现 LLM 命令归一化，把同批新增元素名称引用转换为合法 `connector.from` / `connector.to`。
 - 前端原创实现流式事件消费与画布状态投影，把收到的 Patch 逐步应用到本地 Project State。
 
+长期记忆后端 MVP 未新增第三方依赖，复用 Pydantic 进行领域模型校验，使用 Python 标准库 `json` 和 `pathlib` 实现本地 JSON 仓储。原创功能边界：
+
+- 长期记忆领域模型，记录偏好类型、作用范围、置信度、状态、来源证据和最近使用时间。
+- `UserMemoryRepository` 仓储协议和本地 JSON 仓储实现，方便后续替换为数据库或云端存储。
+- `UserMemoryService` 状态流转与相关性检索，确保只有 active 记忆进入 Planner 上下文。
+- `MemoryExtractor` 候选提取和敏感信息过滤，避免低置信或隐私内容静默写入长期记忆。
+
 说明：默认自然语言理解由 `DemoCommandPlanner` 覆盖比赛演示语料；设置环境变量后可启用真实 LLM Planner，并在失败时重试、提醒错误原因，再按配置降级。
 
 ## 真实 LLM Planner
@@ -146,6 +153,7 @@ backend/artifacts/llm/<timestamp>/
 ```powershell
 uv run --no-editable pytest
 uv run --no-editable pytest tests/test_api.py tests/test_orchestration_service.py
+uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py
 uv run --no-editable ruff check .
 uv run --no-editable mypy src
 ```

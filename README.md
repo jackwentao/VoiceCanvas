@@ -89,6 +89,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - [技术选型与依赖声明](./docs/技术选型与依赖声明.md)
 - [接口与数据模型设计](./docs/接口与数据模型设计.md)
 - [前端交互原型与接口绑定设计](./docs/前端交互原型与接口绑定设计.md)
+- [长期记忆 MVP 决策](./docs/长期记忆MVP决策.md)
 - [比赛冲刺行动计划](./docs/比赛冲刺行动计划.md)
 - [PR 提交记录](./docs/PR提交记录.md)
 
@@ -132,6 +133,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - 画布文字元素的自适应排版能力，根据元素边界和中英文混排内容估算字号并避免文本裁剪。
 - 持续语音创作会话状态机，包括首次授权后持续监听、最终转写自动提交、系统播报期间停止监听、播报结束提示音恢复收音和“结束创作”退出。
 - 高风险清空画布的语音确认闭环，包括 `CLEAR_SCENE` 命令、确认/取消恢复逻辑、撤销历史和噪声不入后端指令系统的前端过滤。
+- 用户长期记忆后端 MVP，包括偏好模型、来源证据、本地 JSON 仓储、状态流转、相关性检索和敏感信息过滤。
 
 第三方框架只作为服务运行、模型校验、编排基础设施和测试工具使用；VoiceCanvas 的业务规则、画布状态变更、命令语义和演示工作流为本项目原创实现。
 
@@ -190,6 +192,13 @@ uv sync --no-editable
 uv run --no-editable pytest
 uv run --no-editable ruff check .
 uv run --no-editable mypy src
+```
+
+长期记忆后端 MVP 测试：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py
 ```
 
 后端本地服务：
