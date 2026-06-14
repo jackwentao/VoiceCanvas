@@ -2,6 +2,7 @@ import { mergeElementPatch } from "./element-patch.js";
 
 const CANVAS_PATCH_EVENT = "CANVAS_PATCH_APPLIED";
 const CLARIFICATION_EVENT = "CLARIFICATION_REQUESTED";
+const EXPORT_EVENT = "EXPORT_COMPLETED";
 
 function nowIso() {
   return new Date().toISOString();
@@ -186,6 +187,15 @@ export function applyBackendEvent(state, event, options = {}) {
       [normalized]
     );
     state.voiceStatus = normalized.question || "需要进一步确认";
+  }
+
+  if (normalized.type === EXPORT_EVENT) {
+    state.session.progress = {
+      completedSteps: 1,
+      totalSteps: 1,
+      message: normalized.export?.filename || "导出完成"
+    };
+    state.voiceStatus = "导出完成";
   }
 
   if (normalized.type === "TURN_SUMMARY") {

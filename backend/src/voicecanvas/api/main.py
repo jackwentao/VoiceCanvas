@@ -10,7 +10,10 @@ from fastapi.responses import StreamingResponse
 
 from voicecanvas.api.schemas import (
     CreateUserMemoryRequest,
+    ExportProjectRequest,
+    ExportProjectResponse,
     HealthResponse,
+    ImportProjectRequest,
     OrchestrationResponse,
     ProjectStateResponse,
     ResumeOrchestrationRequest,
@@ -19,6 +22,7 @@ from voicecanvas.api.schemas import (
     UserMemoryListResponse,
     UserMemoryResponse,
 )
+from voicecanvas.application.export_service import ExportRequest
 from voicecanvas.application.orchestration_service import (
     OrchestrationService,
     OrchestrationStreamChunk,
@@ -122,6 +126,34 @@ def create_app(
     @app.get("/api/projects/{project_id}", response_model=ProjectStateResponse)
     async def get_project(project_id: str) -> ProjectStateResponse:
         state = service.get_project_state(project_id)
+
+        return ProjectStateResponse(
+            project=state.project.model_dump(by_alias=True),
+            history=[entry.model_dump(by_alias=True) for entry in state.history],
+            events=state.events,
+        )
+
+    @app.post("/api/projects/{project_id}/export", response_model=ExportProjectResponse)
+    async def export_project(
+        project_id: str,
+        request: ExportProjectRequest,
+    ) -> ExportProjectResponse:
+        try:
+            result = service.export_project(
+                project_id,
+                ExportRequest.model_validate(request.model_dump(by_alias=True)),
+            )
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+
+        return ExportProjectResponse(export=result.model_dump(by_alias=True))
+
+    @app.post("/api/projects/import", response_model=ProjectStateResponse)
+    async def import_project(request: ImportProjectRequest) -> ProjectStateResponse:
+        try:
+            state = service.import_project(request.payload)
+        except ValueError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
 
         return ProjectStateResponse(
             project=state.project.model_dump(by_alias=True),

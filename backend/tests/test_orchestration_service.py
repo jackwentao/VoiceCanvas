@@ -329,6 +329,31 @@ def test_service_returns_completed_response_for_unknown_sentence() -> None:
     assert response.patches == []
 
 
+def test_service_exports_project_through_command_pipeline() -> None:
+    service = OrchestrationService()
+
+    response = service.handle_user_input("project_export_voice", "导出项目数据")
+
+    export_events = [event for event in response.events if event["type"] == "EXPORT_COMPLETED"]
+    assert response.status == "COMPLETED"
+    assert response.summary.command_count == 1
+    assert response.patches == []
+    assert export_events
+    assert export_events[-1]["export"]["filename"].endswith(".voicecanvas.json")
+
+
+def test_service_exports_active_scene_image_through_command_pipeline() -> None:
+    service = OrchestrationService()
+
+    response = service.handle_user_input("project_export_image", "导出当前分镜图片")
+
+    export_events = [event for event in response.events if event["type"] == "EXPORT_COMPLETED"]
+    assert response.status == "COMPLETED"
+    assert response.summary.command_count == 1
+    assert export_events[-1]["export"]["format"] == "png"
+    assert export_events[-1]["export"]["mimeType"] == "image/svg+xml"
+
+
 def test_service_e2e_adds_boy_as_male_character_asset() -> None:
     client = FakeLLMClient(
         [

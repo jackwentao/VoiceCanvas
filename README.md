@@ -130,6 +130,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - 并行工具结果聚合后统一回灌 Orchestrator 的应用层缓冲机制。
 - Render Catalog 语义渲染能力目录、别名归一化、前端 renderer registry 和不支持对象的生成素材占位降级策略。
 - 前端原型中的画布投影、历史区、AI 交互栏和导出入口设计。
+- 可复用导出与载入能力：前端按钮可直接导出当前项目包或当前分镜图片，语音/LLM 路径可通过 `EXPORT_PROJECT` 调用同一导出服务，项目包可再次载入恢复为可编辑 Project State。
 - 画布文字元素的自适应排版能力，根据元素边界和中英文混排内容估算字号并避免文本裁剪。
 - 持续语音创作会话状态机，包括首次授权后持续监听、最终转写自动提交、系统播报期间停止监听、播报结束提示音恢复收音和“结束创作”退出。
 - 高风险清空画布的语音确认闭环，包括 `CLEAR_SCENE` 命令、确认/取消恢复逻辑、撤销历史和噪声不入后端指令系统的前端过滤。
@@ -234,6 +235,39 @@ Invoke-RestMethod `
   -Method Get `
   -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas"
 ```
+
+导出项目包 API 示例：
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas/export" `
+  -ContentType "application/json" `
+  -Body '{"format":"json","scope":"project"}'
+```
+
+导出当前分镜图片 API 示例：
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas/export" `
+  -ContentType "application/json" `
+  -Body '{"format":"png","scope":"active_scene"}'
+```
+
+导出的 `.voicecanvas.json` 项目包可通过前端“设置 -> 载入项目”重新载入，也可调用后端载入接口：
+
+```powershell
+$payload = Get-Content ".\VoiceCanvas-Demo.voicecanvas.json" -Raw | ConvertFrom-Json
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/api/projects/import" `
+  -ContentType "application/json" `
+  -Body (@{ payload = $payload } | ConvertTo-Json -Depth 80)
+```
+
+本次导出/载入功能未新增第三方依赖；图片导出使用浏览器原生 `Canvas`、`Blob` 和 `URL.createObjectURL`，后端导出兜底使用 Python 标准库生成可验证 SVG 源。
 
 ## 当前状态
 

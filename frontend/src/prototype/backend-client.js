@@ -73,6 +73,20 @@ export function loadProjectState(projectId = DEFAULT_PROJECT_ID) {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}`);
 }
 
+export function exportProjectState(projectId = DEFAULT_PROJECT_ID, payload = {}) {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/export`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function importProjectState(payload) {
+  return requestJson("/api/projects/import", {
+    method: "POST",
+    body: JSON.stringify({ payload })
+  });
+}
+
 export function startOrchestration(projectId, userInput) {
   return requestJson("/api/orchestrations", {
     method: "POST",

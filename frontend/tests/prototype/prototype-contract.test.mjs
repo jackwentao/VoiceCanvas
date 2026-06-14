@@ -26,6 +26,7 @@ const requiredEvents = [
   "STAGE_CHANGED",
   "PROGRESS",
   "CANVAS_PATCH_APPLIED",
+  "EXPORT_COMPLETED",
   "CLARIFICATION_REQUESTED",
   "TURN_SUMMARY"
 ];
@@ -230,6 +231,10 @@ async function testPrototypeHtml() {
     new URL("../../src/prototype/backend-client.js", import.meta.url),
     "utf-8"
   );
+  const exportService = await readFile(
+    new URL("../../src/prototype/export-service.js", import.meta.url),
+    "utf-8"
+  );
   const stateSync = await readFile(
     new URL("../../src/prototype/state-sync.js", import.meta.url),
     "utf-8"
@@ -260,6 +265,10 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("结束创作"), "语音创作模式必须支持语音或按钮结束");
   assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
   assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
+  assert.ok(app.includes("exportFromBackendResult"), "语音导出必须复用导出结果下载函数");
+  assert.ok(app.includes("runDirectProjectExport"), "显式项目导出按钮必须直接触发导出函数");
+  assert.ok(app.includes("runDirectSceneImageExport"), "显式图片导出按钮必须直接触发图片导出函数");
+  assert.ok(app.includes("loadProjectFromFile"), "载入项目入口必须能读取导出的项目文件");
   assert.ok(app.includes("openMemoryPanel"), "长期记忆入口必须打开管理面板");
   assert.ok(app.includes("refreshUserMemories"), "长期记忆面板必须支持刷新列表");
   assert.ok(app.includes("createMemoryFromPanel"), "长期记忆面板必须支持显式新增");
@@ -303,6 +312,12 @@ async function testPrototypeHtml() {
   assert.ok(backendClient.includes("/api/orchestrations/"), "前端客户端必须绑定澄清恢复 API");
   assert.ok(backendClient.includes("/resume"), "前端客户端必须提供 resume 调用");
   assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
+  assert.ok(backendClient.includes("/export"), "前端客户端必须绑定项目导出 API");
+  assert.ok(backendClient.includes("/api/projects/import"), "前端客户端必须绑定项目载入 API");
+  assert.ok(exportService.includes("exportProjectFile"), "导出模块必须提供项目文件导出函数");
+  assert.ok(exportService.includes("exportSceneImage"), "导出模块必须提供图片导出函数");
+  assert.ok(exportService.includes("importProjectFile"), "导出模块必须提供项目文件载入函数");
+  assert.ok(exportService.includes("voicecanvas.project"), "项目包必须包含可识别的类型标记");
   assert.ok(backendClient.includes("DEFAULT_USER_ID"), "前端客户端必须提供演示默认用户");
   assert.ok(backendClient.includes("/api/users/"), "前端客户端必须绑定长期记忆用户 API");
   assert.ok(backendClient.includes("/api/memories/"), "前端客户端必须绑定长期记忆单条 API");

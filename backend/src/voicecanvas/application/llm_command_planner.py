@@ -237,6 +237,14 @@ class LLMCommandPlanner:
                 )
             ]
 
+        if draft.type == CommandType.EXPORT_PROJECT:
+            payload.setdefault("format", "json")
+            payload.setdefault(
+                "scope",
+                "project" if payload.get("format") in {"json", "project"} else "active_scene",
+            )
+            return [(draft.type, payload, draft.reason)]
+
         return [(draft.type, payload, draft.reason)]
 
     def _normalize_update_scene(
@@ -705,6 +713,8 @@ class LLMCommandPlanner:
                     for issue in validation.issues
                 )
                 raise ValueError(f"LLM 命令未通过业务校验：{issue_text}")
+            if command.type == CommandType.EXPORT_PROJECT:
+                continue
             try:
                 result = self._executor.execute(command, current_project)
             except ValueError as error:
@@ -913,6 +923,8 @@ class LLMCommandPlanner:
             "居中",
             "置顶",
             "置底",
+            "导出",
+            "保存",
         ]
         return any(keyword in user_input for keyword in actionable_keywords)
 
@@ -1026,6 +1038,10 @@ Render Catalog（前端本地绘制能力清单）：
   {{"type":"connector","name":"箭头","from":"小女孩","to":"猫",
     "content":{{"label":"指向"}},"x":0,"y":0,"width":1,"height":1,"zIndex":8}}。
 - 用户一句话里有多个对象、文字或指向关系时，要逐项生成命令，不要省略其中任何关系。
+- 用户要求“导出项目/保存项目/导出 JSON/导出结构化文件”时，输出 EXPORT_PROJECT，
+  payload 使用 {{"format":"json","scope":"project"}}。
+- 用户要求“导出图片/保存当前画面/导出当前分镜图片”时，输出 EXPORT_PROJECT，
+  payload 使用 {{"format":"png","scope":"active_scene"}}。
 - 画真实世界物体，例如猫、人物、桌子、产品、背景时，优先使用 type="generated_asset"。
 - generated_asset 必须包含 asset.kind、asset.status="pending"、asset.prompt 和 placeholderStyle。
 - 不确定用户目标时返回 respond，并在 message 中说明需要用户补充什么。

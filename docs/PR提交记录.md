@@ -2,6 +2,14 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：导出与项目载入功能
+
+- 本机未安装 GitHub CLI `gh`，本轮创建 PR 与合并 PR 使用 GitHub 连接器完成。
+- 本轮 PR 只实现一件事：导出图片、导出可再次载入的项目包，以及项目包载入恢复。
+- 本轮未新增第三方库、框架、SDK 或外部服务；导出能力复用浏览器原生 API 和 Python 标准库。
+- 涉及参赛作品有效性，提交前必须同步 README 中的原创功能说明、运行方式和测试手段。
+- 合并前必须通过后端相关测试、后端全量测试、前端契约测试和本次触碰文件的 ruff 检查。
+
 ## PR #1：scaffold VoiceCanvas architecture
 
 - PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/1

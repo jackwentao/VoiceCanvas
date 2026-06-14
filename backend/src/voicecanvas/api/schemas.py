@@ -51,6 +51,32 @@ class ProjectStateResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class ExportProjectRequest(BaseModel):
+    """项目导出入口请求，和 LLM 生成的 EXPORT_PROJECT payload 保持一致。"""
+
+    format: Literal["json", "project", "png", "svg"] = "json"
+    scope: Literal["project", "active_scene", "scene"] = "project"
+    scene_id: str | None = Field(default=None, alias="sceneId")
+
+    model_config = {"populate_by_name": True}
+
+
+class ExportProjectResponse(BaseModel):
+    """导出结果。content 由前端统一转成下载文件。"""
+
+    export: dict[str, Any]
+
+    model_config = {"populate_by_name": True}
+
+
+class ImportProjectRequest(BaseModel):
+    """载入项目包。payload 可传完整导出包，也可直接传 Project 对象。"""
+
+    payload: dict[str, Any]
+
+    model_config = {"populate_by_name": True}
+
+
 class CreateUserMemoryRequest(BaseModel):
     """前端显式新增长期记忆的请求模型。"""
 

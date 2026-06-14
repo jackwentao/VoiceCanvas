@@ -61,13 +61,7 @@ class CommandValidator:
             case CommandType.ARRANGE_LAYOUT:
                 return self._validate_arrange_layout(command, project, path)
             case CommandType.EXPORT_PROJECT:
-                return [
-                    self._issue(
-                        f"{path}.type",
-                        "unsupported_command",
-                        "EXPORT_PROJECT 将由后续 Exporter 模块执行",
-                    )
-                ]
+                return self._validate_export_project(command, project, path)
 
     def _validate_create_scene(
         self, command: CanvasCommand, project: Project, path: str
@@ -76,7 +70,9 @@ class CommandValidator:
         payload = command.payload
         if "scene" in payload:
             self._try_model(Scene, payload["scene"], f"{path}.payload.scene", issues)
-            scene_name = payload["scene"].get("name") if isinstance(payload["scene"], dict) else None
+            scene_name = (
+                payload["scene"].get("name") if isinstance(payload["scene"], dict) else None
+            )
             self._append_duplicate_scene_name_issue(
                 issues,
                 project,
@@ -374,6 +370,43 @@ class CommandValidator:
                             f"目标 Element 不存在：{element_id}",
                         )
                     )
+
+        return issues
+
+    def _validate_export_project(
+        self, command: CanvasCommand, project: Project, path: str
+    ) -> list[ValidationIssue]:
+        issues: list[ValidationIssue] = []
+        payload = command.payload
+        export_format = payload.get("format", "json")
+        scope = payload.get("scope", "project")
+
+        if export_format not in {"json", "project", "png", "svg"}:
+            issues.append(
+                self._issue(
+                    f"{path}.payload.format",
+                    "unsupported_format",
+                    "EXPORT_PROJECT 仅支持 json、project、png、svg",
+                )
+            )
+
+        if scope not in {"project", "active_scene", "scene"}:
+            issues.append(
+                self._issue(
+                    f"{path}.payload.scope",
+                    "unsupported_scope",
+                    "EXPORT_PROJECT 仅支持 project、active_scene、scene",
+                )
+            )
+
+        if scope == "scene" and self._find_scene(project, payload.get("sceneId")) is None:
+            issues.append(
+                self._issue(
+                    f"{path}.payload.sceneId",
+                    "not_found",
+                    "导出目标 Scene 不存在",
+                )
+            )
 
         return issues
 

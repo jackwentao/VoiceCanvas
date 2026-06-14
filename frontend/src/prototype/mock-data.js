@@ -28,6 +28,7 @@ export const API_CONTRACT = {
         "STAGE_CHANGED",
         "PROGRESS",
         "CANVAS_PATCH_APPLIED",
+        "EXPORT_COMPLETED",
         "CLARIFICATION_REQUESTED",
         "TURN_SUMMARY"
       ]
@@ -117,7 +118,7 @@ export const UI_BINDINGS = [
     components: ["ExportPanel", "ExportStatus"],
     reads: ["Project", "ExportResult"],
     writes: ["ExportRequest"],
-    events: ["CANVAS_PATCH_APPLIED", "TURN_SUMMARY"],
+    events: ["EXPORT_COMPLETED", "TURN_SUMMARY"],
     api: ["POST /api/projects/:projectId/export"]
   },
   {
@@ -166,7 +167,7 @@ export const COMMAND_BINDINGS = [
     endpoint: "POST /api/projects/:projectId/export",
     firstAction: "EXECUTE_COMMANDS",
     commands: ["EXPORT_PROJECT"],
-    events: ["STAGE_CHANGED", "CANVAS_PATCH_APPLIED", "TURN_SUMMARY"]
+    events: ["STAGE_CHANGED", "EXPORT_COMPLETED", "TURN_SUMMARY"]
   }
 ];
 
