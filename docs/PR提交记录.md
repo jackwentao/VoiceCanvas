@@ -2,6 +2,24 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 最终文档收口：README、指令完成情况与其他文档同步
+
+- PR #45：更新评审验证 README。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/45
+  - 状态：Merged
+  - 范围：重写根 README，突出 Demo 视频、前后端启动、MinIO、Docker、真实 LLM、API 验证、测试命令、前后端架构图、数据流和能力边界。
+  - 验证：`git diff --check -- README.md`。
+- PR #46：新增指令完成情况文档。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/46
+  - 状态：Merged
+  - 范围：新增 `docs/指令完成情况.md`，明确预计实现、已完成、降级完成、部分完成、未完成及原因，并在 README 中加入入口。
+  - 验证：`git diff --check -- README.md docs/指令完成情况.md`。
+- PR #47：同步最终项目文档状态。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/47
+  - 状态：Merged
+  - 范围：同步技术架构、接口模型、前端绑定、技术选型、Demo 验收、比赛冲刺计划和 PR 记录，使其与 README、指令完成情况和当前代码一致。
+  - 验证：`git diff --check -- docs README.md`。
+
 ## 最终验收维护：修复 mypy 类型检查问题
 
 - 标题：修复最终 mypy 类型检查问题。
