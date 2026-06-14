@@ -2,6 +2,36 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：元素描述字段
+
+- 本轮 PR 只实现一件事：为图片、图形、生成素材、连接线等画布元素增加可选 `description` 字段，并在前端画布展示已有描述。
+- `description` 用于记录人类或 AI 明确补充的对象属性，例如人物姓名、角色特征、商品口味；没有明确属性时保持为空，不强制生成。
+- 后端 `CanvasElement`、`CommandValidator` 和 LLM Prompt 均支持该字段；Demo Planner 增加“给商品加描述...”语料，便于无真实 LLM 时演示补充描述。
+- 前端仅在元素存在 `description` 时渲染描述标签；连接线使用 SVG 文本展示描述。
+- 本轮未新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_demo_command_planner.py tests/test_domain_project.py tests/test_command_validator.py
+uv run --no-editable ruff check src/voicecanvas/domain/project.py src/voicecanvas/application/command_validator.py src/voicecanvas/application/llm_command_planner.py src/voicecanvas/application/demo_command_planner.py tests/test_domain_project.py tests/test_command_validator.py tests/test_demo_command_planner.py
+uv run --no-editable pytest
+```
+
+结果：相关测试 31 passed；ruff 通过；后端全量测试 141 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
+已运行：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：前端交互原型契约测试通过。
+
 ## 本轮发布决策：画布背景色可修改
 
 - 本轮 PR 只实现一件事：当前镜头画布背景色可通过前端 swatch/颜色输入修改，也可通过“把背景改成浅绿/#eaf2ff”等文本命令进入后端编排。

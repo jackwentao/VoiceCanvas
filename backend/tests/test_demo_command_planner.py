@@ -58,6 +58,21 @@ def test_planner_updates_title_text() -> None:
     assert plan.commands[0].payload["patch"] == {"text": "低糖也好喝"}
 
 
+def test_planner_updates_product_description() -> None:
+    project = _project()
+    storyboard = DemoCommandPlanner().plan("创建一个三镜头的珍珠奶茶带货分镜", project)
+    assert storyboard.commands
+
+    from voicecanvas.application.command_executor import CommandExecutor
+
+    updated = CommandExecutor().execute_batch(storyboard.commands, project).project
+    plan = DemoCommandPlanner().plan("给商品加描述草莓味，珍珠加量", updated)
+
+    assert plan.action == "commands"
+    assert plan.commands[0].type == CommandType.UPDATE_ELEMENT
+    assert plan.commands[0].payload["patch"] == {"description": "草莓味，珍珠加量"}
+
+
 def test_planner_deletes_last_scene() -> None:
     plan = DemoCommandPlanner().plan("删除最后一个镜头", _project())
 

@@ -260,6 +260,7 @@ class CommandValidator:
             "height",
             "zIndex",
             "name",
+            "description",
             "text",
             "style",
             "transform",

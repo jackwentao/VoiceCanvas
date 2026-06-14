@@ -181,6 +181,27 @@ class DemoCommandPlanner:
                 "删除最后一个镜头",
             )
 
+        element_description = self._element_description_from_text(text)
+        if element_description:
+            target = self._description_target(project, text)
+            if target is None:
+                return DemoCommandPlan("respond", [], "当前项目没有可补充描述的目标元素")
+            return DemoCommandPlan(
+                "commands",
+                [
+                    self._command(
+                        CommandType.UPDATE_ELEMENT,
+                        {
+                            "sceneId": target[0].id,
+                            "elementId": target[1].id,
+                            "patch": {"description": element_description},
+                        },
+                        "补充元素描述",
+                    )
+                ],
+                "补充元素描述",
+            )
+
         if "标题" in text and "改成" in text:
             title = self._find_element(
                 project,
@@ -592,6 +613,42 @@ class DemoCommandPlanner:
         if "低糖" in text:
             return "低糖"
         return "优惠"
+
+    def _element_description_from_text(self, text: str) -> str:
+        markers = ["描述改成", "说明改成", "描述为", "说明为", "加描述", "补充描述", "描述是"]
+        for marker in markers:
+            if marker in text:
+                return text.split(marker, 1)[1].strip(" ：:。")
+        return ""
+
+    def _description_target(
+        self, project: Project, text: str
+    ) -> tuple[Scene, CanvasElement] | None:
+        if self._contains_any(text, ["商品", "产品", "奶茶"]):
+            return self._find_element(
+                project,
+                names=["商品", "产品", "奶茶"],
+                types=[ElementType.GENERATED_ASSET, ElementType.SHAPE, ElementType.IMAGE],
+            )
+        if self._contains_any(text, ["箭头", "连接线"]):
+            return self._find_element(
+                project,
+                names=["箭头", "连接线"],
+                types=[ElementType.CONNECTOR],
+            )
+        if "标签" in text:
+            return self._find_element(
+                project,
+                names=["标签"],
+                types=[ElementType.TEXT, ElementType.SHAPE],
+            )
+        if "标题" in text:
+            return self._find_element(
+                project,
+                names=["标题", "主标题"],
+                types=[ElementType.TEXT],
+            )
+        return None
 
     def _text_after(self, text: str, marker: str) -> str:
         if marker not in text:

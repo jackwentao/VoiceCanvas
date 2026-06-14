@@ -1526,7 +1526,12 @@ function renderElement(element) {
 function renderTextElement(element) {
   const selected = state.selectedElementId === element.id ? "is-selected" : "";
   const text = getTextElementContent(element);
-  return `<button class="canvas-element text-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)};${textElementStyle(element, text)}">${escapeHtml(text)}</button>`;
+  return `
+    <button class="canvas-element text-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)};${textElementStyle(element, text)}">
+      <span>${escapeHtml(text)}</span>
+      ${renderElementDescription(element)}
+    </button>
+  `;
 }
 
 function renderShapeElement(element) {
@@ -1545,6 +1550,7 @@ function renderShapeElement(element) {
   return `
     <button class="canvas-element shape-element ${selected}" data-shape="${getShapeKind(element)}" data-element="${element.id}" style="${elementBoxStyle(element)};${shapeStyle}">
       ${label ? `<span>${escapeHtml(label)}</span>` : ""}
+      ${renderElementDescription(element)}
     </button>
   `;
 }
@@ -1556,6 +1562,7 @@ function renderImageElement(element) {
   return `
     <button class="canvas-element image-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)};border-radius:${radius}px">
       ${content.url ? `<img src="${escapeAttribute(content.url)}" alt="${escapeAttribute(content.alt || element.name || "")}">` : `<span>${escapeHtml(content.alt || element.name || "图片")}</span>`}
+      ${renderElementDescription(element)}
     </button>
   `;
 }
@@ -1576,6 +1583,7 @@ function renderGeneratedAssetElement(element) {
     return `
       <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="ready" style="${elementBoxStyle(element)}">
         <img src="${escapeAttribute(content.url)}" alt="${escapeAttribute(content.alt || element.name || "")}">
+        ${renderElementDescription(element)}
       </button>
     `;
   }
@@ -1588,6 +1596,7 @@ function renderGeneratedAssetElement(element) {
   return `
     <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="${status}" style="${elementBoxStyle(element)};${placeholderStyle}">
       <span>${escapeHtml(element.name || element.asset?.kind || "生成素材")}</span>
+      ${renderElementDescription(element)}
     </button>
   `;
 }
@@ -1601,6 +1610,7 @@ function renderCatalogAssetElement(element, catalogAsset) {
     return `
       <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="ready" data-asset-provider="minio" style="${elementBoxStyle(element)}">
         <img src="${escapeAttribute(catalogAsset.url)}" alt="${escapeAttribute(label)}" data-asset-path="${escapeAttribute(catalogAsset.path)}" loading="lazy">
+        ${renderElementDescription(element)}
       </button>
     `;
   }
@@ -1614,6 +1624,7 @@ function renderCatalogAssetElement(element, catalogAsset) {
   return `
     <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="${status}" data-asset-provider="minio" style="${elementBoxStyle(element)};${placeholderStyle}">
       <span>${escapeHtml(message)}</span>
+      ${renderElementDescription(element)}
     </button>
   `;
 }
@@ -1623,6 +1634,7 @@ function renderGroupElement(element) {
   return `
     <button class="canvas-element group-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)}">
       <span>${escapeHtml(element.name || "组合")}</span>
+      ${renderElementDescription(element)}
     </button>
   `;
 }
@@ -1640,6 +1652,7 @@ function renderUnknownElement(element) {
   return `
     <button class="canvas-element unknown-element ${selected}" data-element="${element.id}" style="${elementBoxStyle(element)};${placeholderStyle}">
       <span>${escapeHtml(element.label || element.name || "未知元素")}</span>
+      ${renderElementDescription(element)}
     </button>
   `;
 }
@@ -1653,8 +1666,14 @@ function renderSemanticIllustrationElement(element) {
   return `
     <button class="canvas-element illustration-element ${selected}" data-illustration="${spec.renderKey || spec.kind}" data-variant="${spec.variant || ""}" data-element="${element.id}" style="${elementBoxStyle(element)}">
       ${renderIllustrationSvg(spec, label)}
+      ${renderElementDescription(element)}
     </button>
   `;
+}
+
+function renderElementDescription(element) {
+  if (!element.description) return "";
+  return `<small class="element-description">${escapeHtml(element.description)}</small>`;
 }
 
 function semanticIllustrationSpec(element) {
@@ -2022,11 +2041,13 @@ function renderConnectorElement(element, layoutIndex) {
   const selected = state.selectedElementId === element.id ? "is-selected" : "";
   const label = getContent(element).label || element.text || "";
   const labelPoint = pointOnConnectorLabel(from, to, connector);
+  const description = element.description || "";
 
   return `
     <g class="connector-item ${selected}" data-element="${element.id}">
       <path d="${buildConnectorPath(from, to, connector)}" fill="none" stroke="${escapeAttribute(stroke.color)}" stroke-width="${stroke.width}" stroke-linecap="round" stroke-linejoin="round" ${dash} ${markerEnd}></path>
       ${label ? `<text x="${labelPoint.x}" y="${labelPoint.y}" text-anchor="middle">${escapeHtml(label)}</text>` : ""}
+      ${description ? `<text class="connector-description" x="${labelPoint.x}" y="${labelPoint.y + 18}" text-anchor="middle">${escapeHtml(description)}</text>` : ""}
     </g>
   `;
 }

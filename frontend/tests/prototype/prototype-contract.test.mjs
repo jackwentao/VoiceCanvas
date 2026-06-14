@@ -124,6 +124,10 @@ function testInitialProjectModel() {
       assert.ok(element.width > 0);
       assert.ok(element.height > 0);
       assert.ok(Number.isFinite(element.zIndex));
+      assert.ok(
+        element.description === undefined || typeof element.description === "string",
+        "元素 description 必须为空或字符串"
+      );
 
       if (element.type === "text") {
         assert.ok(element.content?.text || element.text, "text 元素必须有可渲染文本");
@@ -391,6 +395,8 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("getIllustrationRenderer"), "前端必须通过 renderer registry 分发语义插画");
   assert.ok(app.includes("metadata.renderKey"), "前端必须优先使用后端显式 renderKey");
   assert.ok(app.includes("renderSemanticIllustrationElement"), "画布必须支持语义对象插画渲染");
+  assert.ok(app.includes("renderElementDescription"), "画布必须展示元素 description 字段");
+  assert.ok(app.includes("connector-description"), "连接线必须支持展示 description 字段");
   assert.ok(app.includes("characterIllustrationSvg"), "画布必须使用通用人物插画渲染器");
   assert.ok(app.includes("renderVariant"), "画布必须支持后端传入的人物渲染变体");
   assert.ok(app.includes('data-variant="${spec.variant || ""}"'), "人物渲染变体必须落到 DOM 便于视觉 QA");
@@ -406,6 +412,7 @@ async function testPrototypeHtml() {
   assert.ok(!app.includes("element.name || element.shape"), "shape 不应把图层 name 当画面内容渲染");
   assert.ok(css.includes(".connector-layer"), "CSS 必须定义连接层样式");
   assert.ok(css.includes(".background-controls"), "CSS 必须定义背景色 swatch 控件");
+  assert.ok(css.includes(".element-description"), "CSS 必须定义元素描述标签样式");
   assert.ok(css.includes(".illustration-element"), "CSS 必须定义语义插画元素样式");
   assert.ok(css.includes("overflow-wrap: anywhere"), "文字元素必须支持长文本断行，避免裁剪");
   assert.ok(css.includes("word-break: break-word"), "文字元素必须支持混合长词断行");
