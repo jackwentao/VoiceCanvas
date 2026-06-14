@@ -18,6 +18,7 @@ class HealthResponse(BaseModel):
 class StartOrchestrationRequest(BaseModel):
     project_id: str = Field(alias="projectId")
     user_input: str = Field(alias="userInput", min_length=1)
+    user_id: str = Field(default="user_1", alias="userId", min_length=1)
 
     model_config = {"populate_by_name": True}
 

@@ -937,6 +937,7 @@ class LLMCommandPlanner:
         context: PlanningContext | None = None,
     ) -> list[LLMMessage]:
         conversation = context.conversation if context is not None else None
+        user_memory = context.user_memory if context is not None else None
         user_payload = {
             "userInput": user_input,
             "project": self._project_context(project),
@@ -946,6 +947,9 @@ class LLMCommandPlanner:
             else None,
             "conversationContext": conversation.model_dump(by_alias=True)
             if conversation is not None
+            else None,
+            "userMemoryContext": user_memory.model_dump(by_alias=True)
+            if user_memory is not None
             else None,
         }
         return [
@@ -1058,6 +1062,8 @@ Render Catalog（前端本地绘制能力清单）：
 - 如果输入里有 conversationContext，优先把 focusStack 作为
   “它、这个、刚才那个、往左移一点”等省略表达的近期语境。
 - recentTurns 只用于理解最近对话，不要把已过期或不存在的元素编造成可操作对象。
+- 如果输入里有 userMemoryContext，把 relevant 里的 active 长期记忆作为偏好、工作流和负向约束参考；
+  当前用户指令、项目状态、澄清回答和显式目标优先级更高，不要执行与本轮请求无关的记忆。
 """.strip()
 
     def _extract_json(self, raw_output: str) -> str:

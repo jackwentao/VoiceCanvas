@@ -135,6 +135,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - 持续语音创作会话状态机，包括首次授权后持续监听、最终转写自动提交、系统播报期间停止监听、播报结束提示音恢复收音和“结束创作”退出。
 - 高风险清空画布的语音确认闭环，包括 `CLEAR_SCENE` 命令、确认/取消恢复逻辑、撤销历史和噪声不入后端指令系统的前端过滤。
 - 用户长期记忆后端 MVP，包括偏好模型、来源证据、本地 JSON 仓储、状态流转、相关性检索和敏感信息过滤。
+- 用户长期记忆接入编排主链路：每轮编排会按用户输入检索相关 active 记忆，并以 `userMemoryContext` 注入 Planner；candidate、rejected 和 archived 记忆不会自动影响 AI 决策。
 
 第三方框架只作为服务运行、模型校验、编排基础设施和测试工具使用；VoiceCanvas 的业务规则、画布状态变更、命令语义和演示工作流为本项目原创实现。
 
@@ -199,8 +200,10 @@ uv run --no-editable mypy src
 
 ```powershell
 cd backend
-uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py
+uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py tests/test_user_memory_api.py tests/test_orchestration_service.py tests/test_llm_command_planner.py
 ```
+
+长期记忆接入编排主链路未新增第三方依赖；实现复用现有 FastAPI、Pydantic、Planner 和本地 JSON 仓储能力。
 
 后端本地服务：
 
@@ -226,7 +229,7 @@ Invoke-RestMethod `
   -Body '{"projectId":"project_demo","userInput":"创建一个三镜头的珍珠奶茶带货分镜"}'
 ```
 
-当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager` 和内存项目仓库；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
+当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager`、内存项目仓库和长期记忆上下文；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
 
 新建项目 API 示例：
 
