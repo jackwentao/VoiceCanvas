@@ -220,17 +220,25 @@ $env:VOICECANVAS_MINIO_SECRET_KEY="your-secret-key"
 $env:VOICECANVAS_MINIO_SECURE="false"
 ```
 
-初始化 Render Catalog 素材包到 MinIO：
+下载 Render Catalog 真实素材包：
 
 ```powershell
 cd backend
-uv run --no-editable python scripts/seed_minio_catalog.py --generate-placeholders
+uv run --no-editable python scripts/download_real_catalog_assets.py --overwrite
 ```
 
-如果已有设计好的素材文件，可放在本地素材根目录下，并保持与 `assetPath` 相同的相对路径，然后执行：
+脚本会把 8 个统一风格的公开 PNG 素材下载到 `backend/data/real-assets`，并保持与 `assetPath` 相同的相对路径。素材来源为 Google Noto Emoji，许可证为 Apache-2.0。
+
+上传真实素材包到 MinIO：
 
 ```powershell
-uv run --no-editable python scripts/seed_minio_catalog.py --asset-root "D:\VoiceCanvasAssets"
+uv run --no-editable python scripts/seed_minio_catalog.py --asset-root ".\data\real-assets"
+```
+
+后端启动前必须先检查 MinIO 桶内是否已经存在完整素材包：
+
+```powershell
+uv run --no-editable python scripts/check_minio_catalog.py --strict
 ```
 
 素材对象路径统一放在 `catalog/commerce/` 前缀下，例如：
@@ -246,7 +254,7 @@ catalog/commerce/digital/smartphone.png
 GET /api/assets/catalog?path=catalog/commerce/food-drink/bubble-tea.png
 ```
 
-后端返回代理 URL，图片读取失败时前端会显示 `generated_asset` 占位，创作流程不中断。
+当 `VOICECANVAS_ASSET_PROVIDER=minio` 时，后端默认启动流程也会执行同一套素材完整性检查；任意 Catalog 素材缺失都会阻止服务启动，并列出缺失路径。仅本地调试临时跳过时可设置 `VOICECANVAS_SKIP_MINIO_CATALOG_CHECK=true`。图片读取失败时前端仍会显示 `generated_asset` 占位，创作流程不中断。
 
 长期记忆后端 MVP 测试：
 
