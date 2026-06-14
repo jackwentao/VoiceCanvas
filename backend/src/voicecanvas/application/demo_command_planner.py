@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from typing import TypeAlias
 from uuid import uuid4
@@ -7,6 +8,17 @@ from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
 
 DemoCommandPlan: TypeAlias = CommandPlan
+
+BACKGROUND_COLOR_ALIASES = {
+    "白色": "#ffffff",
+    "浅绿": "#f6fbf6",
+    "绿色": "#e8f5ee",
+    "黄色": "#fff3bf",
+    "粉色": "#fff1f2",
+    "蓝色": "#eaf2ff",
+    "灰色": "#f4f7f6",
+    "黑色": "#111827",
+}
 
 
 class DemoCommandPlanner:
@@ -67,6 +79,37 @@ class DemoCommandPlanner:
                     )
                 ],
                 "导出图片" if is_image_export else "导出项目数据",
+            )
+
+        background_color = self._background_color_from_text(text)
+        if background_color:
+            scene = next(
+                (item for item in project.scenes if item.id == project.active_scene_id),
+                None,
+            )
+            if scene is None:
+                return DemoCommandPlan("respond", [], "当前没有可修改背景的镜头")
+            return DemoCommandPlan(
+                "commands",
+                [
+                    self._command(
+                        CommandType.UPDATE_SCENE,
+                        {
+                            "sceneId": scene.id,
+                            "patch": {
+                                "canvas": {
+                                    **scene.canvas.model_dump(),
+                                    "background": {
+                                        "type": "solid",
+                                        "color": background_color,
+                                    },
+                                }
+                            },
+                        },
+                        "修改当前镜头背景色",
+                    )
+                ],
+                "修改当前镜头背景色",
             )
 
         if "创建" in text and "分镜" in text:
@@ -571,6 +614,19 @@ class DemoCommandPlanner:
                 "重新开始这个画布",
             ],
         )
+
+    def _background_color_from_text(self, text: str) -> str | None:
+        if "背景" not in text or not self._contains_any(text, ["改", "换", "设", "调"]):
+            return None
+
+        hex_match = re.search(r"#[0-9a-fA-F]{6}\b", text)
+        if hex_match:
+            return hex_match.group(0).lower()
+
+        for keyword, color in BACKGROUND_COLOR_ALIASES.items():
+            if keyword in text:
+                return color
+        return None
 
     def _command(self, command_type: CommandType, payload: dict, reason: str) -> CanvasCommand:
         return CanvasCommand(

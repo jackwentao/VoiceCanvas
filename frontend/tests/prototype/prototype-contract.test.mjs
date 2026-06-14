@@ -343,6 +343,8 @@ async function testPrototypeHtml() {
   assert.ok(html.includes("memoryOverlay"), "前端必须提供长期记忆管理面板");
   assert.ok(html.includes("memoryContentInput"), "长期记忆面板必须提供新增内容输入");
   assert.ok(html.includes('data-project-action="export-image"'), "设置菜单必须提供导出图片入口");
+  assert.ok(html.includes("backgroundColorInput"), "画布工具栏必须提供背景色自定义输入");
+  assert.ok(html.includes("data-background-color"), "画布工具栏必须提供背景色 swatch");
   assert.ok(!html.includes("contract-panel"), "开发契约面板不应出现在最终交互原型界面中");
   assert.ok(!app.includes("renderContractPanel"), "前端原型不应渲染底部契约调试面板");
   assert.ok(app.includes("isVoiceShortcut"), "原型必须封装语音快捷键判断");
@@ -358,6 +360,9 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
   assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
   assert.ok(app.includes("exportFromBackendResult"), "语音导出必须复用导出结果下载函数");
+  assert.ok(app.includes("updateBackgroundColor"), "画布背景色修改必须有统一入口");
+  assert.ok(app.includes("sceneCanvasWithBackground"), "背景色修改必须复用 Scene canvas 字段");
+  assert.ok(app.includes('type: "UPDATE_SCENE"'), "背景色修改必须通过 UPDATE_SCENE 命令投影");
   assert.ok(app.includes("runDirectProjectExport"), "显式项目导出按钮必须直接触发导出函数");
   assert.ok(app.includes("runDirectSceneImageExport"), "显式图片导出按钮必须直接触发图片导出函数");
   assert.ok(app.includes("createNewProject"), "新建项目入口必须创建真实 Project State");
@@ -400,6 +405,7 @@ async function testPrototypeHtml() {
   assert.ok(app.indexOf('text.includes("男生")') < app.indexOf('text.includes("女生")'), "男生主体识别必须在通用人物识别前处理");
   assert.ok(!app.includes("element.name || element.shape"), "shape 不应把图层 name 当画面内容渲染");
   assert.ok(css.includes(".connector-layer"), "CSS 必须定义连接层样式");
+  assert.ok(css.includes(".background-controls"), "CSS 必须定义背景色 swatch 控件");
   assert.ok(css.includes(".illustration-element"), "CSS 必须定义语义插画元素样式");
   assert.ok(css.includes("overflow-wrap: anywhere"), "文字元素必须支持长文本断行，避免裁剪");
   assert.ok(css.includes("word-break: break-word"), "文字元素必须支持混合长词断行");
