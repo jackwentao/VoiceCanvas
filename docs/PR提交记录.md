@@ -2,6 +2,35 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：删除镜头后的画布同步与撤销恢复
+
+- 本轮 PR 只实现一件事：修复删除当前镜头后，中间画布在流式事件间隙仍指向已删除镜头的问题，并补充删除镜头撤销恢复测试。
+- 前端状态归并层在收到 `SCENE_DELETED` 时，如果删除的是当前镜头，会立即选择最近可用镜头作为 `activeSceneId`；随后如果收到后端 `ACTIVE_SCENE_CHANGED`，仍以可信后端事件为准。
+- 撤销删除镜头继续复用后端 `HistoryManager` 的逆命令机制：删除 active 镜头的逆命令会重新创建被删镜头，并恢复原 active 镜头。
+- 本轮未新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：前端交互原型契约测试通过。
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_history_manager.py
+uv run --no-editable ruff check tests/test_history_manager.py
+uv run --no-editable pytest
+```
+
+结果：`tests/test_history_manager.py` 6 passed；ruff 通过；后端全量测试 136 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
 ## 本轮发布决策：确定性指令绕过 LLM
 
 - 本轮 PR 只实现一件事：撤销、重做、纯切换镜头这三类确定性指令不再进入 Planner/LLM。

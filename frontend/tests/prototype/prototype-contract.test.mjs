@@ -14,6 +14,7 @@ import {
 } from "../../src/prototype/scene-numbering.js";
 import { estimateTextUnits, fitTextFontSize } from "../../src/prototype/text-layout.js";
 import { importProjectFile, sceneToSvg } from "../../src/prototype/export-service.js";
+import { applyBackendEvent } from "../../src/prototype/state-sync.js";
 import {
   isAmbientNoiseTranscript,
   isLikelyFeedbackEcho,
@@ -223,6 +224,91 @@ function testSceneDisplayNumberingUsesSortedVisibleIndex() {
   );
   assert.equal(sceneDisplayNumber(scenes, "scene_backend_2"), 1);
   assert.equal(sceneAtDisplayNumber(scenes, 2).id, "scene_backend_3");
+}
+
+function testSceneDeletePatchKeepsCanvasOnNearestScene() {
+  const scene1 = {
+    id: "scene_1",
+    name: "主图",
+    order: 1,
+    description: "第一镜头",
+    canvas: { width: 960, height: 540, background: { type: "solid", color: "#ffffff" } },
+    elements: []
+  };
+  const scene2 = {
+    id: "scene_2",
+    name: "产品特写",
+    order: 2,
+    description: "第二镜头",
+    canvas: { width: 960, height: 540, background: { type: "solid", color: "#ffffff" } },
+    elements: []
+  };
+  const state = {
+    project: {
+      id: "project_scene_delete",
+      title: "镜头删除测试",
+      mode: "storyboard",
+      activeSceneId: "scene_2",
+      scenes: [scene1, scene2]
+    },
+    session: { id: "session_scene_delete", progress: {} },
+    eventLog: [],
+    voiceStatus: ""
+  };
+
+  applyBackendEvent(state, {
+    type: "CANVAS_PATCH_APPLIED",
+    sessionId: "session_scene_delete",
+    commandId: "cmd_delete_scene",
+    patch: {
+      id: "patch_scene_deleted",
+      type: "SCENE_DELETED",
+      sceneId: "scene_2",
+      scene: scene2,
+      createdAt: "2026-06-14T00:00:00+00:00"
+    }
+  });
+
+  assert.deepEqual(
+    state.project.scenes.map((scene) => scene.id),
+    ["scene_1"],
+    "删除镜头事件必须移除左侧镜头列表中的目标镜头"
+  );
+  assert.equal(
+    state.project.activeSceneId,
+    "scene_1",
+    "删除当前镜头后，中间画布必须立即切到最近可用镜头"
+  );
+
+  applyBackendEvent(state, {
+    type: "CANVAS_PATCH_APPLIED",
+    sessionId: "session_scene_delete",
+    commandId: "cmd_undo_delete_scene",
+    patch: {
+      id: "patch_scene_created",
+      type: "SCENE_CREATED",
+      sceneId: "scene_2",
+      scene: scene2,
+      createdAt: "2026-06-14T00:00:01+00:00"
+    }
+  });
+  applyBackendEvent(state, {
+    type: "CANVAS_PATCH_APPLIED",
+    sessionId: "session_scene_delete",
+    commandId: "cmd_undo_delete_scene",
+    patch: {
+      id: "patch_active_scene_changed",
+      type: "ACTIVE_SCENE_CHANGED",
+      sceneId: "scene_2",
+      createdAt: "2026-06-14T00:00:01+00:00"
+    }
+  });
+
+  assert.equal(state.project.activeSceneId, "scene_2", "撤销删除镜头后必须恢复原 active 镜头");
+  assert.ok(
+    state.project.scenes.some((scene) => scene.id === "scene_2"),
+    "撤销删除镜头必须把镜头重新投影回前端状态"
+  );
 }
 
 async function testPrototypeHtml() {
@@ -669,6 +755,7 @@ testInitialProjectModel();
 testElementPatchMirrorSync();
 testTextLayoutFontFit();
 testSceneDisplayNumberingUsesSortedVisibleIndex();
+testSceneDeletePatchKeepsCanvasOnNearestScene();
 await testVoiceSessionController();
 await testVoiceSessionDoesNotListenDuringFeedback();
 await testVoiceSessionDropsAmbientNoise();
