@@ -2,6 +2,7 @@ import json
 
 from voicecanvas.application.export_service import ExportRequest, ExportService
 from voicecanvas.application.project_repository import InMemoryProjectRepository
+from voicecanvas.domain.project import Project
 
 
 def test_export_project_bundle_can_be_imported_again() -> None:
@@ -42,6 +43,63 @@ def test_export_active_scene_image_returns_svg_source() -> None:
     assert result.filename.endswith(".png")
     assert result.content.startswith("<svg")
     assert "rect" in result.content
+
+
+def test_export_scene_image_embeds_real_asset_urls() -> None:
+    project = Project.model_validate(
+        {
+            "id": "project_asset_export",
+            "title": "素材导出测试",
+            "mode": "storyboard",
+            "activeSceneId": "scene_asset_export",
+            "scenes": [
+                {
+                    "id": "scene_asset_export",
+                    "name": "主画面",
+                    "order": 1,
+                    "canvas": {"width": 400, "height": 240, "background": {"color": "#ffffff"}},
+                    "elements": [
+                        {
+                            "id": "el_image",
+                            "type": "image",
+                            "name": "照片",
+                            "x": 12,
+                            "y": 16,
+                            "width": 96,
+                            "height": 80,
+                            "zIndex": 1,
+                            "content": {
+                                "url": "https://cdn.example.test/photo.png",
+                                "alt": "照片",
+                            },
+                        },
+                        {
+                            "id": "el_ready_asset",
+                            "type": "generated_asset",
+                            "name": "小女孩",
+                            "x": 132,
+                            "y": 16,
+                            "width": 96,
+                            "height": 120,
+                            "zIndex": 2,
+                            "content": {
+                                "url": "https://cdn.example.test/girl.png",
+                                "alt": "小女孩",
+                            },
+                            "asset": {"kind": "character", "status": "ready"},
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+    service = ExportService()
+
+    result = service.export(project, ExportRequest(format="png", scope="active_scene"))
+
+    assert '<image href="https://cdn.example.test/photo.png"' in result.content
+    assert '<image href="https://cdn.example.test/girl.png"' in result.content
+    assert ">小女孩</text>" not in result.content
 
 
 def test_export_specific_scene_rejects_missing_scene() -> None:

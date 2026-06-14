@@ -13,7 +13,7 @@ import {
   visibleSceneEntries
 } from "../../src/prototype/scene-numbering.js";
 import { estimateTextUnits, fitTextFontSize } from "../../src/prototype/text-layout.js";
-import { importProjectFile } from "../../src/prototype/export-service.js";
+import { importProjectFile, sceneToSvg } from "../../src/prototype/export-service.js";
 import {
   isAmbientNoiseTranscript,
   isLikelyFeedbackEcho,
@@ -610,6 +610,58 @@ async function testImportProjectFileValidation() {
   );
 }
 
+function testSceneSvgExportsRenderedAssets() {
+  const svg = sceneToSvg({
+    id: "scene_export_assets",
+    name: "导出图片测试",
+    canvas: { width: 400, height: 240, background: { type: "solid", color: "#ffffff" } },
+    elements: [
+      {
+        id: "el_photo",
+        type: "image",
+        name: "照片",
+        x: 12,
+        y: 16,
+        width: 96,
+        height: 80,
+        zIndex: 1,
+        content: { url: "https://cdn.example.test/photo.png", alt: "照片" }
+      },
+      {
+        id: "el_ready_asset",
+        type: "generated_asset",
+        name: "已生成素材",
+        x: 132,
+        y: 16,
+        width: 96,
+        height: 80,
+        zIndex: 2,
+        content: { url: "data:image/png;base64,AAAA", alt: "已生成素材" },
+        asset: { kind: "character", status: "ready" }
+      },
+      {
+        id: "el_girl",
+        type: "generated_asset",
+        name: "小女孩",
+        x: 244,
+        y: 20,
+        width: 90,
+        height: 120,
+        zIndex: 3,
+        content: { alt: "小女孩" },
+        asset: { kind: "character", status: "pending" },
+        subject: { character: { gender: "女性" } },
+        placeholderStyle: { fill: "#ffffff", stroke: "#243b53", strokeWidth: 2 }
+      }
+    ]
+  });
+
+  assert.ok(svg.includes('<image href="https://cdn.example.test/photo.png"'), "image 元素必须导出真实图片");
+  assert.ok(svg.includes('<image href="data:image/png;base64,AAAA"'), "ready generated_asset 必须导出真实图片");
+  assert.ok(svg.includes("character-illustration is-female"), "语义人物插画必须导出为真实 SVG");
+  assert.ok(!svg.includes(">小女孩</text>"), "可渲染语义素材不应退回占位文字");
+}
+
 testApiContract();
 testUiBindings();
 testCommandBindings();
@@ -624,6 +676,7 @@ testAmbientNoiseDetection();
 testFeedbackEchoDetection();
 testClarificationOptionResolver();
 await testImportProjectFileValidation();
+testSceneSvgExportsRenderedAssets();
 await testPrototypeHtml();
 
 console.log("前端交互原型契约测试通过");
