@@ -2,6 +2,27 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：SQLite 项目状态仓储
+
+- 本轮 PR 只实现一件事：把默认 Project State 仓储从内存实现切换为 SQLite 持久化实现。
+- 应用层新增 `ProjectRepository` 端口，`OrchestrationService` 只依赖端口；SQLite 具体实现放在 `infrastructure`，便于后续替换为云端或多租户存储。
+- 默认数据库路径为 `backend/data/voicecanvas.sqlite3`，可通过 `VOICECANVAS_PROJECT_DB_PATH` 覆盖，方便演示和测试环境隔离。
+- 本轮使用 Python 标准库 `sqlite3`，没有新增第三方库、框架、SDK 或外部服务。
+- 长期记忆 JSON 仓储不在本 PR 迁移范围内，后续按单独 PR 处理，保持每个 PR 只做一件事。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_project_repository.py tests/test_api.py
+uv run --no-editable ruff check src/voicecanvas/application/project_repository.py src/voicecanvas/application/orchestration_service.py src/voicecanvas/infrastructure/settings.py src/voicecanvas/infrastructure/sqlite_project_repository.py src/voicecanvas/api/main.py tests/test_project_repository.py tests/test_api.py
+uv run --no-editable pytest
+```
+
+结果：`tests/test_project_repository.py` 与 `tests/test_api.py` 共 24 passed；ruff 通过；后端全量测试 145 passed；存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
 ## 本轮发布决策：元素描述字段
 
 - 本轮 PR 只实现一件事：为图片、图形、生成素材、连接线等画布元素增加可选 `description` 字段，并在前端画布展示已有描述。
