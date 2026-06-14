@@ -55,6 +55,26 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok", "service": "voicecanvas-backend"}
 
 
+def test_default_app_persists_project_state_with_sqlite(tmp_path, monkeypatch) -> None:
+    db_path = tmp_path / "voicecanvas.sqlite3"
+    monkeypatch.setenv("VOICECANVAS_PROJECT_DB_PATH", str(db_path))
+
+    first_client = TestClient(create_app(asset_storage=FakeAssetStorage()))
+    first_client.post(
+        "/api/projects",
+        json={
+            "projectId": "project_sqlite_api",
+            "title": "SQLite API 项目",
+            "mode": "storyboard",
+        },
+    )
+    second_client = TestClient(create_app(asset_storage=FakeAssetStorage()))
+    response = second_client.get("/api/projects/project_sqlite_api")
+
+    assert response.status_code == 200
+    assert response.json()["project"]["title"] == "SQLite API 项目"
+
+
 def test_catalog_asset_endpoint_returns_backend_proxy_url() -> None:
     client = _client()
 

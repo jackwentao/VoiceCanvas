@@ -116,6 +116,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 | `backend/pyproject.toml` | `httpx`、`python-dotenv` | 外部服务 HTTP 调用与本地环境变量加载 |
 | `backend/pyproject.toml` | `minio` | 统一风格带货素材包的 MinIO 私有桶读取；仅在存储适配器层懒加载使用 |
 | `backend/pyproject.toml` | `pytest`、`pytest-asyncio`、`respx`、`ruff`、`mypy` | 后端测试、外部 HTTP Mock、lint 与类型检查 |
+| Python 标准库 | `sqlite3` | 默认持久化 Project State，不新增第三方依赖 |
 | 外部服务 | DeepSeek OpenAI-compatible API | 真实 LLM Planner 的自然语言理解能力；仅通过 `adapters/llm` 接入，可降级到 Demo Planner |
 | 浏览器原生 API | Web Speech API（`SpeechRecognition` / `webkitSpeechRecognition`） | 持续语音创作模式的中文语音转写入口；仅在前端适配层使用，可被后续云端 ASR adapter 替换 |
 | 浏览器原生 API | SpeechSynthesis | 系统语音反馈播报；仅用于演示交互反馈，不参与后端可信状态判断 |
@@ -126,6 +127,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - 结构化画布、镜头、元素、连接线和历史记录的项目数据模型。
 - 元素补丁合并与 `transform`/旧尺寸字段镜像同步，保证人物、猫、桌子等语义对象可持续缩放和移动。
 - 命令校验、命令执行、历史记录和项目状态更新链路。
+- SQLite Project Repository：默认把 Project State 持久化到 `backend/data/voicecanvas.sqlite3`，支持重启后继续读取项目。
 - 面向可恢复 AI 编排的应用层接口、演示 Planner、真实 LLM Planner 输出校验与降级链路。
 - 面向“左边那个杯子 / 那个标签 / 它”等用户表达的指代消解、候选澄清和恢复上下文设计。
 - 并行工具结果聚合后统一回灌 Orchestrator 的应用层缓冲机制。
@@ -198,6 +200,14 @@ uv run --no-editable ruff check .
 uv run --no-editable mypy src
 ```
 
+项目状态默认持久化到 SQLite：
+
+```powershell
+$env:VOICECANVAS_PROJECT_DB_PATH="D:\tmp\voicecanvas.sqlite3"
+```
+
+未设置时使用 `backend/data/voicecanvas.sqlite3`。本功能使用 Python 标准库 `sqlite3`，没有新增第三方依赖；长期记忆当前仍保留独立 JSON 仓储，后续会按独立 PR 迁移。
+
 MinIO 素材包配置：
 
 ```powershell
@@ -258,7 +268,7 @@ Invoke-RestMethod `
   -Body '{"projectId":"project_demo","userInput":"创建一个三镜头的珍珠奶茶带货分镜"}'
 ```
 
-当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager`、内存项目仓库和长期记忆上下文；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
+当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager`、SQLite 项目仓储和长期记忆上下文；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
 
 新建项目 API 示例：
 
@@ -315,7 +325,7 @@ Invoke-RestMethod `
 
 项目处于 MVP 主链路落地阶段，当前仓库已提交产品决策、语音指令语料、基础 README、技术架构设计、接口与数据模型设计、前端交互原型与接口绑定设计。当前技术路线已确定为“可恢复 AI 编排器架构”：所有用户语音或文本输入统一进入后端 AI Orchestrator，由 LangGraph 根据上下文推进计划、命令执行、工具调用、澄清等待和恢复继续；当需要澄清时，系统暂停当前任务会话，等待用户语音或点击回答后从原状态继续执行。
 
-当前已完成后端应用层命令闭环，并将 `/api/orchestrations` 接入真实业务执行链路：请求会通过 Demo Planner 生成结构化命令，再经过 Command Validator、Command Executor、History Manager 和内存 Project Repository，最终返回真实 Project State、CanvasPatch、HistoryEntry、运行事件和本轮总结。页面交互上，左侧为画布历史区，展示镜头历史、操作历史和关键变更记录；右侧为 AI 交互栏，承载语音入口、当前阶段、澄清问题、执行进度和本轮变更总结；主画布支持随命令执行流式更新。当前前端原型位于 `frontend/`，后端服务位于 `backend/`。
+当前已完成后端应用层命令闭环，并将 `/api/orchestrations` 接入真实业务执行链路：请求会通过 Demo Planner 生成结构化命令，再经过 Command Validator、Command Executor、History Manager 和 SQLite Project Repository，最终返回真实 Project State、CanvasPatch、HistoryEntry、运行事件和本轮总结。页面交互上，左侧为画布历史区，展示镜头历史、操作历史和关键变更记录；右侧为 AI 交互栏，承载语音入口、当前阶段、澄清问题、执行进度和本轮变更总结；主画布支持随命令执行流式更新。当前前端原型位于 `frontend/`，后端服务位于 `backend/`。
 
 后续将继续补充：
 

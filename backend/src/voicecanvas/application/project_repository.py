@@ -1,7 +1,26 @@
-from typing import Literal
+from typing import Literal, Protocol
 from uuid import uuid4
 
 from voicecanvas.domain.project import Project, Scene
+
+
+class ProjectRepository(Protocol):
+    """项目状态仓储端口，基础设施层可以替换为 SQLite、云存储或测试替身。"""
+
+    def get_or_create(self, project_id: str) -> Project: ...
+
+    def load(self, project_id: str) -> Project | None: ...
+
+    def save(self, project: Project) -> None: ...
+
+    def list(self) -> list[Project]: ...
+
+    def create_blank_project(
+        self,
+        title: str = "未命名项目",
+        mode: Literal["free_canvas", "storyboard"] = "storyboard",
+        project_id: str | None = None,
+    ) -> Project: ...
 
 
 class InMemoryProjectRepository:

@@ -14,7 +14,7 @@ from voicecanvas.application.demo_command_planner import DemoCommandPlanner
 from voicecanvas.application.deterministic_command_router import DeterministicCommandRouter
 from voicecanvas.application.export_service import ExportRequest, ExportResult, ExportService
 from voicecanvas.application.history_manager import HistoryManager
-from voicecanvas.application.project_repository import InMemoryProjectRepository
+from voicecanvas.application.project_repository import InMemoryProjectRepository, ProjectRepository
 from voicecanvas.application.user_memory_service import UserMemoryService
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.history import HistoryEntry
@@ -64,7 +64,7 @@ class OrchestrationService:
 
     def __init__(
         self,
-        repository: InMemoryProjectRepository | None = None,
+        repository: ProjectRepository | None = None,
         planner: CommandPlanner | None = None,
         executor: CommandExecutor | None = None,
         validator: CommandValidator | None = None,

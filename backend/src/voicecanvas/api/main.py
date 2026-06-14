@@ -36,10 +36,12 @@ from voicecanvas.application.orchestration_service import (
     OrchestrationStreamChunk,
 )
 from voicecanvas.application.planner_factory import create_planner_from_env
+from voicecanvas.application.project_repository import ProjectRepository
 from voicecanvas.application.user_memory_service import UserMemoryService
 from voicecanvas.domain.user_memory import UserMemoryEvidence
 from voicecanvas.infrastructure.local_user_memory_repository import LocalUserMemoryRepository
-from voicecanvas.infrastructure.settings import AssetSettings
+from voicecanvas.infrastructure.settings import AssetSettings, StorageSettings
+from voicecanvas.infrastructure.sqlite_project_repository import SQLiteProjectRepository
 
 
 def _sse_event(event_name: str, data: dict[str, Any]) -> str:
@@ -61,6 +63,11 @@ def _orchestration_sse_stream(chunks: Iterator[OrchestrationStreamChunk]) -> Ite
 def _default_user_memory_service() -> UserMemoryService:
     path = Path(__file__).resolve().parents[3] / "data" / "user-memory.json"
     return UserMemoryService(LocalUserMemoryRepository(path))
+
+
+def _default_project_repository() -> ProjectRepository:
+    settings = StorageSettings.from_env()
+    return SQLiteProjectRepository(settings.project_db_path)
 
 
 def _default_asset_storage() -> AssetStorage:
@@ -96,6 +103,7 @@ def create_app(
     memory_service = user_memory_service or _default_user_memory_service()
     storage = asset_storage or _default_asset_storage()
     service = orchestration_service or OrchestrationService(
+        repository=_default_project_repository(),
         planner=create_planner_from_env(),
         user_memory_service=memory_service,
     )

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import Literal, cast
 
 from dotenv import load_dotenv
@@ -59,4 +60,18 @@ class AssetSettings(BaseModel):
             minio_secure=os.getenv("VOICECANVAS_MINIO_SECURE", "false").lower()
             in {"1", "true", "yes", "on"},
             public_base_url=os.getenv("VOICECANVAS_ASSET_PUBLIC_BASE_URL"),
+        )
+
+
+class StorageSettings(BaseModel):
+    project_db_path: Path
+
+    @classmethod
+    def from_env(cls) -> "StorageSettings":
+        load_dotenv()
+        default_path = Path(__file__).resolve().parents[3] / "data" / "voicecanvas.sqlite3"
+        return cls(
+            project_db_path=Path(
+                os.getenv("VOICECANVAS_PROJECT_DB_PATH", str(default_path))
+            )
         )

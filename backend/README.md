@@ -44,6 +44,14 @@ Invoke-RestMethod `
 
 `GET /api/projects/{projectId}` 返回当前可信 `project`、该项目 `history` 和可扩展的 `events` 数组，前端原型启动时用它初始化画布、历史区和 AI 交互栏状态。
 
+项目状态默认使用 SQLite 持久化到 `backend/data/voicecanvas.sqlite3`，服务重启后仍可通过同一个 `projectId` 读取。需要隔离演示或测试数据时，可覆盖数据库路径：
+
+```powershell
+$env:VOICECANVAS_PROJECT_DB_PATH="D:\tmp\voicecanvas.sqlite3"
+```
+
+该能力使用 Python 标准库 `sqlite3`，没有新增第三方依赖。长期记忆当前仍使用独立 JSON 仓储，后续按单独 PR 迁移。
+
 长期记忆管理接口：
 
 ```powershell
