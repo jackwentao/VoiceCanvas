@@ -2,6 +2,39 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 2026-06-14 最终稳定性修复拆分
+
+本轮按照“一个 PR 只做一件事”拆分为以下修复：
+
+- PR #48：修复导出 PNG 失败兜底。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/48
+  - 状态：Merged
+  - 范围：前端 PNG 导出在单张素材拉取失败时使用本地 SVG 占位，整张 PNG 渲染失败时降级保存 SVG。
+  - 验证命令：`cd frontend && npm run test:prototype`。
+- PR #49：修复澄清恢复定位。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/49
+  - 状态：Merged
+  - 范围：后端指代解析支持元素名称、文案、标签和 alt 直接命中；澄清恢复继承原始指令里的左、右、上、下、居中方向；前端本地演示动态查找当前项目对象。
+  - 验证命令：`cd backend && uv run --no-editable pytest tests/test_referent_resolver.py tests/test_orchestration_service.py`。
+- PR #50：修复项目切换状态同步。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/50
+  - 状态：Merged
+  - 范围：前端新建和载入项目时重置旧会话、事件、选中元素与语音草稿状态；后端创建项目接口已有保存和上下文重置测试覆盖。
+  - 验证命令：`cd frontend && npm run test:prototype`、`cd backend && uv run --no-editable pytest tests/test_api.py`。
+
+全量回归已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest
+uv run --no-editable ruff check src/voicecanvas/application/referent_resolver.py src/voicecanvas/application/orchestration_service.py tests/test_referent_resolver.py tests/test_orchestration_service.py tests/test_export_service.py tests/test_api.py
+```
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
 ## 最终文档收口：README、指令完成情况与其他文档同步
 
 - PR #45：更新评审验证 README。
