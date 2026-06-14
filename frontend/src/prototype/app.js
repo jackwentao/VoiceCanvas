@@ -8,6 +8,7 @@ import {
   importProjectState,
   listUserMemories,
   loadProjectState,
+  resolveBackendUrl,
   resolveCatalogAssetUrl,
   resumeOrchestration,
   startOrchestrationStream,
@@ -443,7 +444,9 @@ async function runBackendInput(userInput, fallback) {
       onEvent: async (event) => {
         applyBackendEvent(state, event, { userInput });
         if (event.type === "EXPORT_COMPLETED") {
-          await exportFromBackendResult(event.export, state.project);
+          await exportFromBackendResult(event.export, state.project, {
+            resolveImageHref: resolveBackendUrl
+          });
         }
         state.backend.connected = true;
         state.backend.lastError = null;
@@ -882,7 +885,11 @@ async function runDirectSceneImageExport() {
   publishStage("executing", "导出当前分镜图片");
 
   try {
-    await exportSceneImage(state.project, { sceneId: state.project.activeSceneId });
+    await exportSceneImage(state.project, {
+      sceneId: state.project.activeSceneId,
+      resolveAssetUrl: resolveCatalogAssetUrl,
+      resolveImageHref: resolveBackendUrl
+    });
     completeExportSession(input, "PNG 图片", "已导出当前分镜图片");
   } catch (error) {
     appendBackendError(state, error);

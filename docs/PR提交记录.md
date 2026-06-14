@@ -2,6 +2,33 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：修复图片导出保留真实素材与语义插画
+
+- 标题：修复图片导出保留真实素材与语义插画。
+- 本轮 PR 只实现一件事：修复当前画面图片导出时真实素材、语义插画和连接线丢失或退回占位模板的问题。
+- 功能描述：前端显式“导出图片”和语音触发的后端图片导出都会尽量保留当前画布的真实渲染效果；奶茶等 Render Catalog 素材会导出后端代理图片，人物/女孩/猫/桌子会导出本地 SVG 插画，箭头连接线和说明文字会随画面一起导出。
+- 实现思路：前端导出服务在生成 PNG 前可注入 `resolveAssetUrl` 与 `resolveImageHref`，把 Catalog `assetPath` 解析为后端绝对代理 URL 并内联成 data URL；后端 `ExportService` 通过可注入 Catalog URL resolver 把 `metadata.assetPath` 转为代理图片，并补齐 direct render 语义对象和 connector 的 SVG 输出。
+- 依赖声明：本轮未新增第三方库、框架、SDK 或外部服务；复用浏览器原生 Canvas/Blob/Fetch、Python 标准库和既有后端素材代理能力。
+- 原创功能说明：Project State 到可交付图片的结构化渲染、Catalog 素材解析、语义对象 SVG 兜底和连接线导出均为本项目原创业务实现；第三方能力仅作为运行和测试基础设施。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_export_service.py tests/test_api.py tests/test_orchestration_service.py
+uv run --no-editable ruff check src/voicecanvas/application/export_service.py src/voicecanvas/api/main.py tests/test_export_service.py tests/test_api.py tests/test_orchestration_service.py
+uv run --no-editable pytest
+```
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：导出专项/API/编排回归 45 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能；触碰 Python 文件 ruff 通过；后端全量测试 165 passed，存在同一个上游弃用 warning；前端交互原型契约测试通过。
+
 ## 本轮发布决策：语音修改项目名称与镜头旁白字幕
 
 - 标题：语音支持修改项目名称与镜头旁白字幕。

@@ -416,11 +416,13 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
   assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
   assert.ok(app.includes("exportFromBackendResult"), "语音导出必须复用导出结果下载函数");
+  assert.ok(app.includes("resolveBackendUrl"), "语音导出的后端代理图片必须能解析到后端地址");
   assert.ok(app.includes("updateBackgroundColor"), "画布背景色修改必须有统一入口");
   assert.ok(app.includes("sceneCanvasWithBackground"), "背景色修改必须复用 Scene canvas 字段");
   assert.ok(app.includes('type: "UPDATE_SCENE"'), "背景色修改必须通过 UPDATE_SCENE 命令投影");
   assert.ok(app.includes("runDirectProjectExport"), "显式项目导出按钮必须直接触发导出函数");
   assert.ok(app.includes("runDirectSceneImageExport"), "显式图片导出按钮必须直接触发图片导出函数");
+  assert.ok(app.includes("resolveAssetUrl: resolveCatalogAssetUrl"), "显式导出图片必须解析 Catalog 素材 URL");
   assert.ok(app.includes("createNewProject"), "新建项目入口必须创建真实 Project State");
   assert.ok(app.includes("createProjectState"), "新建项目入口必须优先调用后端创建接口");
   assert.ok(app.includes("createLocalBlankProject"), "新建项目必须提供后端不可用时的本地空白项目兜底");
@@ -803,13 +805,54 @@ function testSceneSvgExportsRenderedAssets() {
         asset: { kind: "character", status: "pending" },
         subject: { character: { gender: "女性" } },
         placeholderStyle: { fill: "#ffffff", stroke: "#243b53", strokeWidth: 2 }
+      },
+      {
+        id: "el_bubble_tea",
+        type: "generated_asset",
+        name: "珍珠奶茶",
+        x: 70,
+        y: 132,
+        width: 88,
+        height: 88,
+        zIndex: 4,
+        content: { alt: "珍珠奶茶" },
+        asset: { kind: "product", status: "pending" },
+        metadata: {
+          renderKey: "bubble-tea",
+          assetPath: "catalog/commerce/food-drink/bubble-tea.png"
+        },
+        placeholderStyle: { fill: "#fff8dd", stroke: "#1f8a5b", strokeWidth: 2 }
+      },
+      {
+        id: "el_arrow",
+        type: "connector",
+        name: "推荐箭头",
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+        zIndex: 5,
+        connector: {
+          kind: "line",
+          from: { target: { type: "element", elementId: "el_girl" }, anchor: "left" },
+          to: { target: { type: "element", elementId: "el_bubble_tea" }, anchor: "right" },
+          routing: "straight"
+        },
+        content: { label: "推荐" },
+        style: { stroke: "#f15b4a", strokeWidth: 4, arrowEnd: true }
       }
     ]
   });
 
   assert.ok(svg.includes('<image href="https://cdn.example.test/photo.png"'), "image 元素必须导出真实图片");
   assert.ok(svg.includes('<image href="data:image/png;base64,AAAA"'), "ready generated_asset 必须导出真实图片");
+  assert.ok(
+    svg.includes('<image href="/api/assets/catalog/raw?path=catalog%2Fcommerce%2Ffood-drink%2Fbubble-tea.png"'),
+    "Catalog 素材必须导出后端代理图片"
+  );
   assert.ok(svg.includes("character-illustration is-female"), "语义人物插画必须导出为真实 SVG");
+  assert.ok(svg.includes("marker-end"), "连接线箭头必须导出 SVG marker");
+  assert.ok(svg.includes(">推荐</text>"), "连接线标签必须随图片导出");
   assert.ok(!svg.includes(">小女孩</text>"), "可渲染语义素材不应退回占位文字");
 }
 

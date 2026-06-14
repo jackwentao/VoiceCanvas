@@ -144,6 +144,17 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 
 第三方框架只作为服务运行、模型校验、编排基础设施和测试工具使用；VoiceCanvas 的业务规则、画布状态变更、命令语义和演示工作流为本项目原创实现。
 
+## 本轮导出修复说明
+
+当前图片导出能力已覆盖前端显式导出和语音触发后端导出两条路径：
+
+- `metadata.assetPath` 指向的奶茶等 Render Catalog 素材会通过后端素材代理 URL 渲染和导出，不再退回占位模板。
+- `image` 和 `generated_asset` 中已有 `content.url`、`asset.url` 或 `image.url` 的元素会保留真实图片。
+- 人物、女孩、猫、桌子等无真实 URL 但已有 direct renderer 的语义对象会导出为本地 SVG 插画。
+- 连接线、箭头、连接线标签和说明会随当前画面一起导出。
+
+本轮修复未新增第三方库、框架、SDK 或外部服务；前端继续使用浏览器原生 `Canvas`、`Blob`、`fetch` 和 `URL.createObjectURL`，后端继续使用 Python 标准库生成可验证 SVG 源。Catalog 素材读取仍通过既有后端代理和存储适配器完成，前端不直连 MinIO，也不接触存储凭证。
+
 ## 项目结构
 
 ```text

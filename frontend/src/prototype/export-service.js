@@ -10,13 +10,14 @@ export function exportProjectFile(project) {
 
 export async function exportSceneImage(project, options = {}) {
   const scene = selectScene(project, options.sceneId);
-  const svg = sceneToSvg(scene);
+  const exportScene = await prepareSceneForExport(scene, options);
+  const svg = sceneToSvg(exportScene);
   const filename = `${safeFilename(project.title)}-${safeFilename(scene.name)}.png`;
-  await downloadSvgAsPng(svg, filename, scene.canvas?.width || 960, scene.canvas?.height || 540);
+  await downloadSvgAsPng(svg, filename, scene.canvas?.width || 960, scene.canvas?.height || 540, options);
   return { format: "png", sceneId: scene.id, filename };
 }
 
-export async function exportFromBackendResult(exportResult, project) {
+export async function exportFromBackendResult(exportResult, project, options = {}) {
   if (!exportResult) return null;
 
   if (exportResult.format === "json" || exportResult.mimeType === "application/json") {
@@ -30,7 +31,8 @@ export async function exportFromBackendResult(exportResult, project) {
       exportResult.content,
       exportResult.filename,
       scene.canvas?.width || 960,
-      scene.canvas?.height || 540
+      scene.canvas?.height || 540,
+      options
     );
     return exportResult;
   }
@@ -86,7 +88,8 @@ export function sceneToSvg(scene) {
   const height = scene.canvas?.height || 540;
   const background = scene.canvas?.background?.color || "#ffffff";
   const elements = [...(scene.elements || [])].sort((left, right) => getZIndex(left) - getZIndex(right));
-  const renderedElements = elements.map(elementToSvg);
+  const layoutIndex = createElementLayoutIndex(scene);
+  const renderedElements = elements.map((element) => elementToSvg(element, layoutIndex));
   const body = renderedElements.join("\n");
   const illustrationStyles = renderedElements.some((item) => item.includes("object-illustration"))
     ? `<style>${ILLUSTRATION_SVG_STYLES}</style>`
@@ -98,7 +101,30 @@ export function sceneToSvg(scene) {
   </svg>`;
 }
 
-function elementToSvg(element) {
+async function prepareSceneForExport(scene, options = {}) {
+  if (typeof options.resolveAssetUrl !== "function") return scene;
+  const cloned = structuredClone(scene);
+  await Promise.all((cloned.elements || []).map((element) => resolveElementExportAsset(element, options)));
+  return cloned;
+}
+
+async function resolveElementExportAsset(element, options) {
+  const assetPath = element.metadata?.assetPath;
+  if (!assetPath || getElementImageHref(element)) return;
+  const asset = await options.resolveAssetUrl(assetPath);
+  if (!asset?.url) return;
+  element.content = {
+    ...(element.content || {}),
+    url: asset.url
+  };
+  element.asset = {
+    ...(element.asset || {}),
+    status: "ready",
+    url: asset.url
+  };
+}
+
+function elementToSvg(element, layoutIndex) {
   const transform = getTransform(element);
   if (element.type === "text") {
     const text = escapeHtml(element.content?.text || element.text || element.name || "");
@@ -111,7 +137,7 @@ function elementToSvg(element) {
   }
 
   if (element.type === "connector") {
-    return "";
+    return connectorElementToSvg(element, layoutIndex);
   }
 
   const imageHref = getElementImageHref(element);
@@ -132,13 +158,13 @@ function elementToSvg(element) {
     ${label ? `<text x="${transform.x + transform.width / 2}" y="${transform.y + transform.height / 2}" text-anchor="middle" font-size="24" fill="#111827">${label}</text>` : ""}`;
 }
 
-async function downloadSvgAsPng(svg, filename, width, height) {
+async function downloadSvgAsPng(svg, filename, width, height, options = {}) {
   if (typeof Image === "undefined" || typeof document === "undefined") {
     downloadBlob(svg, filename.replace(/\.png$/i, ".svg"), "image/svg+xml");
     return;
   }
 
-  const exportSvg = await inlineSvgImageHrefs(svg);
+  const exportSvg = await inlineSvgImageHrefs(svg, options);
   const svgUrl = URL.createObjectURL(new Blob([exportSvg], { type: "image/svg+xml" }));
   try {
     const image = await loadImage(svgUrl);
@@ -164,7 +190,7 @@ function loadImage(url) {
   });
 }
 
-async function inlineSvgImageHrefs(svg) {
+async function inlineSvgImageHrefs(svg, options = {}) {
   if (
     typeof DOMParser === "undefined" ||
     typeof XMLSerializer === "undefined" ||
@@ -179,12 +205,20 @@ async function inlineSvgImageHrefs(svg) {
     imageNodes.map(async (node) => {
       const href = node.getAttribute("href") || node.getAttribute("xlink:href");
       if (!href || href.startsWith("data:") || href.startsWith("blob:")) return;
-      const dataUrl = await imageUrlToDataUrl(href);
+      const resolvedHref = resolveImageHref(href, options);
+      const dataUrl = await imageUrlToDataUrl(resolvedHref);
       node.setAttribute("href", dataUrl);
       node.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", dataUrl);
     })
   );
   return new XMLSerializer().serializeToString(parsed.documentElement);
+}
+
+function resolveImageHref(href, options = {}) {
+  if (typeof options.resolveImageHref === "function") {
+    return options.resolveImageHref(href);
+  }
+  return href;
 }
 
 async function imageUrlToDataUrl(url) {
@@ -243,10 +277,19 @@ function getElementImageHref(element) {
   }
 
   if (element.type === "generated_asset" && element.asset?.status === "ready") {
-    return content.url || element.asset?.url || element.image?.url || element.url || null;
+    return content.url || element.asset?.url || element.image?.url || element.url || catalogProxyUrl(element.metadata?.assetPath);
+  }
+
+  if (element.type === "generated_asset") {
+    return catalogProxyUrl(element.metadata?.assetPath);
   }
 
   return null;
+}
+
+function catalogProxyUrl(assetPath) {
+  if (!assetPath) return null;
+  return `/api/assets/catalog/raw?path=${encodeURIComponent(assetPath)}`;
 }
 
 function imageElementToSvg(element, transform, href) {
@@ -254,6 +297,147 @@ function imageElementToSvg(element, transform, href) {
   const clipId = `clip-${safeSvgId(element.id || element.name || href)}`;
   return `<defs><clipPath id="${clipId}"><rect x="${transform.x}" y="${transform.y}" width="${transform.width}" height="${transform.height}" rx="${radius}"/></clipPath></defs>
     <image href="${escapeAttribute(href)}" xlink:href="${escapeAttribute(href)}" x="${transform.x}" y="${transform.y}" width="${transform.width}" height="${transform.height}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/>`;
+}
+
+function connectorElementToSvg(element, layoutIndex) {
+  const connector = getConnectorConfig(element);
+  const from = resolveEndpoint(connector.from, connector.to, layoutIndex);
+  const to = resolveEndpoint(connector.to, connector.from, layoutIndex);
+  if (!from || !to) return "";
+
+  const stroke = resolveStroke(element.style?.stroke, element.style?.strokeWidth, "#f15b4a");
+  const markerId = `arrow-${safeSvgId(element.id || "connector")}`;
+  const marker = getMarkerEnd(element)
+    ? `<defs><marker id="${markerId}" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L8,4 L0,8 Z" fill="${escapeAttribute(stroke.color)}"/></marker></defs>`
+    : "";
+  const markerEnd = getMarkerEnd(element) ? ` marker-end="url(#${markerId})"` : "";
+  const dash = Array.isArray(stroke.dash) ? ` stroke-dasharray="${stroke.dash.join(" ")}"` : "";
+  const label = getContent(element).label || element.text || "";
+  const labelPoint = pointOnConnectorLabel(from, to, connector);
+  const description = element.description || "";
+
+  return `${marker}<path d="${buildConnectorPath(from, to, connector)}" fill="none" stroke="${escapeAttribute(stroke.color)}" stroke-width="${stroke.width}" stroke-linecap="round" stroke-linejoin="round"${dash}${markerEnd}/>
+    ${label ? `<text x="${labelPoint.x}" y="${labelPoint.y}" text-anchor="middle" font-size="18" font-weight="800" fill="${escapeAttribute(stroke.color)}" stroke="#ffffff" stroke-width="4" paint-order="stroke">${escapeHtml(label)}</text>` : ""}
+    ${description ? `<text x="${labelPoint.x}" y="${labelPoint.y + 20}" text-anchor="middle" font-size="14" font-weight="700" fill="#244236" stroke="#ffffff" stroke-width="3" paint-order="stroke">${escapeHtml(description)}</text>` : ""}`;
+}
+
+function createElementLayoutIndex(scene) {
+  return Object.fromEntries(
+    (scene.elements || []).map((element) => {
+      const transform = getTransform(element);
+      return [element.id, { id: element.id, bounds: transform }];
+    })
+  );
+}
+
+function getConnectorConfig(element) {
+  if (element.connector) return element.connector;
+  return {
+    kind: element.connectorType || "line",
+    from: normalizeLegacyEndpoint(element.from),
+    to: normalizeLegacyEndpoint(element.to),
+    routing: element.connectorType === "curve" ? "bezier" : "straight"
+  };
+}
+
+function normalizeLegacyEndpoint(endpoint) {
+  if (!endpoint || endpoint.target) return endpoint;
+  if (endpoint.elementId) {
+    return {
+      target: { type: "element", elementId: endpoint.elementId },
+      anchor: endpoint.anchor
+    };
+  }
+  return endpoint;
+}
+
+function resolveEndpoint(endpoint, oppositeEndpoint, layoutIndex) {
+  if (!endpoint) return null;
+  const target = endpoint.target || (endpoint.elementId ? { type: "element", elementId: endpoint.elementId } : null);
+  if (!target) return null;
+  if (target.type === "point") return target.point;
+
+  const layout = layoutIndex[target.elementId];
+  if (!layout) return null;
+  const opposite = oppositeEndpoint ? resolveEndpointCenter(oppositeEndpoint, layoutIndex) : null;
+  return anchorPoint(layout.bounds, endpoint.anchor || "auto", opposite);
+}
+
+function resolveEndpointCenter(endpoint, layoutIndex) {
+  const target = endpoint.target || (endpoint.elementId ? { type: "element", elementId: endpoint.elementId } : null);
+  if (!target) return null;
+  if (target.type === "point") return target.point;
+  const layout = layoutIndex[target.elementId];
+  if (!layout) return null;
+  return {
+    x: layout.bounds.x + layout.bounds.width / 2,
+    y: layout.bounds.y + layout.bounds.height / 2
+  };
+}
+
+function anchorPoint(bounds, anchor, opposite) {
+  const normalized = normalizeAnchor(anchor, bounds, opposite);
+  if (typeof normalized === "object") {
+    const ratio = Math.min(1, Math.max(0, normalized.ratio ?? 0.5));
+    if (normalized.side === "top") return { x: bounds.x + bounds.width * ratio, y: bounds.y };
+    if (normalized.side === "right") return { x: bounds.x + bounds.width, y: bounds.y + bounds.height * ratio };
+    if (normalized.side === "bottom") return { x: bounds.x + bounds.width * ratio, y: bounds.y + bounds.height };
+    return { x: bounds.x, y: bounds.y + bounds.height * ratio };
+  }
+
+  if (normalized === "top") return { x: bounds.x + bounds.width / 2, y: bounds.y };
+  if (normalized === "right") return { x: bounds.x + bounds.width, y: bounds.y + bounds.height / 2 };
+  if (normalized === "bottom") return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height };
+  if (normalized === "left") return { x: bounds.x, y: bounds.y + bounds.height / 2 };
+  return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+}
+
+function normalizeAnchor(anchor, bounds, opposite) {
+  if (anchor !== "auto" || !opposite) return anchor;
+  const center = {
+    x: bounds.x + bounds.width / 2,
+    y: bounds.y + bounds.height / 2
+  };
+  const dx = opposite.x - center.x;
+  const dy = opposite.y - center.y;
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? "right" : "left";
+  return dy >= 0 ? "bottom" : "top";
+}
+
+function buildConnectorPath(from, to, connector) {
+  const routing = connector.routing || (connector.kind === "curve" ? "bezier" : "straight");
+  if (routing === "bezier" || connector.kind === "curve") {
+    const delta = Math.max(48, Math.abs(to.x - from.x) * 0.36);
+    return `M ${from.x} ${from.y} C ${from.x + delta} ${from.y}, ${to.x - delta} ${to.y}, ${to.x} ${to.y}`;
+  }
+  if (routing === "orthogonal" || connector.kind === "elbow") {
+    const midX = (from.x + to.x) / 2;
+    return `M ${from.x} ${from.y} L ${midX} ${from.y} L ${midX} ${to.y} L ${to.x} ${to.y}`;
+  }
+  return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+}
+
+function pointOnConnectorLabel(from, to, connector) {
+  if (connector.routing === "orthogonal" || connector.kind === "elbow") {
+    return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 - 10 };
+  }
+  return { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 - 12 };
+}
+
+function getMarkerEnd(element) {
+  if (element.style?.markerEnd?.type === "none") return false;
+  return element.style?.arrowEnd !== false;
+}
+
+function resolveStroke(stroke, legacyWidth, fallbackColor) {
+  if (typeof stroke === "string") {
+    return { color: stroke, width: legacyWidth || 1 };
+  }
+  return {
+    color: stroke?.color || fallbackColor,
+    width: stroke?.width || legacyWidth || 1,
+    dash: stroke?.dash
+  };
 }
 
 function illustrationElementToSvg(element, transform) {

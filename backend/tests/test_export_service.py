@@ -102,6 +102,101 @@ def test_export_scene_image_embeds_real_asset_urls() -> None:
     assert ">小女孩</text>" not in result.content
 
 
+def test_export_scene_image_renders_catalog_asset_semantic_character_and_connector() -> None:
+    project = Project.model_validate(
+        {
+            "id": "project_semantic_export",
+            "title": "语义导出测试",
+            "mode": "storyboard",
+            "activeSceneId": "scene_semantic_export",
+            "scenes": [
+                {
+                    "id": "scene_semantic_export",
+                    "name": "主画面",
+                    "order": 1,
+                    "canvas": {"width": 640, "height": 360, "background": {"color": "#ffffff"}},
+                    "elements": [
+                        {
+                            "id": "el_bubble_tea",
+                            "type": "generated_asset",
+                            "name": "珍珠奶茶",
+                            "x": 120,
+                            "y": 96,
+                            "width": 120,
+                            "height": 140,
+                            "zIndex": 1,
+                            "content": {"alt": "珍珠奶茶"},
+                            "asset": {"kind": "product", "status": "pending"},
+                            "metadata": {
+                                "renderKey": "bubble-tea",
+                                "assetPath": "catalog/commerce/food-drink/bubble-tea.png",
+                            },
+                            "placeholderStyle": {
+                                "fill": "#ffffff",
+                                "stroke": "#1f8a5b",
+                                "strokeWidth": 2,
+                            },
+                        },
+                        {
+                            "id": "el_girl",
+                            "type": "generated_asset",
+                            "name": "小女孩",
+                            "x": 320,
+                            "y": 76,
+                            "width": 110,
+                            "height": 150,
+                            "zIndex": 2,
+                            "content": {"alt": "小女孩"},
+                            "asset": {"kind": "character", "status": "pending"},
+                            "metadata": {"renderKey": "character", "renderVariant": "female"},
+                            "subject": {"character": {"gender": "女性", "renderKey": "character"}},
+                            "placeholderStyle": {
+                                "fill": "#ffffff",
+                                "stroke": "#243b53",
+                                "strokeWidth": 2,
+                            },
+                        },
+                        {
+                            "id": "el_arrow",
+                            "type": "connector",
+                            "name": "推荐箭头",
+                            "x": 0,
+                            "y": 0,
+                            "width": 1,
+                            "height": 1,
+                            "zIndex": 3,
+                            "connector": {
+                                "kind": "line",
+                                "from": {
+                                    "target": {"type": "element", "elementId": "el_girl"},
+                                    "anchor": "left",
+                                },
+                                "to": {
+                                    "target": {"type": "element", "elementId": "el_bubble_tea"},
+                                    "anchor": "right",
+                                },
+                                "routing": "straight",
+                            },
+                            "content": {"label": "推荐"},
+                            "style": {"stroke": "#f15b4a", "strokeWidth": 4, "arrowEnd": True},
+                        },
+                    ],
+                }
+            ],
+        }
+    )
+    service = ExportService(catalog_url_resolver=lambda path: f"/assets/{path}")
+
+    result = service.export(project, ExportRequest(format="png", scope="active_scene"))
+
+    assert '<image href="/assets/catalog/commerce/food-drink/bubble-tea.png"' in result.content
+    assert "character-illustration is-female" in result.content
+    assert ">小女孩</text>" not in result.content
+    assert '<path d="M ' in result.content
+    assert "marker-end" in result.content
+    assert ">推荐</text>" in result.content
+
+
 def test_export_specific_scene_rejects_missing_scene() -> None:
     project = InMemoryProjectRepository().get_or_create("project_missing_scene")
     service = ExportService()
