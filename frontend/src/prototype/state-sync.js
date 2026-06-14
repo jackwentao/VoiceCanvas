@@ -229,6 +229,9 @@ function applyCanvasPatch(project, patch) {
     if (!project.scenes.some((scene) => scene.id === patch.scene.id)) {
       project.scenes.push(structuredClone(patch.scene));
     }
+    if (!findScene(project, project.activeSceneId)) {
+      project.activeSceneId = patch.scene.id;
+    }
   }
 
   if (patch.type === "SCENE_UPDATED") {
@@ -237,7 +240,14 @@ function applyCanvasPatch(project, patch) {
   }
 
   if (patch.type === "SCENE_DELETED") {
+    const deletedScene = findScene(project, patch.sceneId) || patch.scene;
     project.scenes = project.scenes.filter((scene) => scene.id !== patch.sceneId);
+    if (project.activeSceneId === patch.sceneId || !findScene(project, project.activeSceneId)) {
+      const fallbackScene = chooseNeighborScene(project.scenes, deletedScene);
+      if (fallbackScene) {
+        project.activeSceneId = fallbackScene.id;
+      }
+    }
   }
 
   if (patch.type === "SCENE_CLEARED") {
@@ -275,4 +285,26 @@ function applyCanvasPatch(project, patch) {
 
 function findScene(project, sceneId) {
   return project.scenes.find((scene) => scene.id === sceneId);
+}
+
+function chooseNeighborScene(scenes, deletedScene) {
+  if (!scenes.length) return null;
+  const deletedOrder = Number.isFinite(deletedScene?.order) ? deletedScene.order : null;
+  if (deletedOrder === null) {
+    return orderedScenes(scenes)[0];
+  }
+
+  const before = scenes.filter((scene) => Number.isFinite(scene.order) && scene.order < deletedOrder);
+  if (before.length) {
+    return orderedScenes(before).at(-1);
+  }
+  return orderedScenes(scenes)[0];
+}
+
+function orderedScenes(scenes) {
+  return [...scenes].sort((left, right) => {
+    const leftOrder = Number.isFinite(left.order) ? left.order : Number.MAX_SAFE_INTEGER;
+    const rightOrder = Number.isFinite(right.order) ? right.order : Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder;
+  });
 }
