@@ -745,6 +745,10 @@ class LLMCommandPlanner:
         content = element.get("content") if isinstance(element.get("content"), dict) else {}
         asset = element.get("asset") if isinstance(element.get("asset"), dict) else {}
         subject = element.get("subject") if isinstance(element.get("subject"), dict) else {}
+        attributes = object_kind.get("attributes") or {}
+        key_features = [object_kind["label"]]
+        for values in attributes.values():
+            key_features.extend(str(value) for value in values)
 
         normalized = {
             **element,
@@ -759,13 +763,16 @@ class LLMCommandPlanner:
                 "status": asset.get("status") or "pending",
                 "prompt": asset.get("prompt")
                 or f"{display_name}，清晰简洁的画布插画风格，适合演示画布",
-                "provider": asset.get("provider") or "mock",
+                "provider": asset.get("provider")
+                or object_kind.get("assetProvider")
+                or "mock",
             },
             "subject": {
                 **subject,
                 object_kind.get("subjectType", object_kind["kind"]): {
                     "category": object_kind["label"],
-                    "keyFeatures": object_kind["features"],
+                    "keyFeatures": key_features,
+                    **({"attributes": attributes} if attributes else {}),
                     **({"gender": object_kind["gender"]} if object_kind.get("gender") else {}),
                     **(
                         {"variant": object_kind["renderVariant"]}
@@ -779,7 +786,19 @@ class LLMCommandPlanner:
                 **(element.get("metadata") if isinstance(element.get("metadata"), dict) else {}),
                 "renderKey": object_kind["renderKey"],
                 "renderHint": object_kind["renderHint"],
-                "renderMode": "direct" if object_kind.get("directRender") else "placeholder",
+                "renderMode": object_kind.get("renderMode")
+                or ("direct" if object_kind.get("directRender") else "placeholder"),
+                **(
+                    {"assetProvider": object_kind["assetProvider"]}
+                    if object_kind.get("assetProvider")
+                    else {}
+                ),
+                **({"assetPath": object_kind["assetPath"]} if object_kind.get("assetPath") else {}),
+                **(
+                    {"styleFamily": object_kind["styleFamily"]}
+                    if object_kind.get("styleFamily")
+                    else {}
+                ),
                 **(
                     {"renderVariant": object_kind["renderVariant"]}
                     if object_kind.get("renderVariant")
@@ -810,6 +829,14 @@ class LLMCommandPlanner:
             "renderKey": match.render_key,
             "renderHint": match.render_key,
             "directRender": match.direct_render,
+            "renderMode": "asset" if match.asset_path else (
+                "direct" if match.direct_render else "placeholder"
+            ),
+            "category": match.category,
+            "assetProvider": match.asset_provider,
+            "assetPath": match.asset_path,
+            "styleFamily": match.style_family,
+            "attributes": match.attributes or {},
             **({"gender": match.variant} if match.variant else {}),
             **({"renderVariant": match.variant} if match.variant else {}),
         }
@@ -1010,8 +1037,12 @@ class LLMCommandPlanner:
 Render Catalog（前端本地绘制能力清单）：
 {render_catalog}
 - direct 对象可以写 metadata.renderKey/renderVariant 让前端本地渲染。
+- minio/assetPath 对象只写 metadata.renderKey 和语义属性。
+- 不要输出图片 URL，系统会通过后端代理解析素材路径。
 - placeholder 对象只能作为 generated_asset 占位等待生成，不要猜成其他 renderKey。
-- 用户说法和预存名称不一致时，先按 aliases/variants 归一化；目录外对象保留原始描述到 asset.prompt。
+- 用户说法和预存名称不一致时，先按 aliases/variants 归一化。
+- 口味、颜色、卖点等属性保留在 subject 或 asset.prompt。
+- 目录外对象保留原始描述到 asset.prompt。
 
 你是 VoiceCanvas 的画布指令规划器。你只负责把中文用户输入转换成受控 JSON，不能直接覆盖 Project。
 

@@ -114,6 +114,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 | `backend/pyproject.toml` | `pydantic` | 领域模型、请求响应和命令校验 |
 | `backend/pyproject.toml` | `langgraph`、`langchain-core` | 可恢复 AI 编排与 LLM 适配基础类型 |
 | `backend/pyproject.toml` | `httpx`、`python-dotenv` | 外部服务 HTTP 调用与本地环境变量加载 |
+| `backend/pyproject.toml` | `minio` | 统一风格带货素材包的 MinIO 私有桶读取；仅在存储适配器层懒加载使用 |
 | `backend/pyproject.toml` | `pytest`、`pytest-asyncio`、`respx`、`ruff`、`mypy` | 后端测试、外部 HTTP Mock、lint 与类型检查 |
 | 外部服务 | DeepSeek OpenAI-compatible API | 真实 LLM Planner 的自然语言理解能力；仅通过 `adapters/llm` 接入，可降级到 Demo Planner |
 | 浏览器原生 API | Web Speech API（`SpeechRecognition` / `webkitSpeechRecognition`） | 持续语音创作模式的中文语音转写入口；仅在前端适配层使用，可被后续云端 ASR adapter 替换 |
@@ -129,6 +130,7 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 - 面向“左边那个杯子 / 那个标签 / 它”等用户表达的指代消解、候选澄清和恢复上下文设计。
 - 并行工具结果聚合后统一回灌 Orchestrator 的应用层缓冲机制。
 - Render Catalog 语义渲染能力目录、别名归一化、前端 renderer registry 和不支持对象的生成素材占位降级策略。
+- MinIO 素材包代理渲染链路：Render Catalog 保存稳定对象路径，后端校验并代理 `catalog/commerce/` 素材，前端按路径加载图片并在失败时占位降级。
 - 前端原型中的画布投影、历史区、AI 交互栏和导出入口设计。
 - 可复用导出与载入能力：前端按钮可直接导出当前项目包或当前分镜图片，语音/LLM 路径可通过 `EXPORT_PROJECT` 调用同一导出服务，项目包可再次载入恢复为可编辑 Project State。
 - 画布文字元素的自适应排版能力，根据元素边界和中英文混排内容估算字号并避免文本裁剪。
@@ -195,6 +197,33 @@ uv run --no-editable pytest
 uv run --no-editable ruff check .
 uv run --no-editable mypy src
 ```
+
+MinIO 素材包配置：
+
+```powershell
+cd backend
+$env:VOICECANVAS_ASSET_PROVIDER="minio"
+$env:VOICECANVAS_MINIO_ENDPOINT="127.0.0.1:9000"
+$env:VOICECANVAS_MINIO_BUCKET="voicecanvas-assets"
+$env:VOICECANVAS_MINIO_ACCESS_KEY="your-access-key"
+$env:VOICECANVAS_MINIO_SECRET_KEY="your-secret-key"
+$env:VOICECANVAS_MINIO_SECURE="false"
+```
+
+素材对象路径统一放在 `catalog/commerce/` 前缀下，例如：
+
+```text
+catalog/commerce/food-drink/bubble-tea.png
+catalog/commerce/digital/smartphone.png
+```
+
+前端不会直连 MinIO。页面根据 `render-catalog.json` 中的 `assetPath` 调用：
+
+```text
+GET /api/assets/catalog?path=catalog/commerce/food-drink/bubble-tea.png
+```
+
+后端返回代理 URL，图片读取失败时前端会显示 `generated_asset` 占位，创作流程不中断。
 
 长期记忆后端 MVP 测试：
 

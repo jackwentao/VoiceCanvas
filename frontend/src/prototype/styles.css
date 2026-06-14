@@ -679,6 +679,15 @@ h2 {
   border: 1px solid rgba(27, 43, 52, 0.08);
 }
 
+.generated-asset-element[data-status="loading"] {
+  color: #386154;
+}
+
+.generated-asset-element[data-status="failed"] {
+  color: #8a3a2a;
+  border-style: dashed;
+}
+
 .image-element img,
 .generated-asset-element img {
   width: 100%;

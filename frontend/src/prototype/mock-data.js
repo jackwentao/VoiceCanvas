@@ -71,6 +71,12 @@ export const API_CONTRACT = {
       path: "/api/assets/upload",
       request: ["file", "sceneId?"],
       response: ["AssetRef"]
+    },
+    catalog: {
+      method: "GET",
+      path: "/api/assets/catalog",
+      request: ["path"],
+      response: ["path", "provider", "url"]
     }
   },
   userMemory: {

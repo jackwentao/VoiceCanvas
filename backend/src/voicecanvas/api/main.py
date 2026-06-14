@@ -4,11 +4,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
+from voicecanvas.adapters.storage.minio import MinioAssetStorage, MinioAssetStorageConfig
 from voicecanvas.api.schemas import (
+    CatalogAssetResponse,
     CreateProjectRequest,
     CreateUserMemoryRequest,
     ExportProjectRequest,
@@ -23,6 +25,11 @@ from voicecanvas.api.schemas import (
     UserMemoryListResponse,
     UserMemoryResponse,
 )
+from voicecanvas.application.asset_storage import (
+    AssetStorage,
+    CatalogAssetPathError,
+    CatalogAssetUnavailableError,
+)
 from voicecanvas.application.export_service import ExportRequest
 from voicecanvas.application.orchestration_service import (
     OrchestrationService,
@@ -32,6 +39,7 @@ from voicecanvas.application.planner_factory import create_planner_from_env
 from voicecanvas.application.user_memory_service import UserMemoryService
 from voicecanvas.domain.user_memory import UserMemoryEvidence
 from voicecanvas.infrastructure.local_user_memory_repository import LocalUserMemoryRepository
+from voicecanvas.infrastructure.settings import AssetSettings
 
 
 def _sse_event(event_name: str, data: dict[str, Any]) -> str:
@@ -55,6 +63,20 @@ def _default_user_memory_service() -> UserMemoryService:
     return UserMemoryService(LocalUserMemoryRepository(path))
 
 
+def _default_asset_storage() -> AssetStorage:
+    settings = AssetSettings.from_env()
+    return MinioAssetStorage(
+        MinioAssetStorageConfig(
+            endpoint=settings.minio_endpoint,
+            bucket=settings.minio_bucket,
+            access_key=settings.minio_access_key,
+            secret_key=settings.minio_secret_key,
+            secure=settings.minio_secure,
+            public_base_url=settings.public_base_url,
+        )
+    )
+
+
 def _now() -> str:
     return datetime.now(UTC).isoformat()
 
@@ -62,6 +84,7 @@ def _now() -> str:
 def create_app(
     orchestration_service: OrchestrationService | None = None,
     user_memory_service: UserMemoryService | None = None,
+    asset_storage: AssetStorage | None = None,
 ) -> FastAPI:
     app = FastAPI(title="VoiceCanvas Backend", version="0.1.0")
     app.add_middleware(
@@ -71,6 +94,7 @@ def create_app(
         allow_headers=["*"],
     )
     memory_service = user_memory_service or _default_user_memory_service()
+    storage = asset_storage or _default_asset_storage()
     service = orchestration_service or OrchestrationService(
         planner=create_planner_from_env(),
         user_memory_service=memory_service,
@@ -81,6 +105,24 @@ def create_app(
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
         return HealthResponse(status="ok", service="voicecanvas-backend")
+
+    @app.get("/api/assets/catalog", response_model=CatalogAssetResponse)
+    async def get_catalog_asset(path: str = Query(min_length=1)) -> CatalogAssetResponse:
+        try:
+            asset = storage.catalog_asset_url(path)
+        except CatalogAssetPathError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        return CatalogAssetResponse(path=asset.path, provider=asset.provider, url=asset.url)
+
+    @app.get("/api/assets/catalog/raw")
+    async def read_catalog_asset(path: str = Query(min_length=1)) -> Response:
+        try:
+            asset = storage.read_catalog_asset(path)
+        except CatalogAssetPathError as error:
+            raise HTTPException(status_code=400, detail=str(error)) from error
+        except CatalogAssetUnavailableError as error:
+            raise HTTPException(status_code=503, detail=str(error)) from error
+        return Response(content=asset.content, media_type=asset.media_type)
 
     @app.post("/api/orchestrations", response_model=OrchestrationResponse)
     async def start_orchestration(request: StartOrchestrationRequest) -> OrchestrationResponse:

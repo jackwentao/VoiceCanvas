@@ -15,6 +15,14 @@ class HealthResponse(BaseModel):
     service: str
 
 
+class CatalogAssetResponse(BaseModel):
+    path: str
+    provider: str
+    url: str
+
+    model_config = {"populate_by_name": True}
+
+
 class StartOrchestrationRequest(BaseModel):
     project_id: str = Field(alias="projectId")
     user_input: str = Field(alias="userInput", min_length=1)
