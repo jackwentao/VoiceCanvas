@@ -8,6 +8,13 @@ function apiBaseUrl() {
   return baseUrl.replace(/\/+$/, "");
 }
 
+export function resolveBackendUrl(path) {
+  if (!path || /^[a-z][a-z0-9+.-]*:/i.test(path) || path.startsWith("data:") || path.startsWith("blob:")) {
+    return path;
+  }
+  return `${apiBaseUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 function streamStepDelayMs() {
   const queryDelay = new URLSearchParams(window.location.search).get("streamStepDelayMs");
   const configuredDelay = window.VOICECANVAS_STREAM_STEP_DELAY_MS ?? queryDelay ?? 80;
@@ -176,7 +183,7 @@ export async function resolveCatalogAssetUrl(assetPath) {
   if (asset?.url?.startsWith("/")) {
     return {
       ...asset,
-      url: `${apiBaseUrl()}${asset.url}`
+      url: resolveBackendUrl(asset.url)
     };
   }
   return asset;
