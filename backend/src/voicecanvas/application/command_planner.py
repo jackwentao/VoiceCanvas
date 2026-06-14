@@ -4,6 +4,7 @@ from typing import Any, Literal, Protocol
 from voicecanvas.domain.commands import CanvasCommand
 from voicecanvas.domain.conversation import ConversationMemorySnapshot
 from voicecanvas.domain.project import Project
+from voicecanvas.domain.user_memory import UserMemoryContext
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class PlanningContext:
     """Planner 可选读取的上下文；普通规则 planner 可以忽略。"""
 
     conversation: ConversationMemorySnapshot | None = None
+    user_memory: UserMemoryContext | None = None
 
 
 class CommandPlanner(Protocol):

@@ -70,8 +70,13 @@ def create_app(
         allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["*"],
     )
-    service = orchestration_service or OrchestrationService(planner=create_planner_from_env())
     memory_service = user_memory_service or _default_user_memory_service()
+    service = orchestration_service or OrchestrationService(
+        planner=create_planner_from_env(),
+        user_memory_service=memory_service,
+    )
+    if orchestration_service is not None and user_memory_service is not None:
+        service.set_user_memory_service(memory_service)
 
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
@@ -79,7 +84,11 @@ def create_app(
 
     @app.post("/api/orchestrations", response_model=OrchestrationResponse)
     async def start_orchestration(request: StartOrchestrationRequest) -> OrchestrationResponse:
-        result = service.handle_user_input(request.project_id, request.user_input)
+        result = service.handle_user_input(
+            request.project_id,
+            request.user_input,
+            user_id=request.user_id,
+        )
 
         return OrchestrationResponse(
             sessionId=result.session_id,
@@ -113,7 +122,11 @@ def create_app(
 
     @app.post("/api/orchestrations/stream")
     async def stream_orchestration(request: StartOrchestrationRequest) -> StreamingResponse:
-        chunks = service.stream_user_input(request.project_id, request.user_input)
+        chunks = service.stream_user_input(
+            request.project_id,
+            request.user_input,
+            user_id=request.user_id,
+        )
 
         return StreamingResponse(
             _orchestration_sse_stream(chunks),

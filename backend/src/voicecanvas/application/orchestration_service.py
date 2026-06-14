@@ -14,10 +14,12 @@ from voicecanvas.application.demo_command_planner import DemoCommandPlanner
 from voicecanvas.application.export_service import ExportRequest, ExportResult, ExportService
 from voicecanvas.application.history_manager import HistoryManager
 from voicecanvas.application.project_repository import InMemoryProjectRepository
+from voicecanvas.application.user_memory_service import UserMemoryService
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.history import HistoryEntry
 from voicecanvas.domain.patches import CanvasPatch
 from voicecanvas.domain.project import CanvasElement, Project, Scene
+from voicecanvas.domain.user_memory import UserMemoryContext
 
 
 class TurnSummary(BaseModel):
@@ -66,19 +68,30 @@ class OrchestrationService:
         executor: CommandExecutor | None = None,
         validator: CommandValidator | None = None,
         export_service: ExportService | None = None,
+        user_memory_service: UserMemoryService | None = None,
     ) -> None:
         self._repository = repository or InMemoryProjectRepository()
         self._planner = planner or DemoCommandPlanner()
         self._validator = validator or CommandValidator()
         self._executor = executor or CommandExecutor(self._validator)
         self._export_service = export_service or ExportService()
+        self._user_memory_service = user_memory_service
         self._histories: dict[str, HistoryManager] = {}
         self._conversation_memories: dict[str, ConversationMemoryManager] = {}
         self._pending_clarifications: dict[str, dict[str, Any]] = {}
 
-    def handle_user_input(self, project_id: str, user_input: str) -> OrchestrationServiceResponse:
+    def set_user_memory_service(self, user_memory_service: UserMemoryService) -> None:
+        self._user_memory_service = user_memory_service
+
+    def handle_user_input(
+        self,
+        project_id: str,
+        user_input: str,
+        *,
+        user_id: str = "user_1",
+    ) -> OrchestrationServiceResponse:
         final_response: OrchestrationServiceResponse | None = None
-        for chunk in self.stream_user_input(project_id, user_input):
+        for chunk in self.stream_user_input(project_id, user_input, user_id=user_id):
             if chunk.type == "RESULT":
                 final_response = chunk.response
 
@@ -87,7 +100,11 @@ class OrchestrationService:
         return final_response
 
     def stream_user_input(
-        self, project_id: str, user_input: str
+        self,
+        project_id: str,
+        user_input: str,
+        *,
+        user_id: str = "user_1",
     ) -> Iterator[OrchestrationStreamChunk]:
         """流式编排用户输入，每产生一个事件就立即返回一个片段。"""
 
@@ -138,7 +155,10 @@ class OrchestrationService:
             )
             return
 
-        context = PlanningContext(conversation=memory.snapshot(project))
+        context = PlanningContext(
+            conversation=memory.snapshot(project),
+            user_memory=self._user_memory_context_for(user_id=user_id, user_input=user_input),
+        )
         plan = self._planner.plan(user_input, project, context=context)
         if plan.notice:
             yield from self._emit_event(
@@ -816,6 +836,14 @@ class OrchestrationService:
         if project_id not in self._conversation_memories:
             self._conversation_memories[project_id] = ConversationMemoryManager()
         return self._conversation_memories[project_id]
+
+    def _user_memory_context_for(self, *, user_id: str, user_input: str) -> UserMemoryContext | None:
+        if self._user_memory_service is None:
+            return None
+        return self._user_memory_service.context_for(
+            user_id=user_id,
+            query=user_input,
+        )
 
     def _reset_project_context(self, project_id: str) -> None:
         self._histories[project_id] = HistoryManager()

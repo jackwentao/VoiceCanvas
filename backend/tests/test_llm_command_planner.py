@@ -10,6 +10,7 @@ from voicecanvas.application.project_repository import InMemoryProjectRepository
 from voicecanvas.domain.commands import CommandType
 from voicecanvas.domain.conversation import ConversationMemorySnapshot, ElementMemory
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
+from voicecanvas.domain.user_memory import UserMemory, UserMemoryContext
 
 
 def _project():
@@ -636,6 +637,61 @@ def test_llm_planner_sends_conversation_context_and_resolved_focus() -> None:
     assert plan.action == "commands"
     assert payload["conversationContext"]["focusStack"][0]["elementId"] == "el_dog"
     assert payload["resolvedTarget"]["elementId"] == "el_dog"
+
+
+def test_llm_planner_sends_user_memory_context() -> None:
+    context = PlanningContext(
+        user_memory=UserMemoryContext(
+            relevant=[
+                UserMemory(
+                    id="mem_active",
+                    userId="user_1",
+                    kind="style_preference",
+                    content="prefer green commerce visuals with generous whitespace",
+                    scope="commerce",
+                    confidence=0.95,
+                    status="active",
+                    createdAt="2026-06-13T00:00:00+00:00",
+                    updatedAt="2026-06-13T00:00:00+00:00",
+                )
+            ]
+        )
+    )
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "add title",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "text",
+                                    "name": "Title",
+                                    "text": "New",
+                                    "x": 120,
+                                    "y": 70,
+                                    "width": 260,
+                                    "height": 64,
+                                    "zIndex": 5,
+                                },
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("add a green commerce title", _project(), context=context)
+    payload = json.loads(client.calls[0][-1].content)
+
+    assert plan.action == "commands"
+    assert payload["userMemoryContext"]["relevant"][0]["id"] == "mem_active"
+    assert "green commerce" in payload["userMemoryContext"]["relevant"][0]["content"]
 
 
 def test_orchestration_service_reports_planner_warning_when_llm_falls_back() -> None:

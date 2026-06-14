@@ -6,9 +6,11 @@ from voicecanvas.adapters.llm.fake import FakeLLMClient
 from voicecanvas.application.command_planner import CommandPlan, PlanningContext
 from voicecanvas.application.llm_command_planner import LLMCommandPlanner
 from voicecanvas.application.orchestration_service import OrchestrationService
+from voicecanvas.application.user_memory_service import UserMemoryService
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.patches import PatchType
 from voicecanvas.domain.project import Project
+from voicecanvas.infrastructure.local_user_memory_repository import LocalUserMemoryRepository
 
 
 class FocusAwarePlanner:
@@ -74,6 +76,21 @@ class FocusAwarePlanner:
             payload=payload,
             createdAt=datetime.now(UTC).isoformat(),
         )
+
+
+class CapturingMemoryPlanner:
+    def __init__(self) -> None:
+        self.context: PlanningContext | None = None
+
+    def plan(
+        self,
+        user_input: str,
+        project: Project,
+        *,
+        context: PlanningContext | None = None,
+    ) -> CommandPlan:
+        self.context = context
+        return CommandPlan("respond", [], "ok")
 
 
 def test_service_creates_storyboard_with_real_execution_pipeline() -> None:
@@ -416,3 +433,39 @@ def test_service_extracts_short_term_memory_after_patch_for_next_turn() -> None:
     assert moved.status == "COMPLETED"
     assert moved.patches[-1].type == PatchType.ELEMENT_UPDATED
     assert dog.x == 260
+
+
+def test_service_injects_only_active_user_memory_into_planning_context(tmp_path) -> None:
+    memory_service = UserMemoryService(LocalUserMemoryRepository(tmp_path / "user-memory.json"))
+    active = memory_service.create_memory(
+        user_id="user_1",
+        kind="style_preference",
+        content="prefer green commerce visuals with generous whitespace",
+        scope="commerce",
+        confidence=0.95,
+        status="active",
+    )
+    memory_service.create_memory(
+        user_id="user_1",
+        kind="layout_preference",
+        content="prefer title in top left",
+        scope="canvas",
+        confidence=0.9,
+        status="candidate",
+    )
+    planner = CapturingMemoryPlanner()
+    service = OrchestrationService(
+        planner=planner,
+        user_memory_service=memory_service,
+    )
+
+    response = service.handle_user_input(
+        "project_memory",
+        "make a green commerce storyboard",
+        user_id="user_1",
+    )
+
+    assert response.status == "COMPLETED"
+    assert planner.context is not None
+    assert planner.context.user_memory is not None
+    assert [memory.id for memory in planner.context.user_memory.relevant] == [active.id]
