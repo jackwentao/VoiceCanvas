@@ -2,21 +2,22 @@
 
 ## 决策结论
 
-VoiceCanvas 长期记忆先以后端 MVP 形式落地，保存跨项目生效的用户偏好、命名习惯、布局习惯和工作流倾向。长期记忆只作为 AI Planner 的上下文建议，不直接覆盖当前项目状态，也不能绕过用户本轮指令、命令校验和命令执行链路。
+VoiceCanvas 长期记忆以可显式管理的 MVP 形式落地，保存跨项目生效的用户偏好、命名习惯、布局习惯和工作流倾向。长期记忆只作为 AI Planner 的上下文建议，不直接覆盖当前项目状态，也不能绕过用户本轮指令、命令校验和命令执行链路。
 
 ## 范围
 
-本次 PR 只实现长期记忆后端基础能力：
+当前 MVP 包含：
 
 - 长期记忆领域模型：记录类型、作用范围、置信度、状态、来源证据和最近使用时间。
 - 仓储协议：应用层只依赖 `UserMemoryRepository`，不绑定具体存储介质。
 - 本地 JSON 仓储：用于 MVP、离线演示和单元测试。
-- 服务层：支持新增、确认、拒绝、归档、删除和相关性检索。
+- 服务层：支持新增、修改、确认、拒绝、归档、删除和相关性检索。
+- REST API：支持前端查看、新增、修改和删除长期记忆。
+- 前端原型管理面板：用户可以在“设置 / 长期记忆”中显式管理长期记忆。
 - 候选提取器：从明确用户表达中提取长期记忆候选，并过滤敏感信息。
 
-本次 PR 不包含：
+当前 MVP 不包含：
 
-- 前端记忆管理面板。
 - 真实 LLM 自动总结记忆。
 - 向量数据库或云端同步。
 - 自动把长期记忆注入现有 Planner 主链路。
@@ -49,7 +50,14 @@ VoiceCanvas 长期记忆先以后端 MVP 形式落地，保存跨项目生效的
 
 ```powershell
 cd backend
-uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py
+uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py tests/test_user_memory_api.py
+```
+
+前端原型契约：
+
+```powershell
+cd frontend
+npm test
 ```
 
 完整后端回归：

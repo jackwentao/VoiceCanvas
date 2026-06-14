@@ -59,6 +59,31 @@ export const API_CONTRACT = {
       request: ["file", "sceneId?"],
       response: ["AssetRef"]
     }
+  },
+  userMemory: {
+    list: {
+      method: "GET",
+      path: "/api/users/:userId/memories",
+      response: ["UserMemoryItem[]"]
+    },
+    create: {
+      method: "POST",
+      path: "/api/users/:userId/memories",
+      request: ["kind", "content", "scope"],
+      response: ["UserMemoryItem"]
+    },
+    update: {
+      method: "PATCH",
+      path: "/api/memories/:memoryId",
+      request: ["kind?", "content?", "scope?", "confidence?", "status?"],
+      response: ["UserMemoryItem"]
+    },
+    delete: {
+      method: "DELETE",
+      path: "/api/memories/:memoryId",
+      request: [],
+      response: []
+    }
   }
 };
 
@@ -94,6 +119,19 @@ export const UI_BINDINGS = [
     writes: ["ExportRequest"],
     events: ["CANVAS_PATCH_APPLIED", "TURN_SUMMARY"],
     api: ["POST /api/projects/:projectId/export"]
+  },
+  {
+    area: "长期记忆管理面板",
+    components: ["MemoryCreateForm", "MemoryList", "MemoryEditRow"],
+    reads: ["UserMemoryItem[]"],
+    writes: ["UserMemoryCreateRequest", "UserMemoryUpdateRequest"],
+    events: [],
+    api: [
+      "GET /api/users/:userId/memories",
+      "POST /api/users/:userId/memories",
+      "PATCH /api/memories/:memoryId",
+      "DELETE /api/memories/:memoryId"
+    ]
   }
 ];
 

@@ -44,6 +44,27 @@ Invoke-RestMethod `
 
 `GET /api/projects/{projectId}` 返回当前可信 `project`、该项目 `history` 和可扩展的 `events` 数组，前端原型启动时用它初始化画布、历史区和 AI 交互栏状态。
 
+长期记忆管理接口：
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/api/users/user_1/memories" `
+  -ContentType "application/json" `
+  -Body '{"kind":"style_preference","content":"用户喜欢清爽绿色和大面积留白","scope":"commerce"}'
+
+Invoke-RestMethod `
+  -Method Get `
+  -Uri "http://127.0.0.1:8000/api/users/user_1/memories?includeInactive=true"
+```
+
+前端原型的“设置 / 长期记忆”入口会调用：
+
+- `GET /api/users/{userId}/memories`：查看长期记忆。
+- `POST /api/users/{userId}/memories`：显式新增 active 记忆。
+- `PATCH /api/memories/{memoryId}`：修改内容、类型、范围、置信度或状态。
+- `DELETE /api/memories/{memoryId}`：删除长期记忆。
+
 流式编排接口：
 
 ```powershell
@@ -153,7 +174,7 @@ backend/artifacts/llm/<timestamp>/
 ```powershell
 uv run --no-editable pytest
 uv run --no-editable pytest tests/test_api.py tests/test_orchestration_service.py
-uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py
+uv run --no-editable pytest tests/test_user_memory_repository.py tests/test_user_memory_service.py tests/test_memory_extractor.py tests/test_user_memory_api.py
 uv run --no-editable ruff check .
 uv run --no-editable mypy src
 ```

@@ -1,5 +1,6 @@
 export const DEFAULT_PROJECT_ID = "project_demo_voicecanvas";
 export const DEFAULT_API_BASE_URL = "http://127.0.0.1:8000";
+export const DEFAULT_USER_ID = "user_1";
 
 function apiBaseUrl() {
   const queryBaseUrl = new URLSearchParams(window.location.search).get("apiBaseUrl");
@@ -31,7 +32,9 @@ async function requestJson(path, options = {}) {
     throw new Error(`后端请求失败：${response.status} ${body || response.statusText}`);
   }
 
-  return response.json();
+  if (response.status === 204) return null;
+  const body = await response.text();
+  return body ? JSON.parse(body) : null;
 }
 
 function requestJsonWithXhr(path, options = {}) {
@@ -47,6 +50,11 @@ function requestJsonWithXhr(path, options = {}) {
     xhr.onload = () => {
       if (xhr.status < 200 || xhr.status >= 300) {
         reject(new Error(`后端请求失败：${xhr.status} ${xhr.responseText || xhr.statusText}`));
+        return;
+      }
+
+      if (xhr.status === 204 || !xhr.responseText) {
+        resolve(null);
         return;
       }
 
@@ -110,6 +118,33 @@ export function resumeOrchestration(projectId, sessionId, answer) {
       projectId,
       answer
     })
+  });
+}
+
+export function listUserMemories(userId = DEFAULT_USER_ID, includeInactive = true) {
+  const params = new URLSearchParams({
+    includeInactive: String(includeInactive)
+  });
+  return requestJson(`/api/users/${encodeURIComponent(userId)}/memories?${params.toString()}`);
+}
+
+export function createUserMemory(userId = DEFAULT_USER_ID, payload) {
+  return requestJson(`/api/users/${encodeURIComponent(userId)}/memories`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export function updateUserMemory(memoryId, patch) {
+  return requestJson(`/api/memories/${encodeURIComponent(memoryId)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch)
+  });
+}
+
+export function deleteUserMemory(memoryId) {
+  return requestJson(`/api/memories/${encodeURIComponent(memoryId)}`, {
+    method: "DELETE"
   });
 }
 
