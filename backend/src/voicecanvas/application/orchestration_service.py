@@ -11,6 +11,7 @@ from voicecanvas.application.command_planner import CommandPlanner, PlanningCont
 from voicecanvas.application.command_validator import CommandValidator
 from voicecanvas.application.conversation_memory import ConversationMemoryManager
 from voicecanvas.application.demo_command_planner import DemoCommandPlanner
+from voicecanvas.application.deterministic_command_router import DeterministicCommandRouter
 from voicecanvas.application.export_service import ExportRequest, ExportResult, ExportService
 from voicecanvas.application.history_manager import HistoryManager
 from voicecanvas.application.project_repository import InMemoryProjectRepository
@@ -69,6 +70,7 @@ class OrchestrationService:
         validator: CommandValidator | None = None,
         export_service: ExportService | None = None,
         user_memory_service: UserMemoryService | None = None,
+        deterministic_router: DeterministicCommandRouter | None = None,
     ) -> None:
         self._repository = repository or InMemoryProjectRepository()
         self._planner = planner or DemoCommandPlanner()
@@ -76,6 +78,7 @@ class OrchestrationService:
         self._executor = executor or CommandExecutor(self._validator)
         self._export_service = export_service or ExportService()
         self._user_memory_service = user_memory_service
+        self._deterministic_router = deterministic_router or DeterministicCommandRouter()
         self._histories: dict[str, HistoryManager] = {}
         self._conversation_memories: dict[str, ConversationMemoryManager] = {}
         self._pending_clarifications: dict[str, dict[str, Any]] = {}
@@ -155,11 +158,13 @@ class OrchestrationService:
             )
             return
 
-        context = PlanningContext(
-            conversation=memory.snapshot(project),
-            user_memory=self._user_memory_context_for(user_id=user_id, user_input=user_input),
-        )
-        plan = self._planner.plan(user_input, project, context=context)
+        plan = self._deterministic_router.route(user_input, project)
+        if plan is None:
+            context = PlanningContext(
+                conversation=memory.snapshot(project),
+                user_memory=self._user_memory_context_for(user_id=user_id, user_input=user_input),
+            )
+            plan = self._planner.plan(user_input, project, context=context)
         if plan.notice:
             yield from self._emit_event(
                 events,
@@ -837,7 +842,9 @@ class OrchestrationService:
             self._conversation_memories[project_id] = ConversationMemoryManager()
         return self._conversation_memories[project_id]
 
-    def _user_memory_context_for(self, *, user_id: str, user_input: str) -> UserMemoryContext | None:
+    def _user_memory_context_for(
+        self, *, user_id: str, user_input: str
+    ) -> UserMemoryContext | None:
         if self._user_memory_service is None:
             return None
         return self._user_memory_service.context_for(

@@ -93,6 +93,51 @@ class CapturingMemoryPlanner:
         return CommandPlan("respond", [], "ok")
 
 
+class CountingPlanner:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def plan(
+        self,
+        user_input: str,
+        project: Project,
+        *,
+        context: PlanningContext | None = None,
+    ) -> CommandPlan:
+        self.calls.append(user_input)
+        return CommandPlan(
+            "commands",
+            [
+                self._command(
+                    CommandType.ADD_ELEMENT,
+                    {
+                        "sceneId": project.active_scene_id,
+                        "element": {
+                            "type": "text",
+                            "name": "标题",
+                            "text": "新品上市",
+                            "x": 160,
+                            "y": 70,
+                            "width": 260,
+                            "height": 64,
+                            "zIndex": 5,
+                        },
+                    },
+                )
+            ],
+            "添加标题",
+        )
+
+    def _command(self, command_type: CommandType, payload: dict) -> CanvasCommand:
+        return CanvasCommand(
+            id=f"cmd_{uuid4().hex[:12]}",
+            type=command_type,
+            source="ai",
+            payload=payload,
+            createdAt=datetime.now(UTC).isoformat(),
+        )
+
+
 def test_service_creates_storyboard_with_real_execution_pipeline() -> None:
     service = OrchestrationService()
 
@@ -231,6 +276,53 @@ def test_service_switches_to_second_scene_after_create() -> None:
 
     assert response.project.active_scene_id == "scene_demo_2"
     assert response.patches[-1].type == PatchType.ACTIVE_SCENE_CHANGED
+
+
+def test_service_routes_pure_switch_scene_without_calling_planner() -> None:
+    planner = CountingPlanner()
+    service = OrchestrationService(planner=planner)
+    service.handle_user_input("project_direct_switch", "创建初始标题")
+    project = service.handle_user_input("project_direct_switch", "创建另一个标题").project
+    scene = project.scenes[0].model_copy(update={"id": "scene_2", "name": "第二镜头", "order": 2})
+    service._repository.save(
+        project.model_copy(
+            update={
+                "scenes": [*project.scenes, scene],
+                "active_scene_id": project.active_scene_id,
+            }
+        )
+    )
+
+    response = service.handle_user_input("project_direct_switch", "切换到第二镜头")
+
+    assert planner.calls == ["创建初始标题", "创建另一个标题"]
+    assert response.project.active_scene_id == "scene_2"
+    assert response.patches[-1].type == PatchType.ACTIVE_SCENE_CHANGED
+
+
+def test_service_routes_pure_undo_and_redo_without_calling_planner() -> None:
+    planner = CountingPlanner()
+    service = OrchestrationService(planner=planner)
+    changed = service.handle_user_input("project_direct_history", "创建初始标题")
+
+    undo = service.handle_user_input("project_direct_history", "撤销上一步")
+    redo = service.handle_user_input("project_direct_history", "重做刚才那一步")
+
+    assert planner.calls == ["创建初始标题"]
+    assert changed.project.scenes[0].elements[0].text == "新品上市"
+    assert undo.project.scenes[0].elements == []
+    assert redo.project.scenes[0].elements[0].text == "新品上市"
+
+
+def test_service_keeps_mixed_undo_sentence_in_planner_path() -> None:
+    planner = CountingPlanner()
+    service = OrchestrationService(planner=planner)
+
+    response = service.handle_user_input("project_mixed_direct", "撤销上一步然后加标题")
+
+    assert planner.calls == ["撤销上一步然后加标题"]
+    assert response.status == "COMPLETED"
+    assert response.project.scenes[0].elements[0].text == "新品上市"
 
 
 def test_service_requests_clarification_for_ambiguous_title_move() -> None:
