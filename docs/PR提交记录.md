@@ -2,6 +2,47 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：真实素材包下载与 MinIO 启动前检查
+
+- 本轮 PR 只实现一件事：把 Render Catalog 的 8 个带货素材从占位图升级为可下载的真实公开 PNG 素材，并规定后端连接 MinIO 时必须先检查素材包是否已完整上传。
+- 新增 `download_real_catalog_assets.py`，按 Catalog `assetPath` 下载 Google Noto Emoji PNG 素材到 `backend/data/real-assets`，来源许可证为 Apache-2.0。
+- 新增 `check_minio_catalog.py` 与基础设施检查函数，逐个检查桶内 `catalog/commerce/...` 对象是否存在。
+- 当 `VOICECANVAS_ASSET_PROVIDER=minio` 时，后端默认启动路径会执行同一套检查；素材缺失时拒绝启动并列出缺失路径。
+- 前端会把后端返回的相对素材代理 URL 拼成当前后端绝对地址，避免从 `4178` 静态服务误请求图片导致“素材加载失败”。
+- `.gitignore` 排除 `backend/data/`，避免把本地 MinIO 数据、SQLite、下载素材和日志误提交。
+- 本轮不新增第三方库、框架或 SDK；下载使用 Python 标准库，MinIO 上传和检查复用既有 `minio` SDK。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable python scripts/download_real_catalog_assets.py --overwrite
+uv run --no-editable pytest tests/test_minio_catalog_seed.py tests/test_real_catalog_assets.py
+uv run --no-editable ruff check src/voicecanvas/infrastructure/minio_catalog_seed.py src/voicecanvas/infrastructure/real_catalog_assets.py src/voicecanvas/api/main.py scripts/download_real_catalog_assets.py scripts/check_minio_catalog.py tests/test_minio_catalog_seed.py tests/test_real_catalog_assets.py
+uv run --no-editable pytest tests/test_api.py tests/test_minio_catalog_seed.py tests/test_real_catalog_assets.py
+uv run --no-editable pytest --ignore=tests/test_real_llm_command_planner.py
+```
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：真实素材下载成功，8 个 PNG 已落到 `backend/data/real-assets`；新增与相关测试 8 passed；API/素材回归 24 passed；常规后端回归 154 passed；前端交互原型契约测试通过；ruff 通过。存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
+已运行真实素材 seed dry-run：
+
+```powershell
+cd backend
+$env:VOICECANVAS_MINIO_ENDPOINT='127.0.0.1:9000'; $env:VOICECANVAS_MINIO_BUCKET='voicecanvas-assets'; $env:VOICECANVAS_MINIO_ACCESS_KEY='minioadmin'; $env:VOICECANVAS_MINIO_SECRET_KEY='minioadmin'; $env:VOICECANVAS_MINIO_SECURE='false'; uv run --no-editable python scripts/seed_minio_catalog.py --asset-root ".\data\real-assets" --dry-run
+```
+
+结果：dry-run 成功检查 8 个真实素材。随后已启动本地真实 MinIO，执行真实上传，并运行 `check_minio_catalog.py --strict`，结果为 8/8 个素材已上传。
+
+补充：本地也运行过后端全量 `uv run --no-editable pytest`，结果为 154 passed、`tests/test_real_llm_command_planner.py::test_real_llm_planner_outputs_are_saved_and_analyzed` 失败 1 例，失败用例为真实 LLM 外部模型验收的 `create_storyboard` 输出未通过校验，和本次素材下载/MinIO 启动检查无直接耦合。
+
 ## 本轮发布决策：后端 Dockerfile
 
 - 本轮 PR 只实现一件事：提供后端 API Dockerfile 和 `.dockerignore`，让评委可用容器方式启动 VoiceCanvas 后端。

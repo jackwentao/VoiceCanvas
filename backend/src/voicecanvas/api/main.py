@@ -1,4 +1,5 @@
 import json
+import os
 from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,6 +41,11 @@ from voicecanvas.application.project_repository import ProjectRepository
 from voicecanvas.application.user_memory_service import UserMemoryService
 from voicecanvas.domain.user_memory import UserMemoryEvidence
 from voicecanvas.infrastructure.local_user_memory_repository import LocalUserMemoryRepository
+from voicecanvas.infrastructure.minio_catalog_seed import (
+    MinioCatalogNotReadyError,
+    assert_minio_catalog_ready,
+    load_catalog_seed_assets,
+)
 from voicecanvas.infrastructure.settings import AssetSettings, StorageSettings
 from voicecanvas.infrastructure.sqlite_project_repository import SQLiteProjectRepository
 
@@ -72,6 +78,8 @@ def _default_project_repository() -> ProjectRepository:
 
 def _default_asset_storage() -> AssetStorage:
     settings = AssetSettings.from_env()
+    if settings.provider == "minio":
+        _assert_minio_catalog_ready_before_start(settings)
     return MinioAssetStorage(
         MinioAssetStorageConfig(
             endpoint=settings.minio_endpoint,
@@ -82,6 +90,37 @@ def _default_asset_storage() -> AssetStorage:
             public_base_url=settings.public_base_url,
         )
     )
+
+
+def _assert_minio_catalog_ready_before_start(settings: AssetSettings) -> None:
+    if os.getenv("VOICECANVAS_SKIP_MINIO_CATALOG_CHECK", "").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        return
+    if not settings.minio_endpoint or not settings.minio_bucket:
+        raise RuntimeError("请先配置 VOICECANVAS_MINIO_ENDPOINT 与 VOICECANVAS_MINIO_BUCKET")
+    if not settings.minio_access_key or not settings.minio_secret_key:
+        raise RuntimeError("请先配置 VOICECANVAS_MINIO_ACCESS_KEY 与 VOICECANVAS_MINIO_SECRET_KEY")
+
+    try:
+        from minio import Minio
+    except ImportError as error:
+        raise RuntimeError("未安装 MinIO SDK，无法执行启动前素材包检查") from error
+
+    client = Minio(
+        settings.minio_endpoint,
+        access_key=settings.minio_access_key,
+        secret_key=settings.minio_secret_key,
+        secure=settings.minio_secure,
+    )
+    assets = load_catalog_seed_assets()
+    try:
+        assert_minio_catalog_ready(client, settings.minio_bucket, assets)
+    except MinioCatalogNotReadyError as error:
+        raise RuntimeError(str(error)) from error
 
 
 def _now() -> str:

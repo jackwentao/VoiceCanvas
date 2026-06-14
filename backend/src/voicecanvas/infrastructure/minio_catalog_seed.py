@@ -27,6 +27,17 @@ class CatalogSeedResult:
     uploaded: bool
 
 
+@dataclass(frozen=True)
+class CatalogCheckResult:
+    asset_path: str
+    exists: bool
+    detail: str | None = None
+
+
+class MinioCatalogNotReadyError(RuntimeError):
+    """MinIO 素材包未完成上传时抛出的启动前检查错误。"""
+
+
 class MinioSeedClient(Protocol):
     def bucket_exists(self, bucket_name: str) -> bool: ...
 
@@ -40,6 +51,12 @@ class MinioSeedClient(Protocol):
         length: int,
         content_type: str,
     ) -> object: ...
+
+
+class MinioCatalogCheckClient(Protocol):
+    def bucket_exists(self, bucket_name: str) -> bool: ...
+
+    def stat_object(self, bucket_name: str, object_name: str) -> object: ...
 
 
 def default_render_catalog_path() -> Path:
@@ -110,6 +127,58 @@ def seed_minio_catalog(
             )
         )
     return results
+
+
+def check_minio_catalog(
+    client: MinioCatalogCheckClient,
+    bucket: str,
+    assets: list[CatalogSeedAsset],
+) -> list[CatalogCheckResult]:
+    if not bucket.strip():
+        raise ValueError("MinIO bucket 不能为空")
+
+    if not client.bucket_exists(bucket):
+        return [
+            CatalogCheckResult(
+                asset_path=asset.asset_path,
+                exists=False,
+                detail=f"bucket 不存在：{bucket}",
+            )
+            for asset in assets
+        ]
+
+    results: list[CatalogCheckResult] = []
+    for asset in assets:
+        try:
+            client.stat_object(bucket, asset.asset_path)
+        except Exception as error:
+            results.append(
+                CatalogCheckResult(
+                    asset_path=asset.asset_path,
+                    exists=False,
+                    detail=str(error),
+                )
+            )
+        else:
+            results.append(CatalogCheckResult(asset_path=asset.asset_path, exists=True))
+    return results
+
+
+def assert_minio_catalog_ready(
+    client: MinioCatalogCheckClient,
+    bucket: str,
+    assets: list[CatalogSeedAsset],
+) -> None:
+    results = check_minio_catalog(client, bucket, assets)
+    missing = [result for result in results if not result.exists]
+    if not missing:
+        return
+
+    missing_lines = "\n".join(f"- {result.asset_path}: {result.detail}" for result in missing)
+    raise MinioCatalogNotReadyError(
+        "MinIO 素材包未就绪，请先上传 Render Catalog 真实素材后再启动后端。\n"
+        f"缺失或不可访问素材：\n{missing_lines}"
+    )
 
 
 def generate_placeholder_png(asset: CatalogSeedAsset, width: int = 320, height: int = 240) -> bytes:

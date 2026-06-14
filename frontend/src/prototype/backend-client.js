@@ -4,7 +4,8 @@ export const DEFAULT_USER_ID = "user_1";
 
 function apiBaseUrl() {
   const queryBaseUrl = new URLSearchParams(window.location.search).get("apiBaseUrl");
-  return window.VOICECANVAS_API_BASE_URL || queryBaseUrl || DEFAULT_API_BASE_URL;
+  const baseUrl = window.VOICECANVAS_API_BASE_URL || queryBaseUrl || DEFAULT_API_BASE_URL;
+  return baseUrl.replace(/\/+$/, "");
 }
 
 function streamStepDelayMs() {
@@ -169,9 +170,16 @@ export function deleteUserMemory(memoryId) {
   });
 }
 
-export function resolveCatalogAssetUrl(assetPath) {
+export async function resolveCatalogAssetUrl(assetPath) {
   const params = new URLSearchParams({ path: assetPath });
-  return requestJson(`/api/assets/catalog?${params.toString()}`);
+  const asset = await requestJson(`/api/assets/catalog?${params.toString()}`);
+  if (asset?.url?.startsWith("/")) {
+    return {
+      ...asset,
+      url: `${apiBaseUrl()}${asset.url}`
+    };
+  }
+  return asset;
 }
 
 async function readSseStream(body, handlers) {

@@ -123,23 +123,30 @@ http://127.0.0.1:4178/index.html?apiBaseUrl=http://127.0.0.1:8001
 
 ## MinIO 素材包初始化
 
-后端通过 `/api/assets/catalog` 和 `/api/assets/catalog/raw` 代理读取 `render-catalog.json` 中声明的 MinIO 素材。配置好 MinIO 环境变量后，可先把素材包上传到桶内：
+后端通过 `/api/assets/catalog` 和 `/api/assets/catalog/raw` 代理读取 `render-catalog.json` 中声明的 MinIO 素材。配置好 MinIO 环境变量后，先下载真实素材包，再上传到桶内：
 
 ```powershell
+$env:VOICECANVAS_ASSET_PROVIDER="minio"
 $env:VOICECANVAS_MINIO_ENDPOINT="127.0.0.1:9000"
 $env:VOICECANVAS_MINIO_BUCKET="voicecanvas-assets"
 $env:VOICECANVAS_MINIO_ACCESS_KEY="your-access-key"
 $env:VOICECANVAS_MINIO_SECRET_KEY="your-secret-key"
 $env:VOICECANVAS_MINIO_SECURE="false"
 
-uv run --no-editable python scripts/seed_minio_catalog.py --generate-placeholders
+uv run --no-editable python scripts/download_real_catalog_assets.py --overwrite
+uv run --no-editable python scripts/seed_minio_catalog.py --asset-root ".\data\real-assets"
+uv run --no-editable python scripts/check_minio_catalog.py --strict
 ```
 
-`--generate-placeholders` 会为缺失素材生成可展示 PNG，占位素材只用于跑通链路。已有正式素材时，把文件放到本地素材根目录并保持 `catalog/commerce/...` 相对路径，然后使用：
+`download_real_catalog_assets.py` 会把 8 个公开 PNG 素材下载到 `backend/data/real-assets`，来源为 Google Noto Emoji，许可证为 Apache-2.0。`seed_minio_catalog.py --asset-root` 会按 `catalog/commerce/...` 相对路径上传真实素材。`check_minio_catalog.py --strict` 会逐个检查桶内对象；任意素材缺失时返回非 0 状态。
+
+当 `VOICECANVAS_ASSET_PROVIDER=minio` 时，`uvicorn voicecanvas.api.main:app` 的默认启动路径也会执行同一套 MinIO 素材完整性检查。素材包未上传完整时后端不会启动，并会列出缺失对象路径。仅本地调试临时跳过时可设置：
 
 ```powershell
-uv run --no-editable python scripts/seed_minio_catalog.py --asset-root "D:\VoiceCanvasAssets"
+$env:VOICECANVAS_SKIP_MINIO_CATALOG_CHECK="true"
 ```
+
+如果比赛现场只需要先跑通代理链路，可使用 `uv run --no-editable python scripts/seed_minio_catalog.py --generate-placeholders` 生成占位 PNG，但正式演示素材以真实下载包为准。
 
 长期记忆后端 MVP 未新增第三方依赖，复用 Pydantic 进行领域模型校验，使用 Python 标准库 `json` 和 `pathlib` 实现本地 JSON 仓储。原创功能边界：
 
