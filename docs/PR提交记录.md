@@ -2,6 +2,27 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：MinIO 素材包初始化脚本
+
+- 本轮 PR 只实现一件事：提供可运行、可测试的 Render Catalog 素材包初始化脚本，让 `catalog/commerce/` 下的素材对象可以写入真实 MinIO 桶。
+- 脚本读取前端 `render-catalog.json` 中声明的 `assetProvider=minio` 与 `assetPath`，优先上传本地素材文件；如果使用 `--generate-placeholders`，会生成可展示 PNG 占位素材，保证比赛演示链路先跑通。
+- 上传后的对象继续通过既有后端 `/api/assets/catalog` 和 `/api/assets/catalog/raw` 代理读取，前端不直连 MinIO，不暴露凭证。
+- 本轮复用既有 `minio` SDK 与 Python 标准库，没有新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_minio_catalog_seed.py
+uv run --no-editable ruff check src/voicecanvas/infrastructure/minio_catalog_seed.py scripts/seed_minio_catalog.py tests/test_minio_catalog_seed.py
+uv run --no-editable pytest
+$env:VOICECANVAS_MINIO_ENDPOINT='127.0.0.1:9000'; $env:VOICECANVAS_MINIO_BUCKET='voicecanvas-assets'; $env:VOICECANVAS_MINIO_ACCESS_KEY='minioadmin'; $env:VOICECANVAS_MINIO_SECRET_KEY='minioadmin'; $env:VOICECANVAS_MINIO_SECURE='false'; uv run --no-editable python scripts/seed_minio_catalog.py --generate-placeholders --dry-run
+```
+
+结果：`tests/test_minio_catalog_seed.py` 3 passed；ruff 通过；后端全量测试 148 passed；dry-run 成功检查 8 个素材；存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
 ## 本轮发布决策：SQLite 项目状态仓储
 
 - 本轮 PR 只实现一件事：把默认 Project State 仓储从内存实现切换为 SQLite 持久化实现。

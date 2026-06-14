@@ -220,6 +220,19 @@ $env:VOICECANVAS_MINIO_SECRET_KEY="your-secret-key"
 $env:VOICECANVAS_MINIO_SECURE="false"
 ```
 
+初始化 Render Catalog 素材包到 MinIO：
+
+```powershell
+cd backend
+uv run --no-editable python scripts/seed_minio_catalog.py --generate-placeholders
+```
+
+如果已有设计好的素材文件，可放在本地素材根目录下，并保持与 `assetPath` 相同的相对路径，然后执行：
+
+```powershell
+uv run --no-editable python scripts/seed_minio_catalog.py --asset-root "D:\VoiceCanvasAssets"
+```
+
 素材对象路径统一放在 `catalog/commerce/` 前缀下，例如：
 
 ```text
