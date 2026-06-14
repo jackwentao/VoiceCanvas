@@ -110,6 +110,26 @@ http://127.0.0.1:4178/index.html?apiBaseUrl=http://127.0.0.1:8001
 - 后端原创实现 LLM 命令归一化，把同批新增元素名称引用转换为合法 `connector.from` / `connector.to`。
 - 前端原创实现流式事件消费与画布状态投影，把收到的 Patch 逐步应用到本地 Project State。
 
+## MinIO 素材包初始化
+
+后端通过 `/api/assets/catalog` 和 `/api/assets/catalog/raw` 代理读取 `render-catalog.json` 中声明的 MinIO 素材。配置好 MinIO 环境变量后，可先把素材包上传到桶内：
+
+```powershell
+$env:VOICECANVAS_MINIO_ENDPOINT="127.0.0.1:9000"
+$env:VOICECANVAS_MINIO_BUCKET="voicecanvas-assets"
+$env:VOICECANVAS_MINIO_ACCESS_KEY="your-access-key"
+$env:VOICECANVAS_MINIO_SECRET_KEY="your-secret-key"
+$env:VOICECANVAS_MINIO_SECURE="false"
+
+uv run --no-editable python scripts/seed_minio_catalog.py --generate-placeholders
+```
+
+`--generate-placeholders` 会为缺失素材生成可展示 PNG，占位素材只用于跑通链路。已有正式素材时，把文件放到本地素材根目录并保持 `catalog/commerce/...` 相对路径，然后使用：
+
+```powershell
+uv run --no-editable python scripts/seed_minio_catalog.py --asset-root "D:\VoiceCanvasAssets"
+```
+
 长期记忆后端 MVP 未新增第三方依赖，复用 Pydantic 进行领域模型校验，使用 Python 标准库 `json` 和 `pathlib` 实现本地 JSON 仓储。原创功能边界：
 
 - 长期记忆领域模型，记录偏好类型、作用范围、置信度、状态、来源证据和最近使用时间。
