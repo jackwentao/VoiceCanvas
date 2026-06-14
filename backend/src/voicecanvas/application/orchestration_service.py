@@ -1135,15 +1135,52 @@ class OrchestrationService:
                 "根据澄清结果放大元素",
             )
 
+        patch = self._movement_patch_from_original_input(original_input, scene, element)
         return self._canvas_command(
             CommandType.UPDATE_ELEMENT,
             {
                 "sceneId": scene.id,
                 "elementId": element.id,
-                "patch": {"y": 36, "zIndex": 8},
+                "patch": patch,
             },
             "根据澄清结果移动元素",
         )
+
+    def _movement_patch_from_original_input(
+        self,
+        original_input: str,
+        scene: Scene,
+        element: CanvasElement,
+    ) -> dict[str, Any]:
+        normalized = self._normalize_answer(original_input)
+        margin = 36
+        patch: dict[str, Any] = {"zIndex": max(element.z_index, 8)}
+
+        if self._contains_any(normalized, ["左边", "左侧", "往左", "向左", "移到左", "放左"]):
+            patch["x"] = margin
+            return patch
+        if self._contains_any(normalized, ["右边", "右侧", "往右", "向右", "移到右", "放右"]):
+            patch["x"] = max(margin, scene.canvas.width - element.width - margin)
+            return patch
+        if self._contains_any(
+            normalized,
+            ["上面", "顶部", "上方", "往上", "向上", "移到上", "放上"],
+        ):
+            patch["y"] = margin
+            return patch
+        if self._contains_any(
+            normalized,
+            ["下面", "底部", "下方", "往下", "向下", "移到下", "放下"],
+        ):
+            patch["y"] = max(margin, scene.canvas.height - element.height - margin)
+            return patch
+        if self._contains_any(normalized, ["中间", "居中", "中心"]):
+            patch["x"] = max(0, (scene.canvas.width - element.width) / 2)
+            patch["y"] = max(0, (scene.canvas.height - element.height) / 2)
+            return patch
+
+        patch["y"] = margin
+        return patch
 
     def _find_element_by_id(
         self, project: Project, scene_id: str | None, element_id: str | None
@@ -1224,6 +1261,9 @@ class OrchestrationService:
             key=lambda option: float(option["bounds"].get("width", 0))
             * float(option["bounds"].get("height", 0)),
         )
+
+    def _contains_any(self, value: str, keywords: list[str]) -> bool:
+        return any(keyword in value for keyword in keywords)
 
     def _now(self) -> str:
         return datetime.now(UTC).isoformat()

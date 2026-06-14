@@ -293,18 +293,24 @@ function executeCommand(command) {
   }
 
   if (command.type === "SWITCH_SCENE") {
-    state.project.activeSceneId = command.payload.sceneId;
+    const targetScene = state.project.scenes.find((scene) => scene.id === command.payload.sceneId);
+    if (!targetScene) return patches;
+    state.project.activeSceneId = targetScene.id;
     patches.push({
       id: makeId("patch"),
       commandId: command.id,
       type: "ACTIVE_SCENE_CHANGED",
-      sceneId: command.payload.sceneId,
+      sceneId: targetScene.id,
       createdAt: timestamp
     });
   }
 
   if (command.type === "ADD_ELEMENT") {
-    const targetScene = state.project.scenes.find((scene) => scene.id === command.payload.sceneId);
+    const targetScene =
+      state.project.scenes.find((scene) => scene.id === command.payload.sceneId) ||
+      activeScene() ||
+      state.project.scenes[0];
+    if (!targetScene) return patches;
     const element = {
       id: makeId("el"),
       createdAt: timestamp,
@@ -696,6 +702,18 @@ function runStoryboardDemoLocal() {
 function runArrowDemo() {
   const input = COMMAND_BINDINGS[1].userInput;
   beginSession(input);
+  const targetScene =
+    state.project.scenes.find((scene) => scene.name?.includes("产品")) ||
+    activeScene() ||
+    state.project.scenes[0];
+  const elements = targetScene?.elements || [];
+  const productElement =
+    elements.find((element) => `${element.name || ""}${element.text || ""}`.includes("奶茶")) ||
+    elements.find((element) => ["image", "generated_asset", "shape"].includes(element.type));
+  const lowSugarElement =
+    elements.find((element) => `${element.name || ""}${element.text || ""}`.includes("低糖")) ||
+    elements.find((element) => element.type === "text");
+  const sceneId = targetScene?.id || state.project.activeSceneId;
   const commands = [
     {
       id: makeId("cmd"),
@@ -703,7 +721,7 @@ function runArrowDemo() {
       source: "ai",
       reason: "定位到第二镜头",
       createdAt: nowIso(),
-      payload: { sceneId: "scene_product" }
+      payload: { sceneId }
     },
     {
       id: makeId("cmd"),
@@ -712,13 +730,13 @@ function runArrowDemo() {
       reason: "从奶茶产品指向低糖标签",
       createdAt: nowIso(),
       payload: {
-        sceneId: "scene_product",
+        sceneId,
         element: {
           name: "核心卖点箭头",
           type: "connector",
           connectorType: "arrow",
-          from: { elementId: "el_product_cup", anchor: "right" },
-          to: { elementId: "el_low_sugar_tag", anchor: "left" },
+          from: { elementId: productElement?.id || "el_product_cup", anchor: "right" },
+          to: { elementId: lowSugarElement?.id || "el_low_sugar_tag", anchor: "left" },
           text: "核心卖点",
           x: 555,
           y: 174,
@@ -775,6 +793,7 @@ function runArrowDemo() {
 function runClarificationDemo() {
   const input = COMMAND_BINDINGS[2].userInput;
   beginSession(input);
+  const options = buildClarificationOptions();
   playEvents([
     {
       run: () => publishStage("understanding", "发现多个标题候选")
@@ -788,11 +807,7 @@ function runClarificationDemo() {
           originalInput: input,
           question: "当前有主标题、低糖标签和优惠标签，你想移动哪一个？",
           expectedAnswerType: "element_selection",
-          options: [
-            { id: "el_title_hook", label: "主标题", value: "el_title_hook" },
-            { id: "el_low_sugar_tag", label: "低糖标签", value: "el_low_sugar_tag" },
-            { id: "el_offer", label: "优惠标签", value: "el_offer" }
-          ],
+          options,
           createdAt: nowIso()
         };
         pushEvent({
@@ -806,10 +821,40 @@ function runClarificationDemo() {
   ]);
 }
 
+function buildClarificationOptions() {
+  const candidates = [];
+  const labels = [
+    { label: "主标题", terms: ["主标题", "标题"] },
+    { label: "低糖标签", terms: ["低糖"] },
+    { label: "优惠标签", terms: ["优惠"] }
+  ];
+
+  for (const { label, terms } of labels) {
+    const element = state.project.scenes
+      .flatMap((scene) => scene.elements || [])
+      .find((item) => terms.some((term) => `${item.name || ""}${item.text || ""}${item.content?.text || ""}`.includes(term)));
+    candidates.push({ id: element?.id || label, label, value: element?.id || label });
+  }
+
+  return candidates;
+}
+
 function resumeClarification(elementId) {
   if (!state.session.pendingClarification) return;
 
   const targetScene = state.project.scenes.find((scene) => scene.elements.some((element) => element.id === elementId));
+  if (!targetScene) {
+    state.session.pendingClarification = null;
+    state.session.status = "COMPLETED";
+    state.session.stage = "completed";
+    state.session.lastSummary = {
+      message: "未找到可移动的目标元素，已结束澄清。",
+      completed: false,
+      changes: []
+    };
+    render();
+    return;
+  }
   const command = {
     id: makeId("cmd"),
     type: "UPDATE_ELEMENT",

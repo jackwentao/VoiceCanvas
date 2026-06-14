@@ -82,6 +82,21 @@ def test_resolver_expands_candidate_scope_when_direct_name_misses() -> None:
     assert result.candidates[0].element_id == "el_ceramic"
 
 
+def test_resolver_prefers_direct_element_name_for_named_character() -> None:
+    project = _project(
+        [
+            _element("el_girl", "小女孩", 520),
+            _element("el_cat", "小猫", 80),
+        ]
+    )
+
+    result = ReferentResolver().resolve("把小女孩移到左边", project)
+
+    assert result is not None
+    assert result.status == "matched"
+    assert result.candidates[0].element_id == "el_girl"
+
+
 def test_resolution_to_next_action_carries_candidates_for_resume() -> None:
     project = _project(
         [

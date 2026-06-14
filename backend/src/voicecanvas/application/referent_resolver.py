@@ -265,6 +265,11 @@ class ReferentResolver:
             score += semantic_score
             reasons.append("语义描述匹配")
 
+        direct_name_score = self._direct_name_score(user_input, element)
+        if direct_name_score:
+            score += direct_name_score
+            reasons.append("名称或文案直接命中")
+
         position_score, position_reason = self._position_score(scene, element, user_input)
         if position_score:
             score += position_score
@@ -294,6 +299,20 @@ class ReferentResolver:
             ):
                 score = max(score, 0.46)
         return score
+
+    def _direct_name_score(self, user_input: str, element: CanvasElement) -> float:
+        values = [
+            element.name,
+            element.text,
+            element.label,
+            (element.content or {}).get("label"),
+            (element.content or {}).get("alt"),
+        ]
+        for value in values:
+            text = str(value or "").strip().lower()
+            if text and len(text) >= 2 and text in user_input.lower():
+                return 0.7
+        return 0.0
 
     def _position_score(
         self,

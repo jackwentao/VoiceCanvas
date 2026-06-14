@@ -388,6 +388,67 @@ def test_service_resumes_clarification_with_spatial_voice_answer() -> None:
     assert response.next_action is None
 
 
+def test_service_resumes_clarification_with_original_left_direction() -> None:
+    service = OrchestrationService()
+    project = Project.model_validate(
+        {
+            "id": "project_left_resume",
+            "title": "澄清恢复测试",
+            "mode": "storyboard",
+            "activeSceneId": "scene_1",
+            "scenes": [
+                {
+                    "id": "scene_1",
+                    "name": "主图",
+                    "order": 1,
+                    "canvas": {"width": 960, "height": 540, "background": {"color": "#ffffff"}},
+                    "elements": [
+                        {
+                            "id": "el_title",
+                            "type": "text",
+                            "name": "标题",
+                            "text": "新品上市",
+                            "x": 240,
+                            "y": 120,
+                            "width": 260,
+                            "height": 64,
+                            "zIndex": 4,
+                        }
+                    ],
+                }
+            ],
+        }
+    )
+    service._repository.save(project)
+    session_id = "session_left_resume"
+    service._pending_clarifications[session_id] = {
+        "projectId": project.id,
+        "originalInput": "把标题放左边",
+        "nextAction": {
+            "type": "ASK_CLARIFICATION",
+            "options": [
+                {
+                    "id": "el_title",
+                    "label": "标题",
+                    "sceneId": "scene_1",
+                    "elementId": "el_title",
+                    "bounds": {"x": 240, "y": 120, "width": 260, "height": 64},
+                }
+            ],
+        },
+    }
+
+    response = service.resume_user_input(project.id, session_id, "标题")
+
+    assert response.status == "COMPLETED"
+    assert response.patches[-1].type == PatchType.ELEMENT_UPDATED
+    first_scene_title = next(
+        element for element in response.project.scenes[0].elements if element.name == "标题"
+    )
+    assert first_scene_title.x == 36
+    assert response.next_action is None
+
+
 def test_service_asks_confirmation_before_clearing_scene() -> None:
     service = OrchestrationService()
     service.handle_user_input("project_demo", "加标题，写新品上市")
