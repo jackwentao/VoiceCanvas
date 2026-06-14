@@ -262,11 +262,8 @@ class LLMCommandPlanner:
             return self._normalize_scene_patch_with_elements(draft, payload, element_aliases)
 
         if "sceneId" in payload:
-            scene_source = (
-                payload.get("scene")
-                if isinstance(payload.get("scene"), dict)
-                else payload
-            )
+            raw_scene = payload.get("scene")
+            scene_source: dict[str, Any] = raw_scene if isinstance(raw_scene, dict) else payload
             return self._normalize_scene_like_update(
                 draft,
                 payload["sceneId"],
@@ -746,9 +743,14 @@ class LLMCommandPlanner:
             return element
 
         display_name = element.get("name") or object_kind["label"]
-        content = element.get("content") if isinstance(element.get("content"), dict) else {}
-        asset = element.get("asset") if isinstance(element.get("asset"), dict) else {}
-        subject = element.get("subject") if isinstance(element.get("subject"), dict) else {}
+        raw_content = element.get("content")
+        raw_asset = element.get("asset")
+        raw_subject = element.get("subject")
+        content: dict[str, Any] = raw_content if isinstance(raw_content, dict) else {}
+        asset: dict[str, Any] = raw_asset if isinstance(raw_asset, dict) else {}
+        subject: dict[str, Any] = raw_subject if isinstance(raw_subject, dict) else {}
+        metadata = element.get("metadata")
+        metadata_payload: dict[str, Any] = metadata if isinstance(metadata, dict) else {}
         attributes = object_kind.get("attributes") or {}
         key_features = [object_kind["label"]]
         for values in attributes.values():
@@ -787,7 +789,7 @@ class LLMCommandPlanner:
                 },
             },
             "metadata": {
-                **(element.get("metadata") if isinstance(element.get("metadata"), dict) else {}),
+                **metadata_payload,
                 "renderKey": object_kind["renderKey"],
                 "renderHint": object_kind["renderHint"],
                 "renderMode": object_kind.get("renderMode")
