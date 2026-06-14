@@ -41,6 +41,8 @@ function testApiContract() {
   assert.equal(API_CONTRACT.project.create.path, "/api/projects");
   assert.equal(API_CONTRACT.project.export.path, "/api/projects/:projectId/export");
   assert.equal(API_CONTRACT.project.import.path, "/api/projects/import");
+  assert.equal(API_CONTRACT.assets.catalog.method, "GET");
+  assert.equal(API_CONTRACT.assets.catalog.path, "/api/assets/catalog");
   assert.equal(API_CONTRACT.userMemory.list.method, "GET");
   assert.equal(API_CONTRACT.userMemory.create.path, "/api/users/:userId/memories");
   assert.equal(API_CONTRACT.userMemory.update.method, "PATCH");
@@ -288,6 +290,11 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("<path"), "连接线必须使用 SVG path 渲染");
   assert.ok(app.includes("marker-end"), "箭头必须使用 SVG marker 渲染");
   assert.ok(app.includes("renderGeneratedAssetElement"), "画布必须支持生成素材渲染");
+  assert.ok(app.includes("resolveCatalogAssetUrl"), "前端必须通过后端代理解析 MinIO 素材 URL");
+  assert.ok(app.includes("catalogAssetState"), "前端必须缓存 catalog 素材加载状态");
+  assert.ok(app.includes("renderCatalogAssetElement"), "前端必须支持 catalog 图片素材渲染");
+  assert.ok(app.includes('data-status="ready"'), "catalog 图片加载成功时必须进入 ready 状态");
+  assert.ok(app.includes('data-status="${status}"'), "catalog 图片加载中或失败时必须保留状态");
   assert.ok(app.includes("hydrateRenderCatalog"), "前端必须加载 Render Catalog");
   assert.ok(app.includes("renderCatalogState"), "前端必须建立 Render Catalog 索引");
   assert.ok(app.includes("getIllustrationRenderer"), "前端必须通过 renderer registry 分发语义插画");
@@ -322,6 +329,7 @@ async function testPrototypeHtml() {
   assert.ok(backendClient.includes('requestJson("/api/projects"'), "前端客户端必须绑定新建项目 API");
   assert.ok(backendClient.includes("/export"), "前端客户端必须绑定项目导出 API");
   assert.ok(backendClient.includes("/api/projects/import"), "前端客户端必须绑定项目载入 API");
+  assert.ok(backendClient.includes("/api/assets/catalog"), "前端客户端必须绑定 catalog 素材代理 API");
   assert.ok(exportService.includes("exportProjectFile"), "导出模块必须提供项目文件导出函数");
   assert.ok(exportService.includes("exportSceneImage"), "导出模块必须提供图片导出函数");
   assert.ok(exportService.includes("importProjectFile"), "导出模块必须提供项目文件载入函数");
@@ -344,6 +352,16 @@ async function testPrototypeHtml() {
   assert.equal(renderCatalog.version, 1, "Render Catalog 必须有版本");
   assert.equal(catalogItems.get("character")?.directRender, true, "人物必须声明本地 direct renderer");
   assert.equal(catalogItems.get("dog")?.directRender, false, "未接入 renderer 的对象必须走 placeholder");
+  assert.equal(catalogItems.get("bubble-tea")?.assetProvider, "minio", "奶茶素材必须声明 MinIO provider");
+  assert.equal(
+    catalogItems.get("bubble-tea")?.assetPath,
+    "catalog/commerce/food-drink/bubble-tea.png",
+    "奶茶素材必须保存稳定 MinIO 对象路径"
+  );
+  assert.ok(
+    catalogItems.get("bubble-tea")?.supportedAttributes?.some((attribute) => attribute.key === "flavor"),
+    "奶茶素材必须支持口味属性"
+  );
   assert.ok(
     catalogItems.get("character")?.variants?.some((variant) => variant.key === "male"),
     "人物 catalog 必须声明 male variant"

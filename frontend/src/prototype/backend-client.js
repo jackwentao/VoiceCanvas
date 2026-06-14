@@ -169,6 +169,11 @@ export function deleteUserMemory(memoryId) {
   });
 }
 
+export function resolveCatalogAssetUrl(assetPath) {
+  const params = new URLSearchParams({ path: assetPath });
+  return requestJson(`/api/assets/catalog?${params.toString()}`);
+}
+
 async function readSseStream(body, handlers) {
   const reader = body.getReader();
   const decoder = new TextDecoder();

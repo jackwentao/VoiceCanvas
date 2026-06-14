@@ -234,6 +234,48 @@ def test_llm_planner_normalizes_real_world_objects_to_generated_assets() -> None
     assert "placeholderStyle" in element
 
 
+def test_llm_planner_keeps_commerce_asset_subject_and_attributes() -> None:
+    client = FakeLLMClient(
+        [
+            _json_response(
+                {
+                    "action": "commands",
+                    "message": "添加奶茶",
+                    "commands": [
+                        {
+                            "type": "ADD_ELEMENT",
+                            "payload": {
+                                "sceneId": "scene_1",
+                                "element": {
+                                    "type": "shape",
+                                    "name": "草莓味珍珠奶茶",
+                                    "shape": "rectangle",
+                                    "x": 260,
+                                    "y": 260,
+                                    "width": 180,
+                                    "height": 140,
+                                    "zIndex": 5,
+                                },
+                            },
+                        }
+                    ],
+                }
+            )
+        ]
+    )
+
+    plan = LLMCommandPlanner(client).plan("画一杯草莓味珍珠奶茶", _project())
+    element = plan.commands[0].payload["element"]
+
+    assert element["type"] == "generated_asset"
+    assert element["asset"]["provider"] == "minio"
+    assert element["metadata"]["renderKey"] == "bubble-tea"
+    assert element["metadata"]["assetPath"] == "catalog/commerce/food-drink/bubble-tea.png"
+    assert element["metadata"]["renderMode"] == "asset"
+    assert element["subject"]["product"]["attributes"]["flavor"] == ["草莓味"]
+    assert element["subject"]["product"]["attributes"]["toppings"] == ["珍珠"]
+
+
 def test_llm_planner_prioritizes_girl_subject_over_table_context() -> None:
     client = FakeLLMClient(
         [

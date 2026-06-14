@@ -3,11 +3,32 @@ import json
 from fastapi.testclient import TestClient
 
 from voicecanvas.api.main import create_app
+from voicecanvas.application.asset_storage import CatalogAssetContent, CatalogAssetRef
 from voicecanvas.application.orchestration_service import OrchestrationService
 
 
+class FakeAssetStorage:
+    def catalog_asset_url(self, path: str) -> CatalogAssetRef:
+        if path != "catalog/commerce/food-drink/bubble-tea.png":
+            from voicecanvas.application.asset_storage import validate_catalog_asset_path
+
+            validate_catalog_asset_path(path)
+        return CatalogAssetRef(
+            path=path,
+            provider="minio",
+            url=f"/api/assets/catalog/raw?path={path}",
+        )
+
+    def read_catalog_asset(self, path: str) -> CatalogAssetContent:
+        if path != "catalog/commerce/food-drink/bubble-tea.png":
+            from voicecanvas.application.asset_storage import validate_catalog_asset_path
+
+            validate_catalog_asset_path(path)
+        return CatalogAssetContent(content=b"fake-image", media_type="image/png")
+
+
 def _client() -> TestClient:
-    return TestClient(create_app(OrchestrationService()))
+    return TestClient(create_app(OrchestrationService(), asset_storage=FakeAssetStorage()))
 
 
 def _parse_sse_blocks(text: str) -> list[dict[str, object]]:
@@ -32,6 +53,42 @@ def test_health_endpoint() -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "ok", "service": "voicecanvas-backend"}
+
+
+def test_catalog_asset_endpoint_returns_backend_proxy_url() -> None:
+    client = _client()
+
+    response = client.get(
+        "/api/assets/catalog",
+        params={"path": "catalog/commerce/food-drink/bubble-tea.png"},
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["provider"] == "minio"
+    assert body["path"] == "catalog/commerce/food-drink/bubble-tea.png"
+    assert body["url"].startswith("/api/assets/catalog/raw")
+
+
+def test_catalog_asset_endpoint_rejects_unsafe_paths() -> None:
+    client = _client()
+
+    for path in ["", "../secret.png", "/catalog/commerce/a.png", "avatar/user.png"]:
+        response = client.get("/api/assets/catalog", params={"path": path})
+        assert response.status_code in {400, 422}
+
+
+def test_catalog_asset_raw_endpoint_returns_image_content() -> None:
+    client = _client()
+
+    response = client.get(
+        "/api/assets/catalog/raw",
+        params={"path": "catalog/commerce/food-drink/bubble-tea.png"},
+    )
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("image/png")
+    assert response.content == b"fake-image"
 
 
 def test_create_project_endpoint_returns_blank_project() -> None:

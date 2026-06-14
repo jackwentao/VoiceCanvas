@@ -191,13 +191,14 @@ class DemoCommandPlanner:
                         CommandType.ADD_ELEMENT,
                         {
                             "sceneId": project.active_scene_id,
-                            "element": self._shape_element(
-                                "商品",
+                            "element": self._catalog_asset_element(
+                                "奶茶产品",
+                                "bubble-tea",
+                                "catalog/commerce/food-drink/bubble-tea.png",
                                 470,
                                 250,
                                 260,
                                 220,
-                                {"fill": "#f8fafc", "stroke": "#2563eb"},
                             ),
                         },
                         "添加商品",
@@ -257,7 +258,7 @@ class DemoCommandPlanner:
             product = self._find_element(
                 project,
                 names=["商品", "奶茶产品"],
-                types=[ElementType.SHAPE],
+                types=[ElementType.SHAPE, ElementType.GENERATED_ASSET],
             )
             if product is None:
                 return DemoCommandPlan("respond", [], "当前项目没有可放大的商品元素")
@@ -326,13 +327,14 @@ class DemoCommandPlanner:
                 CommandType.ADD_ELEMENT,
                 {
                     "sceneId": first_scene.id,
-                    "element": self._shape_element(
-                        "商品",
+                    "element": self._catalog_asset_element(
+                        "奶茶产品",
+                        "bubble-tea",
+                        "catalog/commerce/food-drink/bubble-tea.png",
                         470,
                         250,
                         260,
                         220,
-                        {"fill": "#fff7ed", "stroke": "#ea580c"},
                     ),
                 },
                 "添加第一镜头商品",
@@ -355,13 +357,14 @@ class DemoCommandPlanner:
                         "突出低糖和新品上市卖点",
                         [
                             self._text_element("标题", "低糖也好喝", 170, 70),
-                            self._shape_element(
-                                "商品",
+                            self._catalog_asset_element(
+                                "奶茶产品",
+                                "bubble-tea",
+                                "catalog/commerce/food-drink/bubble-tea.png",
                                 500,
                                 230,
                                 300,
                                 240,
-                                {"fill": "#ecfeff", "stroke": "#0891b2"},
                             ),
                             self._text_element("低糖标签", "核心卖点", 840, 250),
                         ],
@@ -445,6 +448,55 @@ class DemoCommandPlanner:
             "height": height,
             "zIndex": 3,
             "style": style,
+        }
+
+    def _catalog_asset_element(
+        self,
+        name: str,
+        render_key: str,
+        asset_path: str,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+    ) -> dict:
+        return {
+            "id": f"el_{uuid4().hex[:12]}",
+            "type": "generated_asset",
+            "name": name,
+            "x": x,
+            "y": y,
+            "width": width,
+            "height": height,
+            "zIndex": 4,
+            "content": {"alt": name},
+            "asset": {
+                "kind": "product",
+                "status": "pending",
+                "prompt": f"{name}，统一带货素材包风格",
+                "provider": "minio",
+            },
+            "subject": {
+                "product": {
+                    "category": name,
+                    "keyFeatures": [name],
+                    "renderKey": render_key,
+                }
+            },
+            "metadata": {
+                "renderKey": render_key,
+                "renderHint": render_key,
+                "renderMode": "asset",
+                "assetProvider": "minio",
+                "assetPath": asset_path,
+                "styleFamily": "commerce_clean_illustration_v1",
+            },
+            "placeholderStyle": {
+                "fill": "#ffffff",
+                "stroke": "#1f8a5b",
+                "strokeWidth": 2,
+                "radius": 12,
+            },
         }
 
     def _find_element(

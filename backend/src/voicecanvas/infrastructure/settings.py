@@ -32,3 +32,31 @@ class LLMSettings(BaseModel):
             timeout_seconds=float(os.getenv("VOICECANVAS_LLM_TIMEOUT_SECONDS", "20")),
             temperature=float(os.getenv("VOICECANVAS_LLM_TEMPERATURE", "0.1")),
         )
+
+
+class AssetSettings(BaseModel):
+    provider: Literal["local", "minio"] = "local"
+    minio_endpoint: str | None = None
+    minio_bucket: str | None = None
+    minio_access_key: str | None = None
+    minio_secret_key: str | None = None
+    minio_secure: bool = False
+    public_base_url: str | None = None
+
+    @classmethod
+    def from_env(cls) -> "AssetSettings":
+        load_dotenv()
+        provider = cast(
+            Literal["local", "minio"],
+            os.getenv("VOICECANVAS_ASSET_PROVIDER", "local"),
+        )
+        return cls(
+            provider=provider,
+            minio_endpoint=os.getenv("VOICECANVAS_MINIO_ENDPOINT"),
+            minio_bucket=os.getenv("VOICECANVAS_MINIO_BUCKET"),
+            minio_access_key=os.getenv("VOICECANVAS_MINIO_ACCESS_KEY"),
+            minio_secret_key=os.getenv("VOICECANVAS_MINIO_SECRET_KEY"),
+            minio_secure=os.getenv("VOICECANVAS_MINIO_SECURE", "false").lower()
+            in {"1", "true", "yes", "on"},
+            public_base_url=os.getenv("VOICECANVAS_ASSET_PUBLIC_BASE_URL"),
+        )

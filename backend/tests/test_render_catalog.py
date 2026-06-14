@@ -22,6 +22,30 @@ def test_render_catalog_marks_known_but_unsupported_object_as_placeholder() -> N
     assert match.direct_render is False
 
 
+def test_render_catalog_resolves_commerce_subject_and_attributes() -> None:
+    catalog = get_render_catalog()
+
+    match = catalog.resolve("草莓味珍珠奶茶")
+
+    assert match is not None
+    assert match.render_key == "bubble-tea"
+    assert match.asset_provider == "minio"
+    assert match.asset_path == "catalog/commerce/food-drink/bubble-tea.png"
+    assert match.attributes is not None
+    assert "草莓味" in match.attributes["flavor"]
+    assert "珍珠" in match.attributes["toppings"]
+
+
+def test_render_catalog_resolves_smartphone_alias() -> None:
+    catalog = get_render_catalog()
+
+    match = catalog.resolve("画一台旗舰手机")
+
+    assert match is not None
+    assert match.render_key == "smartphone"
+    assert match.asset_provider == "minio"
+
+
 def test_render_catalog_does_not_guess_unknown_object() -> None:
     catalog = get_render_catalog()
 

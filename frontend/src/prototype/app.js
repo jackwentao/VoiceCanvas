@@ -8,6 +8,7 @@ import {
   importProjectState,
   listUserMemories,
   loadProjectState,
+  resolveCatalogAssetUrl,
   resumeOrchestration,
   startOrchestrationStream,
   updateUserMemory
@@ -112,6 +113,12 @@ const renderCatalogState = {
   items: [],
   byKey: new Map(),
   aliasRules: []
+};
+
+const catalogAssetState = {
+  urls: new Map(),
+  pending: new Set(),
+  failed: new Set()
 };
 
 const $ = (selector) => document.querySelector(selector);
@@ -1469,6 +1476,11 @@ function renderImageElement(element) {
 }
 
 function renderGeneratedAssetElement(element) {
+  const catalogAsset = resolveCatalogAssetForElement(element);
+  if (catalogAsset) {
+    return renderCatalogAssetElement(element, catalogAsset);
+  }
+
   const illustration = renderSemanticIllustrationElement(element);
   if (illustration) return illustration;
 
@@ -1491,6 +1503,32 @@ function renderGeneratedAssetElement(element) {
   return `
     <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="${status}" style="${elementBoxStyle(element)};${placeholderStyle}">
       <span>${escapeHtml(element.name || element.asset?.kind || "生成素材")}</span>
+    </button>
+  `;
+}
+
+function renderCatalogAssetElement(element, catalogAsset) {
+  const selected = state.selectedElementId === element.id ? "is-selected" : "";
+  const content = getContent(element);
+  const status = catalogAsset.status;
+  const label = content.alt || element.name || catalogAsset.displayName || "素材";
+  if (status === "ready" && catalogAsset.url) {
+    return `
+      <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="ready" data-asset-provider="minio" style="${elementBoxStyle(element)}">
+        <img src="${escapeAttribute(catalogAsset.url)}" alt="${escapeAttribute(label)}" data-asset-path="${escapeAttribute(catalogAsset.path)}" loading="lazy">
+      </button>
+    `;
+  }
+
+  const placeholderStyle = [
+    `background:${element.placeholderStyle?.fill || "#ffffff"}`,
+    `border:${element.placeholderStyle?.strokeWidth || 1}px dashed ${element.placeholderStyle?.stroke || "#243b53"}`,
+    `border-radius:${element.placeholderStyle?.radius || 8}px`
+  ].join(";");
+  const message = status === "failed" ? `${label} 素材加载失败` : `${label} 素材加载中`;
+  return `
+    <button class="canvas-element generated-asset-element ${selected}" data-element="${element.id}" data-status="${status}" data-asset-provider="minio" style="${elementBoxStyle(element)};${placeholderStyle}">
+      <span>${escapeHtml(message)}</span>
     </button>
   `;
 }
@@ -1583,6 +1621,117 @@ function semanticSpecFromCatalog(element) {
     .filter(Boolean)
     .join(" ");
   return catalogSpecFromText(declaredText);
+}
+
+function resolveCatalogAssetForElement(element) {
+  const catalogItem = catalogItemForElement(element);
+  const assetPath = element.metadata?.assetPath || catalogItem?.assetPath;
+  if (!assetPath) return null;
+
+  if (catalogAssetState.urls.has(assetPath)) {
+    return {
+      path: assetPath,
+      displayName: catalogItem?.displayName,
+      url: catalogAssetState.urls.get(assetPath),
+      status: "ready"
+    };
+  }
+  if (catalogAssetState.failed.has(assetPath)) {
+    return {
+      path: assetPath,
+      displayName: catalogItem?.displayName,
+      url: null,
+      status: "failed"
+    };
+  }
+
+  loadCatalogAssetUrl(assetPath);
+  return {
+    path: assetPath,
+    displayName: catalogItem?.displayName,
+    url: null,
+    status: "loading"
+  };
+}
+
+function catalogItemForElement(element) {
+  const metadata = element.metadata || {};
+  const explicitKey = metadata.renderKey || metadata.renderHint;
+  if (explicitKey && renderCatalogState.byKey.has(explicitKey)) {
+    return renderCatalogState.byKey.get(explicitKey);
+  }
+
+  const subjectItem = catalogItemFromSubject(element.subject);
+  if (subjectItem) return subjectItem;
+
+  const text = [
+    element.name,
+    element.text,
+    element.label,
+    getContent(element).label,
+    getContent(element).alt,
+    element.asset?.kind,
+    ...(element.semantic?.tags || [])
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return catalogItemFromText(text);
+}
+
+function catalogItemFromSubject(subject) {
+  if (!subject || typeof subject !== "object") return null;
+  for (const subjectValue of Object.values(subject)) {
+    if (!subjectValue || typeof subjectValue !== "object") continue;
+    if (subjectValue.renderKey && renderCatalogState.byKey.has(subjectValue.renderKey)) {
+      return renderCatalogState.byKey.get(subjectValue.renderKey);
+    }
+    const text = [
+      subjectValue.category,
+      subjectValue.role,
+      subjectValue.gender,
+      subjectValue.variant,
+      ...(subjectValue.keyFeatures || [])
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const textItem = catalogItemFromText(text);
+    if (textItem) return textItem;
+  }
+  return null;
+}
+
+function catalogItemFromText(text) {
+  const normalizedText = normalizeCatalogText(text);
+  if (!normalizedText) return null;
+
+  let bestRule = null;
+  let bestScore = 0;
+  for (const rule of renderCatalogState.aliasRules) {
+    const alias = normalizeCatalogText(rule.alias);
+    if (!alias) continue;
+    const score = alias === normalizedText ? 1000 + alias.length : normalizedText.includes(alias) ? 100 + alias.length : 0;
+    if (score > bestScore) {
+      bestScore = score;
+      bestRule = rule;
+    }
+  }
+  return bestRule ? renderCatalogState.byKey.get(bestRule.renderKey) || null : null;
+}
+
+async function loadCatalogAssetUrl(assetPath) {
+  if (catalogAssetState.pending.has(assetPath)) return;
+  catalogAssetState.pending.add(assetPath);
+  try {
+    const asset = await resolveCatalogAssetUrl(assetPath);
+    catalogAssetState.urls.set(assetPath, asset.url);
+    catalogAssetState.failed.delete(assetPath);
+  } catch (error) {
+    console.warn("Catalog 素材解析失败，使用占位渲染", error);
+    catalogAssetState.failed.add(assetPath);
+  } finally {
+    catalogAssetState.pending.delete(assetPath);
+    render();
+  }
 }
 
 function catalogSpecFromSubject(subject) {
@@ -2159,6 +2308,8 @@ function bindEvents() {
     if (event.key === "Enter") submitVoiceDraft();
   });
 
+  document.addEventListener("error", handleCatalogAssetImageError, true);
+
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && state.memory.panelOpen) {
       closeMemoryPanel();
@@ -2178,6 +2329,15 @@ function bindEvents() {
     state.settingsOpen = false;
     runVoiceInputDemo();
   });
+}
+
+function handleCatalogAssetImageError(event) {
+  const image = event.target instanceof HTMLImageElement ? event.target : null;
+  const assetPath = image?.dataset.assetPath;
+  if (!assetPath) return;
+  catalogAssetState.urls.delete(assetPath);
+  catalogAssetState.failed.add(assetPath);
+  render();
 }
 
 function isVoiceShortcut(event) {
