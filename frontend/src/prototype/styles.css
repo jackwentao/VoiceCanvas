@@ -574,6 +574,42 @@ h2 {
   font-weight: 700;
 }
 
+.background-controls {
+  display: grid;
+  grid-template-columns: auto repeat(4, 24px) 30px;
+  align-items: center;
+  gap: 7px;
+}
+
+.background-controls span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.background-controls button,
+.background-controls input[type="color"] {
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.78);
+}
+
+.background-controls button.is-active,
+.background-controls input[type="color"][data-custom-active="true"] {
+  border-color: var(--green);
+  outline: 2px solid rgba(31, 138, 91, 0.24);
+  outline-offset: 2px;
+}
+
+.background-controls input[type="color"] {
+  background: transparent;
+  overflow: hidden;
+}
+
 .canvas-frame {
   display: grid;
   place-items: center;

@@ -2,6 +2,41 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：画布背景色可修改
+
+- 本轮 PR 只实现一件事：当前镜头画布背景色可通过前端 swatch/颜色输入修改，也可通过“把背景改成浅绿/#eaf2ff”等文本命令进入后端编排。
+- 背景色统一落到 `Scene.canvas.background.color`，后端使用 `UPDATE_SCENE` 命令更新，前端本地兜底也复用同一命令语义，不新增独立状态。
+- 前端工具栏提供常用背景 swatch 和自定义颜色输入；自定义颜色使用 `change` 事件提交，避免取色拖动时连续请求后端。
+- 本轮未新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_demo_command_planner.py
+uv run --no-editable ruff check src/voicecanvas/application/demo_command_planner.py tests/test_demo_command_planner.py
+uv run --no-editable pytest
+```
+
+结果：`tests/test_demo_command_planner.py` 9 passed；ruff 通过；后端全量测试 138 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
+已运行：
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：前端交互原型契约测试通过。
+
+浏览器验证：
+
+- 启动前端原型后访问 `http://127.0.0.1:4178/index.html`。
+- 确认画布工具栏显示 4 个背景 swatch 和自定义颜色输入。
+- 点击浅绿 swatch 后，画布背景变为 `rgb(246, 251, 246)`，对应 swatch 进入 active 状态，事件流归并 `CANVAS_PATCH_APPLIED`。
+
 ## 本轮发布决策：删除镜头后的画布同步与撤销恢复
 
 - 本轮 PR 只实现一件事：修复删除当前镜头后，中间画布在流式事件间隙仍指向已删除镜头的问题，并补充删除镜头撤销恢复测试。

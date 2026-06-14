@@ -65,6 +65,25 @@ def test_planner_deletes_last_scene() -> None:
     assert plan.commands[0].type == CommandType.DELETE_SCENE
 
 
+def test_planner_updates_active_scene_background_color() -> None:
+    plan = DemoCommandPlanner().plan("把当前画布背景改成浅绿", _project())
+
+    assert plan.action == "commands"
+    assert plan.commands[0].type == CommandType.UPDATE_SCENE
+    assert plan.commands[0].payload["patch"]["canvas"]["background"] == {
+        "type": "solid",
+        "color": "#f6fbf6",
+    }
+
+
+def test_planner_updates_active_scene_background_with_hex_color() -> None:
+    plan = DemoCommandPlanner().plan("背景换成 #eaf2ff", _project())
+
+    assert plan.action == "commands"
+    assert plan.commands[0].type == CommandType.UPDATE_SCENE
+    assert plan.commands[0].payload["patch"]["canvas"]["background"]["color"] == "#eaf2ff"
+
+
 def test_planner_asks_confirmation_before_clearing_scene() -> None:
     plan = DemoCommandPlanner().plan("清空当前画布", _project())
 

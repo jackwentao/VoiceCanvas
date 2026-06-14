@@ -121,6 +121,8 @@ const catalogAssetState = {
   failed: new Set()
 };
 
+const backgroundSwatchColors = ["#ffffff", "#f6fbf6", "#fff3bf", "#eaf2ff"];
+
 const $ = (selector) => document.querySelector(selector);
 let voiceController = null;
 
@@ -251,6 +253,22 @@ function publishPatch(patch, commandId) {
 function executeCommand(command) {
   const patches = [];
   const timestamp = nowIso();
+
+  if (command.type === "UPDATE_SCENE") {
+    const targetScene = state.project.scenes.find((scene) => scene.id === command.payload.sceneId);
+    const patch = command.payload.patch || {};
+    if (targetScene) {
+      Object.assign(targetScene, patch, { updatedAt: timestamp });
+      patches.push({
+        id: makeId("patch"),
+        commandId: command.id,
+        type: "SCENE_UPDATED",
+        sceneId: targetScene.id,
+        patch,
+        createdAt: timestamp
+      });
+    }
+  }
 
   if (command.type === "SWITCH_SCENE") {
     state.project.activeSceneId = command.payload.sceneId;
@@ -1091,6 +1109,54 @@ function switchSceneLocal(sceneId) {
   render();
 }
 
+function updateBackgroundColor(color) {
+  const normalizedColor = normalizeHexColor(color);
+  const scene = activeScene();
+  if (!normalizedColor || !scene) return;
+
+  runBackendInput(
+    `把当前画布背景改成 ${normalizedColor}`,
+    () => updateBackgroundColorLocal(normalizedColor)
+  );
+}
+
+function updateBackgroundColorLocal(color) {
+  const scene = activeScene();
+  if (!scene) return;
+
+  executeCommand({
+    id: makeId("cmd"),
+    type: "UPDATE_SCENE",
+    source: "user_ui",
+    reason: "用户修改画布背景色",
+    createdAt: nowIso(),
+    payload: {
+      sceneId: scene.id,
+      patch: {
+        canvas: sceneCanvasWithBackground(scene, color)
+      }
+    }
+  });
+  render();
+}
+
+function sceneCanvasWithBackground(scene, color) {
+  return {
+    width: scene.canvas?.width || 960,
+    height: scene.canvas?.height || 540,
+    ...scene.canvas,
+    background: {
+      type: "solid",
+      color
+    }
+  };
+}
+
+function normalizeHexColor(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return /^#[0-9a-f]{6}$/.test(normalized) ? normalized : null;
+}
+
 function selectElement(elementId) {
   state.selectedElementId = elementId;
   render();
@@ -1400,6 +1466,7 @@ function renderCanvas() {
   $("#activeSceneDescription").textContent = scene.description || "当前镜头由后端 Project State 驱动";
   $("#activeSceneNarration").textContent = scene.narration || "等待旁白";
   $("#sceneDuration").textContent = scene.durationMs ? `${(scene.durationMs / 1000).toFixed(1)}s` : "未设置";
+  renderBackgroundControls(scene);
 
   const canvas = $("#canvasSurface");
   canvas.style.background = scene.canvas?.background?.type === "solid" ? scene.canvas.background.color : "#ffffff";
@@ -1411,6 +1478,24 @@ function renderCanvas() {
     ...elements.filter((element) => element.type !== "connector").map(renderElement),
     renderConnectorLayer(scene, elements, layoutIndex)
   ].join("");
+}
+
+function renderBackgroundControls(scene) {
+  const color = normalizeHexColor(scene.canvas?.background?.color) || "#ffffff";
+  const customInput = $("#backgroundColorInput");
+  if (customInput) customInput.value = color;
+
+  document.querySelectorAll("[data-background-color]").forEach((button) => {
+    const isActive = button.dataset.backgroundColor?.toLowerCase() === color;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+
+  if (!backgroundSwatchColors.includes(color)) {
+    customInput?.setAttribute("data-custom-active", "true");
+  } else {
+    customInput?.removeAttribute("data-custom-active");
+  }
 }
 
 function createElementLayoutIndex(scene) {
@@ -2253,6 +2338,12 @@ function bindEvents() {
     const resumeButton = event.target.closest("[data-resume]");
     if (resumeButton) resumeClarification(resumeButton.dataset.resume);
 
+    const backgroundButton = event.target.closest("[data-background-color]");
+    if (backgroundButton) {
+      updateBackgroundColor(backgroundButton.dataset.backgroundColor);
+      return;
+    }
+
     const memoryActionButton = event.target.closest("[data-memory-action]");
     if (memoryActionButton) {
       const action = memoryActionButton.dataset.memoryAction;
@@ -2306,6 +2397,10 @@ function bindEvents() {
 
   $("#voiceInput").addEventListener("keydown", (event) => {
     if (event.key === "Enter") submitVoiceDraft();
+  });
+
+  $("#backgroundColorInput")?.addEventListener("change", (event) => {
+    updateBackgroundColor(event.target.value);
   });
 
   document.addEventListener("error", handleCatalogAssetImageError, true);
