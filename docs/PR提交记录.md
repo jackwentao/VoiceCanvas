@@ -2,6 +2,26 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：确定性指令绕过 LLM
+
+- 本轮 PR 只实现一件事：撤销、重做、纯切换镜头这三类确定性指令不再进入 Planner/LLM。
+- 纯指令由应用层 `DeterministicCommandRouter` 识别，并继续复用现有 `CommandPlan`、`CanvasCommand`、`CommandValidator` 和 `CommandExecutor`，不绕过可信执行链路。
+- 如果同一句包含“然后、添加、修改、删除”等额外操作意图，路由器不会命中，仍交给 Planner/LLM 解析复合任务。
+- 本轮未新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_orchestration_service.py
+uv run --no-editable ruff check src/voicecanvas/application/deterministic_command_router.py src/voicecanvas/application/orchestration_service.py tests/test_orchestration_service.py
+uv run --no-editable pytest
+```
+
+结果：`tests/test_orchestration_service.py` 21 passed；本次触碰文件 ruff 通过；后端全量测试 135 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
 ## 本轮发布决策：导出与项目载入功能
 
 - 本机未安装 GitHub CLI `gh`，本轮创建 PR 与合并 PR 使用 GitHub 连接器完成。
