@@ -13,6 +13,7 @@ import {
   visibleSceneEntries
 } from "../../src/prototype/scene-numbering.js";
 import { estimateTextUnits, fitTextFontSize } from "../../src/prototype/text-layout.js";
+import { importProjectFile } from "../../src/prototype/export-service.js";
 import {
   isAmbientNoiseTranscript,
   isLikelyFeedbackEcho,
@@ -36,7 +37,10 @@ function testApiContract() {
   assert.equal(API_CONTRACT.orchestration.start.path, "/api/orchestrations");
   assert.equal(API_CONTRACT.orchestration.resume.path, "/api/orchestrations/:sessionId/resume");
   assert.equal(API_CONTRACT.orchestration.events.transport, "text/event-stream");
+  assert.equal(API_CONTRACT.project.create.method, "POST");
+  assert.equal(API_CONTRACT.project.create.path, "/api/projects");
   assert.equal(API_CONTRACT.project.export.path, "/api/projects/:projectId/export");
+  assert.equal(API_CONTRACT.project.import.path, "/api/projects/import");
   assert.equal(API_CONTRACT.userMemory.list.method, "GET");
   assert.equal(API_CONTRACT.userMemory.create.path, "/api/users/:userId/memories");
   assert.equal(API_CONTRACT.userMemory.update.method, "PATCH");
@@ -268,6 +272,9 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("exportFromBackendResult"), "语音导出必须复用导出结果下载函数");
   assert.ok(app.includes("runDirectProjectExport"), "显式项目导出按钮必须直接触发导出函数");
   assert.ok(app.includes("runDirectSceneImageExport"), "显式图片导出按钮必须直接触发图片导出函数");
+  assert.ok(app.includes("createNewProject"), "新建项目入口必须创建真实 Project State");
+  assert.ok(app.includes("createProjectState"), "新建项目入口必须优先调用后端创建接口");
+  assert.ok(app.includes("createLocalBlankProject"), "新建项目必须提供后端不可用时的本地空白项目兜底");
   assert.ok(app.includes("loadProjectFromFile"), "载入项目入口必须能读取导出的项目文件");
   assert.ok(app.includes("openMemoryPanel"), "长期记忆入口必须打开管理面板");
   assert.ok(app.includes("refreshUserMemories"), "长期记忆面板必须支持刷新列表");
@@ -312,11 +319,14 @@ async function testPrototypeHtml() {
   assert.ok(backendClient.includes("/api/orchestrations/"), "前端客户端必须绑定澄清恢复 API");
   assert.ok(backendClient.includes("/resume"), "前端客户端必须提供 resume 调用");
   assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
+  assert.ok(backendClient.includes('requestJson("/api/projects"'), "前端客户端必须绑定新建项目 API");
   assert.ok(backendClient.includes("/export"), "前端客户端必须绑定项目导出 API");
   assert.ok(backendClient.includes("/api/projects/import"), "前端客户端必须绑定项目载入 API");
   assert.ok(exportService.includes("exportProjectFile"), "导出模块必须提供项目文件导出函数");
   assert.ok(exportService.includes("exportSceneImage"), "导出模块必须提供图片导出函数");
   assert.ok(exportService.includes("importProjectFile"), "导出模块必须提供项目文件载入函数");
+  assert.ok(exportService.includes("validateProjectJsonFile"), "载入模块必须在读取前校验 JSON 文件类型");
+  assert.ok(exportService.includes("只能载入 JSON 项目文件"), "载入模块必须拒绝非 JSON 文件");
   assert.ok(exportService.includes("voicecanvas.project"), "项目包必须包含可识别的类型标记");
   assert.ok(backendClient.includes("DEFAULT_USER_ID"), "前端客户端必须提供演示默认用户");
   assert.ok(backendClient.includes("/api/users/"), "前端客户端必须绑定长期记忆用户 API");
@@ -539,6 +549,49 @@ function testClarificationOptionResolver() {
   assert.equal(resolveClarificationOption("第二个", options).id, "cup_blue");
 }
 
+async function testImportProjectFileValidation() {
+  const validFile = {
+    name: "demo.voicecanvas.json",
+    type: "application/json",
+    text: async () =>
+      JSON.stringify({
+        type: "voicecanvas.project",
+        schemaVersion: 1,
+        project: {
+          id: "project_import_test",
+          title: "导入测试",
+          mode: "storyboard",
+          scenes: [{ id: "scene_1", name: "空白画布", order: 1 }],
+          activeSceneId: "scene_1"
+        }
+      })
+  };
+  const imported = await importProjectFile(validFile);
+  assert.equal(imported.project.id, "project_import_test");
+
+  await assert.rejects(
+    () =>
+      importProjectFile({
+        name: "canvas.png",
+        type: "image/png",
+        text: async () => {
+          throw new Error("不应读取非 JSON 文件内容");
+        }
+      }),
+    /只能载入 JSON 项目文件/
+  );
+
+  await assert.rejects(
+    () =>
+      importProjectFile({
+        name: "note.json",
+        type: "application/json",
+        text: async () => JSON.stringify({ hello: "world" })
+      }),
+    /项目文件格式不正确/
+  );
+}
+
 testApiContract();
 testUiBindings();
 testCommandBindings();
@@ -552,6 +605,7 @@ await testVoiceSessionDropsAmbientNoise();
 testAmbientNoiseDetection();
 testFeedbackEchoDetection();
 testClarificationOptionResolver();
+await testImportProjectFileValidation();
 await testPrototypeHtml();
 
 console.log("前端交互原型契约测试通过");

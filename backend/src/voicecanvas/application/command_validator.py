@@ -381,12 +381,12 @@ class CommandValidator:
         export_format = payload.get("format", "json")
         scope = payload.get("scope", "project")
 
-        if export_format not in {"json", "project", "png", "svg"}:
+        if export_format not in {"json", "png"}:
             issues.append(
                 self._issue(
                     f"{path}.payload.format",
                     "unsupported_format",
-                    "EXPORT_PROJECT 仅支持 json、project、png、svg",
+                    "EXPORT_PROJECT 仅支持 json、png",
                 )
             )
 

@@ -40,6 +40,7 @@ export async function exportFromBackendResult(exportResult, project) {
 }
 
 export async function importProjectFile(file) {
+  validateProjectJsonFile(file);
   const text = await file.text();
   const payload = JSON.parse(text);
   const project = payload.type === PROJECT_BUNDLE_TYPE ? payload.project : payload;
@@ -47,6 +48,21 @@ export async function importProjectFile(file) {
     throw new Error("项目文件格式不正确");
   }
   return { payload, project };
+}
+
+function validateProjectJsonFile(file) {
+  const name = String(file?.name || "").toLowerCase();
+  const type = String(file?.type || "").toLowerCase();
+  const hasJsonExtension = name.endsWith(".json") || name.endsWith(".voicecanvas.json");
+  const hasJsonMime = type === "application/json" || type.endsWith("+json");
+
+  if (name ? !hasJsonExtension : !hasJsonMime) {
+    throw new Error("只能载入 JSON 项目文件");
+  }
+
+  if (type && !hasJsonMime && !hasJsonExtension) {
+    throw new Error("只能载入 JSON 项目文件");
+  }
 }
 
 function createProjectBundle(project) {

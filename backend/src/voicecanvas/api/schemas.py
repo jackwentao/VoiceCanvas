@@ -51,10 +51,20 @@ class ProjectStateResponse(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class CreateProjectRequest(BaseModel):
+    """新建项目请求。未传项目 ID 时由后端生成。"""
+
+    title: str | None = Field(default=None, min_length=1)
+    mode: Literal["free_canvas", "storyboard"] = "storyboard"
+    project_id: str | None = Field(default=None, alias="projectId", min_length=1)
+
+    model_config = {"populate_by_name": True}
+
+
 class ExportProjectRequest(BaseModel):
     """项目导出入口请求，和 LLM 生成的 EXPORT_PROJECT payload 保持一致。"""
 
-    format: Literal["json", "project", "png", "svg"] = "json"
+    format: Literal["json", "png"] = "json"
     scope: Literal["project", "active_scene", "scene"] = "project"
     scene_id: str | None = Field(default=None, alias="sceneId")
 

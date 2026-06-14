@@ -4,7 +4,7 @@ from html import escape
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 
 from voicecanvas.domain.project import CanvasElement, Project, Scene
 
@@ -68,7 +68,10 @@ class ExportService:
             if payload.get("type") == self.project_bundle_type
             else payload
         )
-        project = Project.model_validate(project_payload)
+        try:
+            project = Project.model_validate(project_payload)
+        except ValidationError as error:
+            raise ValueError("项目 JSON 格式不正确，无法载入") from error
         return ProjectImportResult(project=project, importedAt=self._now())
 
     def _normalize_request(self, request: ExportRequest) -> ExportRequest:

@@ -2,6 +2,7 @@ import { COMMAND_BINDINGS, initialHistory, initialProject, initialSession } from
 import {
   DEFAULT_USER_ID,
   DEFAULT_PROJECT_ID,
+  createProjectState,
   createUserMemory,
   deleteUserMemory,
   importProjectState,
@@ -160,6 +161,41 @@ function nowIso() {
 
 function makeId(prefix) {
   return `${prefix}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function createLocalBlankProject(title = "未命名项目", mode = "storyboard") {
+  const timestamp = nowIso();
+  return {
+    id: makeId("project"),
+    title,
+    mode,
+    activeSceneId: "scene_1",
+    metadata: {
+      source: "local_fallback",
+      version: 1
+    },
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    scenes: [
+      {
+        id: "scene_1",
+        name: "空白画布",
+        order: 1,
+        description: null,
+        canvas: {
+          width: 960,
+          height: 540,
+          background: {
+            type: "solid",
+            color: "#ffffff"
+          }
+        },
+        elements: [],
+        createdAt: timestamp,
+        updatedAt: timestamp
+      }
+    ]
+  };
 }
 
 function activeScene() {
@@ -855,36 +891,7 @@ async function runProjectAction(action) {
   state.settingsOpen = false;
 
   if (action === "new") {
-    const command = {
-      id: makeId("cmd"),
-      type: "CREATE_SCENE",
-      source: "user_ui",
-      reason: "新建项目入口已触发",
-      createdAt: nowIso(),
-      payload: {
-        name: "新项目",
-        activate: true
-      }
-    };
-    pushHistory(command, [], "新建项目：原型中保留当前项目并展示入口反馈");
-    state.voiceStatus = "已触发新建项目入口";
-    pushEvent({
-      type: "TURN_SUMMARY",
-      sessionId: state.session.id,
-      summary: {
-        userInput: "新建项目",
-        completed: true,
-        stage: "completed",
-        changes: [
-          {
-            type: "created",
-            targetType: "project",
-            targetName: "新项目",
-            description: "真实实现将调用 POST /api/projects"
-          }
-        ]
-      }
-    });
+    await createNewProject();
   }
 
   if (action === "load") {
@@ -896,6 +903,40 @@ async function runProjectAction(action) {
   }
 
   render();
+}
+
+async function createNewProject() {
+  const title = "未命名项目";
+  setBusy(true);
+  state.voiceStatus = "正在新建项目";
+  render();
+
+  try {
+    const response = await createProjectState({ title, mode: "storyboard" });
+    applyBackendResponse(state, response, { userInput: "新建项目" });
+    state.backend.projectId = response.project.id;
+    state.backend.connected = true;
+    state.backend.lastError = null;
+    state.voiceStatus = "项目已新建";
+  } catch (error) {
+    const project = createLocalBlankProject(title);
+    state.project = project;
+    state.history = [];
+    state.session = structuredClone(initialSession);
+    state.backend.projectId = project.id;
+    state.backend.connected = false;
+    state.backend.lastError = error.message || String(error);
+    appendBackendError(state, error);
+    state.voiceStatus = "后端不可用，已创建本地空白项目";
+    pushEvent({
+      type: "PROJECT_CREATED",
+      sessionId: state.session.id,
+      projectId: project.id,
+      message: "已创建本地空白项目"
+    });
+  } finally {
+    setBusy(false);
+  }
 }
 
 function openProjectFilePicker() {

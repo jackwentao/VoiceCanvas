@@ -19,6 +19,17 @@ def test_export_project_bundle_can_be_imported_again() -> None:
     assert imported.project == project
 
 
+def test_import_rejects_non_project_json() -> None:
+    service = ExportService()
+
+    try:
+        service.import_project({"hello": "world"})
+    except ValueError as error:
+        assert "项目 JSON 格式不正确" in str(error)
+    else:
+        raise AssertionError("非项目 JSON 必须载入失败")
+
+
 def test_export_active_scene_image_returns_svg_source() -> None:
     project = InMemoryProjectRepository().get_or_create("project_image")
     service = ExportService()

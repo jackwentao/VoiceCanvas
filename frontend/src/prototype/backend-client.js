@@ -73,6 +73,13 @@ export function loadProjectState(projectId = DEFAULT_PROJECT_ID) {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}`);
 }
 
+export function createProjectState(payload = {}) {
+  return requestJson("/api/projects", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
 export function exportProjectState(projectId = DEFAULT_PROJECT_ID, payload = {}) {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/export`, {
     method: "POST",

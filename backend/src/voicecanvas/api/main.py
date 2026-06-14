@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from voicecanvas.api.schemas import (
+    CreateProjectRequest,
     CreateUserMemoryRequest,
     ExportProjectRequest,
     ExportProjectResponse,
@@ -121,6 +122,20 @@ def create_app(
                 "Cache-Control": "no-cache",
                 "X-Accel-Buffering": "no",
             },
+        )
+
+    @app.post("/api/projects", response_model=ProjectStateResponse)
+    async def create_project(request: CreateProjectRequest) -> ProjectStateResponse:
+        state = service.create_project(
+            title=request.title,
+            mode=request.mode,
+            project_id=request.project_id,
+        )
+
+        return ProjectStateResponse(
+            project=state.project.model_dump(by_alias=True),
+            history=[entry.model_dump(by_alias=True) for entry in state.history],
+            events=state.events,
         )
 
     @app.get("/api/projects/{project_id}", response_model=ProjectStateResponse)

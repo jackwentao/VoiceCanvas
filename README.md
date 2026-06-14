@@ -228,6 +228,16 @@ Invoke-RestMethod `
 
 当前 `/api/orchestrations` 会同步返回最新 `project`、`patches`、`history`、`events` 和 `summary`。该接口已经接入后端 `CommandValidator`、`CommandExecutor`、`HistoryManager` 和内存项目仓库；自然语言理解默认可使用 `DemoCommandPlanner`，也可通过 `.env` 启用 DeepSeek 真实 LLM Planner。真实 LLM 输出会先经过 Pydantic 结构校验和业务命令校验，失败时重试并按配置降级。
 
+新建项目 API 示例：
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "http://127.0.0.1:8000/api/projects" `
+  -ContentType "application/json" `
+  -Body '{"title":"未命名项目","mode":"storyboard"}'
+```
+
 项目状态 API 示例：
 
 ```powershell
@@ -256,7 +266,7 @@ Invoke-RestMethod `
   -Body '{"format":"png","scope":"active_scene"}'
 ```
 
-导出的 `.voicecanvas.json` 项目包可通过前端“设置 -> 载入项目”重新载入，也可调用后端载入接口：
+导出的 `.voicecanvas.json` 项目包可通过前端“设置 -> 载入项目”重新载入，也可调用后端载入接口。载入入口只接受 JSON 项目文件；PNG 仅用于图片交付，不能用于恢复可编辑项目状态：
 
 ```powershell
 $payload = Get-Content ".\VoiceCanvas-Demo.voicecanvas.json" -Raw | ConvertFrom-Json
@@ -267,7 +277,7 @@ Invoke-RestMethod `
   -Body (@{ payload = $payload } | ConvertTo-Json -Depth 80)
 ```
 
-本次导出/载入功能未新增第三方依赖；图片导出使用浏览器原生 `Canvas`、`Blob` 和 `URL.createObjectURL`，后端导出兜底使用 Python 标准库生成可验证 SVG 源。
+本次新建、导出和载入功能未新增第三方依赖；图片导出使用浏览器原生 `Canvas`、`Blob` 和 `URL.createObjectURL`，后端导出兜底使用 Python 标准库生成可验证 SVG 源。
 
 ## 当前状态
 

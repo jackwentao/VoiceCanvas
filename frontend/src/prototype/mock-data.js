@@ -35,6 +35,12 @@ export const API_CONTRACT = {
     }
   },
   project: {
+    create: {
+      method: "POST",
+      path: "/api/projects",
+      request: ["title?", "mode?", "projectId?"],
+      response: ["Project", "HistoryEntry[]", "OrchestrationEvent[]"]
+    },
     load: {
       method: "GET",
       path: "/api/projects/:projectId",
@@ -51,6 +57,12 @@ export const API_CONTRACT = {
       path: "/api/projects/:projectId/export",
       request: ["format", "scope", "sceneId?"],
       response: ["ExportResult"]
+    },
+    import: {
+      method: "POST",
+      path: "/api/projects/import",
+      request: ["payload"],
+      response: ["Project", "HistoryEntry[]", "OrchestrationEvent[]"]
     }
   },
   assets: {

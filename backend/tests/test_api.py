@@ -34,6 +34,24 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok", "service": "voicecanvas-backend"}
 
 
+def test_create_project_endpoint_returns_blank_project() -> None:
+    client = _client()
+
+    response = client.post(
+        "/api/projects",
+        json={"title": "新建演示项目", "mode": "storyboard"},
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["project"]["id"].startswith("project_")
+    assert body["project"]["title"] == "新建演示项目"
+    assert body["project"]["activeSceneId"] == "scene_1"
+    assert body["project"]["scenes"][0]["elements"] == []
+    assert body["history"] == []
+    assert body["events"][-1]["type"] == "PROJECT_CREATED"
+
+
 def test_start_orchestration_returns_real_project_patches_and_history() -> None:
     client = _client()
 
@@ -146,6 +164,47 @@ def test_import_project_endpoint_restores_exported_bundle() -> None:
     assert body["project"]["id"] == "project_imported"
     assert body["project"]["title"] == "载入后的项目"
     assert body["events"][-1]["type"] == "PROJECT_IMPORTED"
+
+
+def test_import_project_endpoint_resets_history_for_same_project_id() -> None:
+    client = _client()
+    client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_reset",
+            "userInput": "加标题，写新品上市",
+        },
+    )
+    before = client.get("/api/projects/project_reset").json()
+    assert before["history"]
+
+    payload = {
+        "type": "voicecanvas.project",
+        "schemaVersion": 1,
+        "project": {
+            "id": "project_reset",
+            "title": "重新载入的项目",
+            "mode": "storyboard",
+            "scenes": [{"id": "scene_1", "name": "空白画布", "order": 1}],
+            "activeSceneId": "scene_1",
+        },
+    }
+
+    response = client.post("/api/projects/import", json={"payload": payload})
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["project"]["title"] == "重新载入的项目"
+    assert body["history"] == []
+
+
+def test_import_project_endpoint_rejects_non_project_json() -> None:
+    client = _client()
+
+    response = client.post("/api/projects/import", json={"payload": {"hello": "world"}})
+
+    assert response.status_code == 400
+    assert "项目 JSON 格式不正确" in response.json()["detail"]
 
 
 def test_orchestration_api_keeps_project_state_between_calls() -> None:
