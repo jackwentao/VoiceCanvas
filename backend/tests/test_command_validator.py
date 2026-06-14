@@ -176,3 +176,12 @@ def test_validator_rejects_export_missing_scene() -> None:
 
     assert not result.ok
     assert result.issues[0].code == "not_found"
+
+
+def test_validator_rejects_unsupported_export_format() -> None:
+    command = _command(CommandType.EXPORT_PROJECT, {"format": "svg", "scope": "active_scene"})
+
+    result = CommandValidator().validate([command], _project())
+
+    assert not result.ok
+    assert result.issues[0].code == "unsupported_format"

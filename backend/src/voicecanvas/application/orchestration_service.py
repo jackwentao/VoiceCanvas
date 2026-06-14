@@ -533,6 +533,32 @@ class OrchestrationService:
         history = self._history_for(project.id)
         return ProjectState(project=project, history=history.entries(), events=[])
 
+    def create_project(
+        self,
+        title: str | None = None,
+        mode: Literal["free_canvas", "storyboard"] = "storyboard",
+        project_id: str | None = None,
+    ) -> ProjectState:
+        project = self._repository.create_blank_project(
+            title=title or "未命名项目",
+            mode=mode,
+            project_id=project_id,
+        )
+        self._repository.save(project)
+        self._reset_project_context(project.id)
+        created_at = self._now()
+        return ProjectState(
+            project=project,
+            history=[],
+            events=[
+                {
+                    "type": "PROJECT_CREATED",
+                    "projectId": project.id,
+                    "createdAt": created_at,
+                }
+            ],
+        )
+
     def export_project(self, project_id: str, request: ExportRequest) -> ExportResult:
         project = self._repository.get_or_create(project_id)
         return self._export_service.export(project, request)
@@ -540,10 +566,10 @@ class OrchestrationService:
     def import_project(self, payload: dict[str, Any]) -> ProjectState:
         imported = self._export_service.import_project(payload)
         self._repository.save(imported.project)
-        history = self._history_for(imported.project.id)
+        self._reset_project_context(imported.project.id)
         return ProjectState(
             project=imported.project,
-            history=history.entries(),
+            history=[],
             events=[
                 {
                     "type": "PROJECT_IMPORTED",
@@ -790,6 +816,15 @@ class OrchestrationService:
         if project_id not in self._conversation_memories:
             self._conversation_memories[project_id] = ConversationMemoryManager()
         return self._conversation_memories[project_id]
+
+    def _reset_project_context(self, project_id: str) -> None:
+        self._histories[project_id] = HistoryManager()
+        self._conversation_memories[project_id] = ConversationMemoryManager()
+        self._pending_clarifications = {
+            session_id: pending
+            for session_id, pending in self._pending_clarifications.items()
+            if pending.get("projectId") != project_id
+        }
 
     def _collect_patches(self, applied: list[Any]) -> list[CanvasPatch]:
         return [patch for result in applied for patch in result.patches]
