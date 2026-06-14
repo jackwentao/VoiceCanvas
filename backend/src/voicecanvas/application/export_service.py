@@ -133,7 +133,8 @@ class ExportService:
         elements = sorted(scene.elements, key=lambda item: item.z_index)
         body = "\n".join(self._element_svg(element) for element in elements)
         return (
-            f'<svg xmlns="http://www.w3.org/2000/svg" width="{scene.canvas.width:g}" '
+            f'<svg xmlns="http://www.w3.org/2000/svg" '
+            f'xmlns:xlink="http://www.w3.org/1999/xlink" width="{scene.canvas.width:g}" '
             f'height="{scene.canvas.height:g}" '
             f'viewBox="0 0 {scene.canvas.width:g} {scene.canvas.height:g}">'
             f'<rect width="100%" height="100%" fill="{escape(background)}"/>'
@@ -158,6 +159,10 @@ class ExportService:
                 f'font-size="{font_size:g}" fill="{fill}" '
                 f'font-family="Arial, sans-serif">{text}</text>'
             )
+
+        image_href = self._element_image_href(element)
+        if image_href:
+            return self._image_svg(element, image_href)
 
         if element.type in {"shape", "generated_asset", "unknown"}:
             style = element.placeholder_style or element.style or {}
@@ -194,6 +199,46 @@ class ExportService:
             )
 
         return ""
+
+    def _element_image_href(self, element: CanvasElement) -> str | None:
+        content = element.content or {}
+        if element.type == "image":
+            return self._first_string(
+                content.get("url"),
+                (element.image or {}).get("url"),
+            )
+
+        if element.type == "generated_asset" and (element.asset or {}).get("status") == "ready":
+            return self._first_string(
+                content.get("url"),
+                (element.asset or {}).get("url"),
+                (element.image or {}).get("url"),
+            )
+
+        return None
+
+    def _image_svg(self, element: CanvasElement, href: str) -> str:
+        radius = float(element.style.get("radius", element.style.get("borderRadius", 8)))
+        clip_id = f"clip-{self._safe_svg_id(element.id)}"
+        safe_href = escape(href, quote=True)
+        return (
+            f'<defs><clipPath id="{clip_id}">'
+            f'<rect x="{element.x:g}" y="{element.y:g}" width="{element.width:g}" '
+            f'height="{element.height:g}" rx="{radius:g}"/></clipPath></defs>'
+            f'<image href="{safe_href}" xlink:href="{safe_href}" x="{element.x:g}" '
+            f'y="{element.y:g}" width="{element.width:g}" height="{element.height:g}" '
+            f'preserveAspectRatio="xMidYMid slice" clip-path="url(#{clip_id})"/>'
+        )
+
+    def _first_string(self, *values: Any) -> str | None:
+        for value in values:
+            if isinstance(value, str) and value.strip():
+                return value
+        return None
+
+    def _safe_svg_id(self, value: str) -> str:
+        safe = "".join(char if char.isalnum() or char in "-_" else "-" for char in value)
+        return safe.strip("-") or "image"
 
     def _safe_filename(self, value: str) -> str:
         safe = "".join(char if char.isalnum() or char in "-_" else "-" for char in value.strip())
