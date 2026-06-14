@@ -36,6 +36,8 @@ import {
   resolveClarificationOption
 } from "./voice-session.js";
 
+const TOKEN_USAGE_STORAGE_KEY = "voicecanvas.tokenUsage.total";
+
 const state = {
   project: structuredClone(initialProject),
   history: structuredClone(initialHistory),
@@ -59,6 +61,11 @@ const state = {
     projectId: DEFAULT_PROJECT_ID,
     connected: false,
     lastError: null
+  },
+  telemetry: {
+    lastTurnTokenUsage: zeroTokenUsage(),
+    totalTokenUsage: loadStoredTokenUsage(),
+    lastCountedSessionId: null
   }
 };
 
@@ -1322,6 +1329,7 @@ function render() {
   renderHistory();
   renderCanvas();
   renderAIPanel();
+  renderTelemetryPanel();
   renderMemoryPanel();
 }
 
@@ -2352,6 +2360,14 @@ function renderAIPanel() {
     .join("");
 }
 
+function renderTelemetryPanel() {
+  const last = state.telemetry?.lastTurnTokenUsage || zeroTokenUsage();
+  const total = state.telemetry?.totalTokenUsage || zeroTokenUsage();
+  $("#turnTokenUsage").textContent = formatTokenUsage(last);
+  $("#totalTokenUsage").textContent = formatTokenUsage(total);
+  storeTokenUsage(total);
+}
+
 function bindEvents() {
   const voiceButton = document.querySelector("[data-run='voice']");
   voiceButton?.setAttribute("data-bound", "true");
@@ -2403,6 +2419,14 @@ function bindEvents() {
 
     if (state.memory.panelOpen && event.target.id === "memoryOverlay") {
       closeMemoryPanel();
+      return;
+    }
+
+    const telemetryActionButton = event.target.closest("[data-telemetry-action]");
+    if (telemetryActionButton) {
+      if (telemetryActionButton.dataset.telemetryAction === "clear-tokens") {
+        clearTokenUsage();
+      }
       return;
     }
 
@@ -2486,6 +2510,54 @@ function isTypingTarget(target) {
   if (!element) return false;
 
   return Boolean(element.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function zeroTokenUsage() {
+  return {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0
+  };
+}
+
+function loadStoredTokenUsage() {
+  try {
+    const raw = window.localStorage?.getItem(TOKEN_USAGE_STORAGE_KEY);
+    return normalizeTokenUsage(raw ? JSON.parse(raw) : null);
+  } catch {
+    return zeroTokenUsage();
+  }
+}
+
+function storeTokenUsage(usage) {
+  try {
+    window.localStorage?.setItem(TOKEN_USAGE_STORAGE_KEY, JSON.stringify(normalizeTokenUsage(usage)));
+  } catch {
+    // localStorage 不可用时仍保留本页内展示，不影响演示链路。
+  }
+}
+
+function clearTokenUsage() {
+  state.telemetry.totalTokenUsage = zeroTokenUsage();
+  storeTokenUsage(state.telemetry.totalTokenUsage);
+  render();
+}
+
+function normalizeTokenUsage(usage) {
+  return {
+    promptTokens: nonNegativeInteger(usage?.promptTokens),
+    completionTokens: nonNegativeInteger(usage?.completionTokens),
+    totalTokens: nonNegativeInteger(usage?.totalTokens)
+  };
+}
+
+function nonNegativeInteger(value) {
+  return Number.isInteger(value) && value > 0 ? value : 0;
+}
+
+function formatTokenUsage(usage) {
+  const normalized = normalizeTokenUsage(usage);
+  return `${normalized.totalTokens}（输入 ${normalized.promptTokens} / 输出 ${normalized.completionTokens}）`;
 }
 
 bindEvents();

@@ -392,6 +392,9 @@ async function testPrototypeHtml() {
   assert.ok(html.includes('aria-label="开始语音创作"'), "语音按钮必须提供可访问名称");
   assert.ok(html.includes("开始语音创作"), "语音按钮必须明确进入持续创作模式");
   assert.ok(html.includes("voiceStatus"), "AI 交互栏必须展示语音识别状态");
+  assert.ok(html.includes("turnTokenUsage"), "AI 交互栏必须展示本轮 Token 用量");
+  assert.ok(html.includes("totalTokenUsage"), "AI 交互栏必须展示累计 Token 用量");
+  assert.ok(html.includes('data-telemetry-action="clear-tokens"'), "AI 交互栏必须提供 Token 累计清空入口");
   assert.ok(html.includes('data-menu-toggle="settings"'), "顶部必须提供设置菜单入口");
   assert.ok(html.includes('data-project-action="new"'), "设置菜单必须提供新建项目入口");
   assert.ok(html.includes('data-project-action="load"'), "设置菜单必须提供载入项目入口");
@@ -434,6 +437,10 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("deleteMemoryFromPanel"), "长期记忆面板必须支持显式删除");
   assert.ok(app.includes("updateMemoryStatus"), "长期记忆面板必须支持状态流转");
   assert.ok(app.includes("applyBackendResponse"), "后端响应必须统一归并到页面状态");
+  assert.ok(app.includes("lastTurnTokenUsage"), "前端状态必须记录本轮 Token 用量");
+  assert.ok(app.includes("totalTokenUsage"), "前端状态必须记录累计 Token 用量");
+  assert.ok(app.includes("TOKEN_USAGE_STORAGE_KEY"), "累计 Token 用量必须持久化到浏览器本地存储");
+  assert.ok(app.includes("clearTokenUsage"), "前端必须提供清空 Token 累计的逻辑");
   assert.ok(app.includes("renderConnectorLayer"), "画布必须提供独立 SVG 连接层");
   assert.ok(app.includes("createElementLayoutIndex"), "连接线必须依赖元素布局索引计算端点");
   assert.ok(app.includes("<path"), "连接线必须使用 SVG path 渲染");
@@ -496,10 +503,15 @@ async function testPrototypeHtml() {
   assert.ok(backendClient.includes('method: "DELETE"'), "前端客户端必须提供长期记忆 DELETE 调用");
   assert.ok(stateSync.includes("CANVAS_PATCH_APPLIED"), "状态归并层必须保留画布事件投影能力");
   assert.ok(stateSync.includes("CLARIFICATION_REQUESTED"), "状态归并层必须保留澄清事件投影能力");
+  assert.ok(stateSync.includes("tokenUsage"), "状态归并层必须读取后端 Token 用量");
+  assert.ok(stateSync.includes("lastCountedSessionId"), "状态归并层必须避免 SSE 与最终响应重复累计 Token");
   assert.ok(css.includes(".settings-popover[hidden]"), "设置菜单 hidden 状态必须真正隐藏");
   assert.ok(css.includes(".memory-overlay[hidden]"), "长期记忆面板 hidden 状态必须真正隐藏");
   assert.ok(css.includes(".memory-list"), "长期记忆列表必须有独立滚动区域");
   assert.ok(css.includes(".memory-item[data-status=\"active\"]"), "长期记忆条目必须区分生效状态");
+  assert.ok(css.includes(".token-card"), "CSS 必须定义 Token 用量卡片样式");
+  assert.ok(css.includes("grid-template-columns: minmax(196px, 220px) minmax(560px, 1fr)"), "画布布局必须提高中间画布区域占比");
+  assert.ok(css.includes("padding: 8px"), "画布框架必须收紧周围留白");
 
   const catalogItems = new Map(renderCatalog.items.map((item) => [item.renderKey, item]));
   assert.equal(renderCatalog.version, 1, "Render Catalog 必须有版本");

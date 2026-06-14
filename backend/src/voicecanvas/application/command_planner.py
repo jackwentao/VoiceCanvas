@@ -4,6 +4,7 @@ from typing import Any, Literal, Protocol
 from voicecanvas.domain.commands import CanvasCommand
 from voicecanvas.domain.conversation import ConversationMemorySnapshot
 from voicecanvas.domain.project import Project
+from voicecanvas.domain.telemetry import TokenUsage
 from voicecanvas.domain.user_memory import UserMemoryContext
 
 
@@ -27,6 +28,7 @@ class CommandPlan:
     notice: str | None = None
     next_action: dict[str, Any] | None = None
     attempts: list[PlannerAttempt] = field(default_factory=list)
+    token_usage: TokenUsage = field(default_factory=TokenUsage)
 
 
 @dataclass(frozen=True)

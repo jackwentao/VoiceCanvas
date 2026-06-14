@@ -1,7 +1,10 @@
 import json
 
-from voicecanvas.adapters.llm.base import LLMClientError
+import httpx
+
+from voicecanvas.adapters.llm.base import LLMClientError, LLMCompletion
 from voicecanvas.adapters.llm.fake import FakeLLMClient
+from voicecanvas.adapters.llm.openai_compatible import OpenAICompatibleLLMClient
 from voicecanvas.application.command_planner import PlanningContext
 from voicecanvas.application.demo_command_planner import DemoCommandPlanner
 from voicecanvas.application.llm_command_planner import LLMCommandPlanner
@@ -10,6 +13,7 @@ from voicecanvas.application.project_repository import InMemoryProjectRepository
 from voicecanvas.domain.commands import CommandType
 from voicecanvas.domain.conversation import ConversationMemorySnapshot, ElementMemory
 from voicecanvas.domain.project import CanvasElement, ElementType, Project, Scene
+from voicecanvas.domain.telemetry import TokenUsage
 from voicecanvas.domain.user_memory import UserMemory, UserMemoryContext
 
 
@@ -96,6 +100,64 @@ def test_llm_planner_accepts_pydantic_validated_output() -> None:
     assert plan.commands[0].type == CommandType.ADD_ELEMENT
     assert plan.commands[0].source == "ai"
     assert plan.attempts[-1].validated
+    assert plan.token_usage.total_tokens == 0
+
+
+def test_openai_compatible_client_extracts_token_usage(monkeypatch) -> None:
+    def fake_post(*args, **kwargs) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "model": "deepseek-chat",
+                "choices": [{"message": {"content": '{"action":"respond","message":"ok"}'}}],
+                "usage": {
+                    "prompt_tokens": 12,
+                    "completion_tokens": 8,
+                    "total_tokens": 20,
+                },
+            },
+        )
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    client = OpenAICompatibleLLMClient(
+        base_url="https://llm.example.test",
+        model="deepseek-chat",
+        api_key="test-key",
+        provider="deepseek",
+    )
+
+    completion = client.complete_json([], temperature=0.1, timeout_seconds=3)
+
+    assert completion.usage is not None
+    assert completion.usage.prompt_tokens == 12
+    assert completion.usage.completion_tokens == 8
+    assert completion.usage.total_tokens == 20
+
+
+def test_llm_planner_accumulates_token_usage_across_attempts() -> None:
+    client = FakeLLMClient(
+        [
+            LLMCompletion(
+                content="这不是 JSON",
+                model="fake-llm",
+                provider="fake",
+                usage=TokenUsage(promptTokens=3, completionTokens=2, totalTokens=5),
+            ),
+            LLMCompletion(
+                content=_json_response({"action": "respond", "message": "需要补充目标元素"}),
+                model="fake-llm",
+                provider="fake",
+                usage=TokenUsage(promptTokens=7, completionTokens=4, totalTokens=11),
+            ),
+        ]
+    )
+
+    plan = LLMCommandPlanner(client, max_attempts=2).plan("帮我调整一下", _project())
+
+    assert plan.action == "respond"
+    assert plan.token_usage.prompt_tokens == 10
+    assert plan.token_usage.completion_tokens == 6
+    assert plan.token_usage.total_tokens == 16
 
 
 def test_llm_planner_splits_scene_patch_elements_into_add_element_commands() -> None:

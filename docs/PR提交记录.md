@@ -2,6 +2,33 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：美化前端画布布局并增加 Token 用量统计
+
+- 标题：美化前端画布布局并增加 Token 用量统计。
+- 本轮 PR 只实现一件事：提升录屏演示时的前端画布观感，并把真实 LLM 返回的 Token 用量贯穿到右侧 AI 交互栏展示。
+- 功能描述：页面压缩顶栏、面板和画布框架留白，提升中间画布占比；右侧 AI 交互栏展示“本轮 Token”和“累计 Token”，并提供清空按钮。真实 LLM 返回 usage 时展示实际值；Demo Planner 或确定性路由无 usage 时展示 0，不影响演示链路。
+- 实现思路：新增领域层 `TokenUsage` 模型，OpenAI-compatible LLM 适配器抽取响应 `usage`，`LLMCommandPlanner` 汇总多次尝试用量，`TurnSummary` 与 `TURN_SUMMARY` 事件输出 `tokenUsage`；前端状态归并层读取 summary 用量并避免 SSE 与最终响应重复累计，累计值存入 `localStorage`。
+- 依赖声明：本轮未新增第三方库、框架、SDK 或外部服务；复用既有 FastAPI、Pydantic、httpx、原生 HTML/CSS/JavaScript 与浏览器 `localStorage`。
+- 原创功能说明：Token 用量从 LLM 适配器到编排总结再到前端累计展示的遥测链路、清空逻辑和录屏布局优化均为本项目原创业务实现。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_llm_command_planner.py tests/test_api.py tests/test_orchestration_service.py
+uv run --no-editable ruff check src/voicecanvas/adapters/llm src/voicecanvas/application src/voicecanvas/api tests/test_llm_command_planner.py tests/test_api.py tests/test_orchestration_service.py
+uv run --no-editable pytest
+```
+
+```powershell
+cd frontend
+npm run test:prototype
+```
+
+结果：后端 LLM/API/编排遥测回归 58 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能；触碰后端文件 ruff 通过；后端全量测试 167 passed，存在同一个上游弃用 warning；前端交互原型契约测试通过。
+
 ## 本轮发布决策：修复图片导出保留真实素材与语义插画
 
 - 标题：修复图片导出保留真实素材与语义插画。

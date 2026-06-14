@@ -6,7 +6,7 @@ from voicecanvas.adapters.llm.base import LLMClientError, LLMCompletion, LLMMess
 class FakeLLMClient:
     """测试用 LLM 客户端，按顺序返回内容或抛出错误。"""
 
-    def __init__(self, responses: Iterable[str | LLMClientError]) -> None:
+    def __init__(self, responses: Iterable[str | LLMCompletion | LLMClientError]) -> None:
         self._responses = list(responses)
         self.calls: list[list[LLMMessage]] = []
 
@@ -24,5 +24,7 @@ class FakeLLMClient:
         response = self._responses.pop(0)
         if isinstance(response, LLMClientError):
             raise response
+        if isinstance(response, LLMCompletion):
+            return response
 
         return LLMCompletion(content=response, model="fake-llm", provider="fake")
