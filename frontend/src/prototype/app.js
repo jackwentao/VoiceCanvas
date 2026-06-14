@@ -1,9 +1,14 @@
 import { COMMAND_BINDINGS, initialHistory, initialProject, initialSession } from "./mock-data.js";
 import {
+  DEFAULT_USER_ID,
   DEFAULT_PROJECT_ID,
+  createUserMemory,
+  deleteUserMemory,
+  listUserMemories,
   loadProjectState,
   resumeOrchestration,
-  startOrchestrationStream
+  startOrchestrationStream,
+  updateUserMemory
 } from "./backend-client.js";
 import {
   applyBackendEvent,
@@ -33,6 +38,13 @@ const state = {
   voiceListening: false,
   voiceDraftReady: false,
   settingsOpen: false,
+  memory: {
+    panelOpen: false,
+    loading: false,
+    error: null,
+    memories: [],
+    editingId: null
+  },
   backend: {
     projectId: DEFAULT_PROJECT_ID,
     connected: false,
@@ -63,6 +75,28 @@ const commandSummaries = {
   ARRANGE_LAYOUT: "调整布局",
   UPDATE_PROJECT_STYLE: "更新风格",
   EXPORT_PROJECT: "导出项目"
+};
+
+const memoryKindLabels = {
+  style_preference: "风格偏好",
+  layout_preference: "布局偏好",
+  naming_convention: "命名习惯",
+  workflow_preference: "工作流偏好",
+  negative_preference: "负向偏好"
+};
+
+const memoryScopeLabels = {
+  global: "全局",
+  canvas: "画布",
+  storyboard: "分镜",
+  commerce: "带货"
+};
+
+const memoryStatusLabels = {
+  candidate: "待确认",
+  active: "已生效",
+  rejected: "已拒绝",
+  archived: "已归档"
 };
 
 const renderCatalogState = {
@@ -984,11 +1018,146 @@ function selectElement(elementId) {
   render();
 }
 
+async function openMemoryPanel() {
+  state.settingsOpen = false;
+  state.memory.panelOpen = true;
+  state.memory.error = null;
+  render();
+  await refreshUserMemories();
+}
+
+function closeMemoryPanel() {
+  state.memory.panelOpen = false;
+  state.memory.editingId = null;
+  state.memory.error = null;
+  render();
+}
+
+async function refreshUserMemories() {
+  state.memory.loading = true;
+  state.memory.error = null;
+  render();
+
+  try {
+    const response = await listUserMemories(DEFAULT_USER_ID, true);
+    state.memory.memories = response?.memories || [];
+  } catch (error) {
+    state.memory.error = error.message || "长期记忆加载失败";
+  } finally {
+    state.memory.loading = false;
+    render();
+  }
+}
+
+async function createMemoryFromPanel() {
+  const content = $("#memoryContentInput").value.trim();
+  if (!content) {
+    state.memory.error = "请先填写长期记忆内容";
+    renderMemoryPanel();
+    return;
+  }
+
+  state.memory.loading = true;
+  state.memory.error = null;
+  renderMemoryPanel();
+
+  try {
+    await createUserMemory(DEFAULT_USER_ID, {
+      kind: $("#memoryKindInput").value,
+      content,
+      scope: $("#memoryScopeInput").value
+    });
+    $("#memoryContentInput").value = "";
+    await refreshUserMemories();
+  } catch (error) {
+    state.memory.error = error.message || "长期记忆新增失败";
+    state.memory.loading = false;
+    renderMemoryPanel();
+  }
+}
+
+function startMemoryEdit(memoryId) {
+  state.memory.editingId = memoryId;
+  state.memory.error = null;
+  renderMemoryPanel();
+}
+
+function cancelMemoryEdit() {
+  state.memory.editingId = null;
+  state.memory.error = null;
+  renderMemoryPanel();
+}
+
+async function saveMemoryEdit(memoryId) {
+  const row = document.querySelector(`[data-memory-row="${CSS.escape(memoryId)}"]`);
+  if (!row) return;
+
+  const content = row.querySelector("[data-memory-edit='content']").value.trim();
+  if (!content) {
+    state.memory.error = "长期记忆内容不能为空";
+    renderMemoryPanel();
+    return;
+  }
+
+  state.memory.loading = true;
+  state.memory.error = null;
+  renderMemoryPanel();
+
+  try {
+    await updateUserMemory(memoryId, {
+      kind: row.querySelector("[data-memory-edit='kind']").value,
+      content,
+      scope: row.querySelector("[data-memory-edit='scope']").value
+    });
+    state.memory.editingId = null;
+    await refreshUserMemories();
+  } catch (error) {
+    state.memory.error = error.message || "长期记忆保存失败";
+    state.memory.loading = false;
+    renderMemoryPanel();
+  }
+}
+
+async function updateMemoryStatus(memoryId, status) {
+  state.memory.loading = true;
+  state.memory.error = null;
+  renderMemoryPanel();
+
+  try {
+    await updateUserMemory(memoryId, { status });
+    await refreshUserMemories();
+  } catch (error) {
+    state.memory.error = error.message || "长期记忆状态更新失败";
+    state.memory.loading = false;
+    renderMemoryPanel();
+  }
+}
+
+async function deleteMemoryFromPanel(memoryId) {
+  const confirmed = window.confirm("确定删除这条长期记忆吗？删除后无法恢复。");
+  if (!confirmed) return;
+
+  state.memory.loading = true;
+  state.memory.error = null;
+  renderMemoryPanel();
+
+  try {
+    await deleteUserMemory(memoryId);
+    if (state.memory.editingId === memoryId) state.memory.editingId = null;
+    await refreshUserMemories();
+  } catch (error) {
+    state.memory.error = error.message || "长期记忆删除失败";
+    state.memory.loading = false;
+    renderMemoryPanel();
+  }
+}
+
 function render() {
   renderHeader();
   renderHistory();
   renderCanvas();
   renderAIPanel();
+  renderMemoryPanel();
 }
 
 function renderHeader() {
@@ -996,6 +1165,122 @@ function renderHeader() {
   $("#projectMeta").textContent = `${state.project.mode} · ${state.project.scenes.length} 个镜头 · ${stageLabels[state.session.stage] || state.session.stage}`;
   $("#settingsButton").setAttribute("aria-expanded", String(state.settingsOpen));
   $("#settingsMenu").hidden = !state.settingsOpen;
+}
+
+function renderMemoryPanel() {
+  const overlay = $("#memoryOverlay");
+  if (!overlay) return;
+
+  overlay.hidden = !state.memory.panelOpen;
+  renderMemorySelectOptions();
+
+  const error = $("#memoryError");
+  error.hidden = !state.memory.error;
+  error.textContent = state.memory.error || "";
+
+  const list = $("#memoryList");
+  if (state.memory.loading && !state.memory.memories.length) {
+    list.innerHTML = `<p class="memory-empty">正在读取长期记忆...</p>`;
+    return;
+  }
+
+  if (!state.memory.memories.length) {
+    list.innerHTML = `<p class="memory-empty">暂无长期记忆</p>`;
+    return;
+  }
+
+  list.innerHTML = state.memory.memories.map(renderMemoryItem).join("");
+}
+
+function renderMemorySelectOptions() {
+  const kindInput = $("#memoryKindInput");
+  const scopeInput = $("#memoryScopeInput");
+  if (!kindInput || !scopeInput) return;
+
+  kindInput.innerHTML = renderOptions(memoryKindLabels, "style_preference");
+  scopeInput.innerHTML = renderOptions(memoryScopeLabels, "global");
+}
+
+function renderOptions(labels, selectedValue) {
+  return Object.entries(labels)
+    .map(([value, label]) => {
+      const selected = value === selectedValue ? " selected" : "";
+      return `<option value="${escapeAttribute(value)}"${selected}>${escapeHtml(label)}</option>`;
+    })
+    .join("");
+}
+
+function renderMemoryItem(memory) {
+  if (state.memory.editingId === memory.id) return renderEditableMemoryItem(memory);
+
+  return `
+    <article class="memory-item" data-memory-row="${escapeAttribute(memory.id)}" data-status="${escapeAttribute(memory.status)}">
+      <div class="memory-item-main">
+        <p>${escapeHtml(memory.content)}</p>
+        <div class="memory-meta">
+          <span>${escapeHtml(memoryKindLabels[memory.kind] || memory.kind)}</span>
+          <span>${escapeHtml(memoryScopeLabels[memory.scope] || memory.scope)}</span>
+          <span>${escapeHtml(memoryStatusLabels[memory.status] || memory.status)}</span>
+          <span>${formatDateTime(memory.updatedAt)}</span>
+        </div>
+      </div>
+      <div class="memory-actions">
+        ${renderMemoryStatusActions(memory)}
+        <button type="button" data-memory-action="edit" data-memory-id="${escapeAttribute(memory.id)}">编辑</button>
+        <button type="button" data-memory-action="delete" data-memory-id="${escapeAttribute(memory.id)}">删除</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderEditableMemoryItem(memory) {
+  return `
+    <article class="memory-item is-editing" data-memory-row="${escapeAttribute(memory.id)}" data-status="${escapeAttribute(memory.status)}">
+      <textarea data-memory-edit="content" rows="3">${escapeHtml(memory.content)}</textarea>
+      <div class="memory-form-row">
+        <label>
+          类型
+          <select data-memory-edit="kind">${renderOptions(memoryKindLabels, memory.kind)}</select>
+        </label>
+        <label>
+          范围
+          <select data-memory-edit="scope">${renderOptions(memoryScopeLabels, memory.scope)}</select>
+        </label>
+      </div>
+      <div class="memory-actions">
+        <button type="button" data-memory-action="save" data-memory-id="${escapeAttribute(memory.id)}">保存</button>
+        <button type="button" data-memory-action="cancel-edit">取消</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderMemoryStatusActions(memory) {
+  if (memory.status === "candidate") {
+    return `
+      <button type="button" data-memory-action="status" data-memory-id="${escapeAttribute(memory.id)}" data-memory-status="active">激活</button>
+      <button type="button" data-memory-action="status" data-memory-id="${escapeAttribute(memory.id)}" data-memory-status="rejected">拒绝</button>
+    `;
+  }
+  if (memory.status === "active") {
+    return `<button type="button" data-memory-action="status" data-memory-id="${escapeAttribute(memory.id)}" data-memory-status="archived">归档</button>`;
+  }
+  if (memory.status === "archived" || memory.status === "rejected") {
+    return `<button type="button" data-memory-action="status" data-memory-id="${escapeAttribute(memory.id)}" data-memory-status="active">重新激活</button>`;
+  }
+  return "";
+}
+
+function formatDateTime(value) {
+  if (!value) return "未更新";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }
 
 function renderHistory() {
@@ -1748,6 +2033,26 @@ function bindEvents() {
     const resumeButton = event.target.closest("[data-resume]");
     if (resumeButton) resumeClarification(resumeButton.dataset.resume);
 
+    const memoryActionButton = event.target.closest("[data-memory-action]");
+    if (memoryActionButton) {
+      const action = memoryActionButton.dataset.memoryAction;
+      const memoryId = memoryActionButton.dataset.memoryId;
+      if (action === "open") openMemoryPanel();
+      if (action === "close") closeMemoryPanel();
+      if (action === "create") createMemoryFromPanel();
+      if (action === "edit") startMemoryEdit(memoryId);
+      if (action === "save") saveMemoryEdit(memoryId);
+      if (action === "cancel-edit") cancelMemoryEdit();
+      if (action === "status") updateMemoryStatus(memoryId, memoryActionButton.dataset.memoryStatus);
+      if (action === "delete") deleteMemoryFromPanel(memoryId);
+      return;
+    }
+
+    if (state.memory.panelOpen && event.target.id === "memoryOverlay") {
+      closeMemoryPanel();
+      return;
+    }
+
     const menuButton = event.target.closest("[data-menu-toggle='settings']");
     if (menuButton) {
       state.settingsOpen = !state.settingsOpen;
@@ -1784,6 +2089,11 @@ function bindEvents() {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.memory.panelOpen) {
+      closeMemoryPanel();
+      return;
+    }
+
     if (event.key === "Escape" && state.settingsOpen) {
       state.settingsOpen = false;
       renderHeader();

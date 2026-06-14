@@ -69,6 +69,42 @@ class UserMemoryService:
             return memories
         return [memory for memory in memories if memory.status == "active"]
 
+    def update_memory(
+        self,
+        memory_id: str,
+        *,
+        kind: UserMemoryKind | None = None,
+        content: str | None = None,
+        scope: UserMemoryScope | None = None,
+        confidence: float | None = None,
+        status: UserMemoryStatus | None = None,
+    ) -> UserMemory:
+        """只更新前端允许编辑的长期记忆字段，保留来源证据和创建信息。"""
+
+        memory = self._repository.get(memory_id)
+        if memory is None:
+            raise ValueError("长期记忆不存在")
+
+        payload = memory.model_dump(by_alias=True)
+        if kind is not None:
+            payload["kind"] = kind
+        if content is not None:
+            stripped = content.strip()
+            if not stripped:
+                raise ValueError("长期记忆内容不能为空")
+            payload["content"] = stripped
+        if scope is not None:
+            payload["scope"] = scope
+        if confidence is not None:
+            payload["confidence"] = confidence
+        if status is not None:
+            payload["status"] = status
+        payload["updatedAt"] = self._now()
+
+        updated = UserMemory.model_validate(payload)
+        self._repository.save(updated)
+        return updated.model_copy(deep=True)
+
     def context_for(
         self,
         *,

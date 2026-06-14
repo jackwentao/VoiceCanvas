@@ -36,6 +36,10 @@ function testApiContract() {
   assert.equal(API_CONTRACT.orchestration.resume.path, "/api/orchestrations/:sessionId/resume");
   assert.equal(API_CONTRACT.orchestration.events.transport, "text/event-stream");
   assert.equal(API_CONTRACT.project.export.path, "/api/projects/:projectId/export");
+  assert.equal(API_CONTRACT.userMemory.list.method, "GET");
+  assert.equal(API_CONTRACT.userMemory.create.path, "/api/users/:userId/memories");
+  assert.equal(API_CONTRACT.userMemory.update.method, "PATCH");
+  assert.equal(API_CONTRACT.userMemory.delete.path, "/api/memories/:memoryId");
 
   for (const eventType of requiredEvents) {
     assert.ok(
@@ -46,7 +50,7 @@ function testApiContract() {
 }
 
 function testUiBindings() {
-  assert.equal(UI_BINDINGS.length, 4);
+  assert.equal(UI_BINDINGS.length, 5);
 
   for (const binding of UI_BINDINGS) {
     assert.ok(binding.area, "每个 UI 区域必须有名称");
@@ -62,6 +66,10 @@ function testUiBindings() {
   const aiBinding = UI_BINDINGS.find((binding) => binding.area === "右侧 AI 交互栏");
   assert.ok(aiBinding.writes.includes("OrchestratorInput"));
   assert.ok(aiBinding.events.includes("CLARIFICATION_REQUESTED"));
+
+  const memoryBinding = UI_BINDINGS.find((binding) => binding.area === "长期记忆管理面板");
+  assert.ok(memoryBinding.writes.includes("UserMemoryCreateRequest"));
+  assert.ok(memoryBinding.api.includes("PATCH /api/memories/:memoryId"));
 }
 
 function testCommandBindings() {
@@ -234,6 +242,9 @@ async function testPrototypeHtml() {
   assert.ok(html.includes('data-menu-toggle="settings"'), "顶部必须提供设置菜单入口");
   assert.ok(html.includes('data-project-action="new"'), "设置菜单必须提供新建项目入口");
   assert.ok(html.includes('data-project-action="load"'), "设置菜单必须提供载入项目入口");
+  assert.ok(html.includes('data-memory-action="open"'), "设置菜单必须提供长期记忆入口");
+  assert.ok(html.includes("memoryOverlay"), "前端必须提供长期记忆管理面板");
+  assert.ok(html.includes("memoryContentInput"), "长期记忆面板必须提供新增内容输入");
   assert.ok(html.includes('data-project-action="export-image"'), "设置菜单必须提供导出图片入口");
   assert.ok(!html.includes("contract-panel"), "开发契约面板不应出现在最终交互原型界面中");
   assert.ok(!app.includes("renderContractPanel"), "前端原型不应渲染底部契约调试面板");
@@ -249,6 +260,12 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("结束创作"), "语音创作模式必须支持语音或按钮结束");
   assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
   assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
+  assert.ok(app.includes("openMemoryPanel"), "长期记忆入口必须打开管理面板");
+  assert.ok(app.includes("refreshUserMemories"), "长期记忆面板必须支持刷新列表");
+  assert.ok(app.includes("createMemoryFromPanel"), "长期记忆面板必须支持显式新增");
+  assert.ok(app.includes("saveMemoryEdit"), "长期记忆面板必须支持编辑保存");
+  assert.ok(app.includes("deleteMemoryFromPanel"), "长期记忆面板必须支持显式删除");
+  assert.ok(app.includes("updateMemoryStatus"), "长期记忆面板必须支持状态流转");
   assert.ok(app.includes("applyBackendResponse"), "后端响应必须统一归并到页面状态");
   assert.ok(app.includes("renderConnectorLayer"), "画布必须提供独立 SVG 连接层");
   assert.ok(app.includes("createElementLayoutIndex"), "连接线必须依赖元素布局索引计算端点");
@@ -286,9 +303,17 @@ async function testPrototypeHtml() {
   assert.ok(backendClient.includes("/api/orchestrations/"), "前端客户端必须绑定澄清恢复 API");
   assert.ok(backendClient.includes("/resume"), "前端客户端必须提供 resume 调用");
   assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
+  assert.ok(backendClient.includes("DEFAULT_USER_ID"), "前端客户端必须提供演示默认用户");
+  assert.ok(backendClient.includes("/api/users/"), "前端客户端必须绑定长期记忆用户 API");
+  assert.ok(backendClient.includes("/api/memories/"), "前端客户端必须绑定长期记忆单条 API");
+  assert.ok(backendClient.includes('method: "PATCH"'), "前端客户端必须提供长期记忆 PATCH 调用");
+  assert.ok(backendClient.includes('method: "DELETE"'), "前端客户端必须提供长期记忆 DELETE 调用");
   assert.ok(stateSync.includes("CANVAS_PATCH_APPLIED"), "状态归并层必须保留画布事件投影能力");
   assert.ok(stateSync.includes("CLARIFICATION_REQUESTED"), "状态归并层必须保留澄清事件投影能力");
   assert.ok(css.includes(".settings-popover[hidden]"), "设置菜单 hidden 状态必须真正隐藏");
+  assert.ok(css.includes(".memory-overlay[hidden]"), "长期记忆面板 hidden 状态必须真正隐藏");
+  assert.ok(css.includes(".memory-list"), "长期记忆列表必须有独立滚动区域");
+  assert.ok(css.includes(".memory-item[data-status=\"active\"]"), "长期记忆条目必须区分生效状态");
 
   const catalogItems = new Map(renderCatalog.items.map((item) => [item.renderKey, item]));
   assert.equal(renderCatalog.version, 1, "Render Catalog 必须有版本");

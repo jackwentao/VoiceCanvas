@@ -34,6 +34,7 @@
             <div id="settingsMenu" class="settings-popover" role="menu" hidden>
               <button type="button" role="menuitem" data-project-action="new">新建项目</button>
               <button type="button" role="menuitem" data-project-action="load">载入项目</button>
+              <button type="button" role="menuitem" data-memory-action="open">长期记忆</button>
               <button type="button" role="menuitem" data-run="export">导出 JSON</button>
               <button type="button" role="menuitem" data-project-action="export-image">导出图片</button>
             </div>
@@ -124,6 +125,36 @@
             <ol id="eventLog" class="event-log"></ol>
           </section>
         </aside>
+      </section>
+
+      <section id="memoryOverlay" class="memory-overlay" aria-label="长期记忆管理" hidden>
+        <div class="memory-panel" role="dialog" aria-modal="true" aria-labelledby="memoryPanelTitle">
+          <header>
+            <section>
+              <h2 id="memoryPanelTitle">长期记忆</h2>
+              <p>管理跨项目生效的偏好和习惯</p>
+            </section>
+            <button type="button" class="icon-button" data-memory-action="close" aria-label="关闭长期记忆面板">×</button>
+          </header>
+
+          <section class="memory-create-form" aria-label="新增长期记忆">
+            <textarea id="memoryContentInput" rows="3" placeholder="例如：用户喜欢清爽绿色、留白较多的带货视觉风格"></textarea>
+            <div class="memory-form-row">
+              <label>
+                类型
+                <select id="memoryKindInput"></select>
+              </label>
+              <label>
+                范围
+                <select id="memoryScopeInput"></select>
+              </label>
+              <button type="button" data-memory-action="create">新增</button>
+            </div>
+          </section>
+
+          <p id="memoryError" class="memory-error" hidden></p>
+          <div id="memoryList" class="memory-list"></div>
+        </div>
       </section>
     </main>
 
