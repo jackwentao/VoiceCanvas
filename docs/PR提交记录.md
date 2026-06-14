@@ -14,7 +14,9 @@
   - 状态：Merged
   - 范围：新增 `docs/指令完成情况.md`，明确预计实现、已完成、降级完成、部分完成、未完成及原因，并在 README 中加入入口。
   - 验证：`git diff --check -- README.md docs/指令完成情况.md`。
-- 本轮后续文档同步 PR：
+- PR #47：同步最终项目文档状态。
+  - 链接：https://github.com/jackwentao/VoiceCanvas/pull/47
+  - 状态：Merged
   - 范围：同步技术架构、接口模型、前端绑定、技术选型、Demo 验收、比赛冲刺计划和 PR 记录，使其与 README、指令完成情况和当前代码一致。
   - 验证：`git diff --check -- docs README.md`。
 
