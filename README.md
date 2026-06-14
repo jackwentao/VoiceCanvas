@@ -265,6 +265,17 @@ $env:PYTHONPATH="src"
 uv run --no-editable uvicorn voicecanvas.api.main:app --reload
 ```
 
+Docker 后端镜像：
+
+```powershell
+docker build -t voicecanvas-backend .
+docker run --rm -p 8000:8000 `
+  -e VOICECANVAS_PROJECT_DB_PATH=/app/backend/data/voicecanvas.sqlite3 `
+  voicecanvas-backend
+```
+
+该镜像运行后端 API，并包含后端运行时需要的 `frontend/src/prototype/render-catalog.json`。前端原型仍可按本地方式运行，并通过 `apiBaseUrl` 指向容器暴露的 `http://127.0.0.1:8000`。
+
 健康检查：
 
 ```text

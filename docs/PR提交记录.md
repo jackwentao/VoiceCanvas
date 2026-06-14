@@ -2,6 +2,29 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：后端 Dockerfile
+
+- 本轮 PR 只实现一件事：提供后端 API Dockerfile 和 `.dockerignore`，让评委可用容器方式启动 VoiceCanvas 后端。
+- 镜像使用 `ghcr.io/astral-sh/uv:python3.11-bookworm-slim`，通过 `uv sync --frozen --no-dev --no-editable` 安装生产依赖。
+- 镜像拷入 `backend/src`、`backend/scripts` 和后端运行时需要的 `frontend/src/prototype/render-catalog.json`，确保 Render Catalog 在容器内可读取。
+- `.dockerignore` 排除本地虚拟环境、运行数据、测试缓存、LLM 产物和 `.env`，避免把本机状态打进镜像。
+- 本轮不新增第三方库、框架、SDK 或外部服务。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable pytest tests/test_dockerfile_contract.py
+uv run --no-editable ruff check tests/test_dockerfile_contract.py
+uv run --no-editable pytest
+docker --version
+docker build -t voicecanvas-backend:codex-dockerfile .
+```
+
+结果：Dockerfile 契约测试 2 passed；ruff 通过；后端全量测试 150 passed；`docker --version` 返回 Docker 29.4.2；本机 Docker Desktop/Linux daemon 未启动，`docker build` 无法连接 `dockerDesktopLinuxEngine`，因此未完成真实镜像构建。
+
 ## 本轮发布决策：MinIO 素材包初始化脚本
 
 - 本轮 PR 只实现一件事：提供可运行、可测试的 Render Catalog 素材包初始化脚本，让 `catalog/commerce/` 下的素材对象可以写入真实 MinIO 桶。

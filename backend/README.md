@@ -16,6 +16,17 @@ uv run --no-editable uvicorn voicecanvas.api.main:app --reload
 http://127.0.0.1:8000/health
 ```
 
+## Docker 运行
+
+仓库根目录提供后端 API 镜像 Dockerfile：
+
+```powershell
+docker build -t voicecanvas-backend .
+docker run --rm -p 8000:8000 voicecanvas-backend
+```
+
+镜像内默认使用 `/app/backend/data/voicecanvas.sqlite3` 保存 Project State，并拷入后端运行时需要的 `frontend/src/prototype/render-catalog.json`。如需连接真实 LLM 或 MinIO，可在 `docker run` 时继续通过 `-e` 传入 `VOICECANVAS_*` 环境变量。
+
 真实编排接口：
 
 ```powershell
