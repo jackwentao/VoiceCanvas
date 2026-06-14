@@ -23,6 +23,7 @@ from voicecanvas.application.referent_resolver import (
 from voicecanvas.application.render_catalog import RenderCatalog, get_render_catalog
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.project import Project
+from voicecanvas.domain.telemetry import TokenUsage
 
 
 class LLMCommandDraft(BaseModel):
@@ -85,6 +86,7 @@ class LLMCommandPlanner:
     ) -> CommandPlan:
         attempts: list[PlannerAttempt] = []
         feedback: list[str] = []
+        token_usage = TokenUsage()
         resolved_target = self._resolve_referent_before_llm(user_input, project, context)
         if isinstance(resolved_target, CommandPlan):
             return resolved_target
@@ -98,6 +100,7 @@ class LLMCommandPlanner:
                     timeout_seconds=self._timeout_seconds,
                 )
                 raw_output = completion.content
+                token_usage = token_usage.plus(completion.usage)
                 output = self._parse_output(raw_output)
                 plan = self._to_command_plan(output, project, user_input, attempts)
                 attempts.append(
@@ -108,6 +111,7 @@ class LLMCommandPlanner:
                     commands=plan.commands,
                     message=plan.message,
                     attempts=attempts,
+                    token_usage=token_usage,
                 )
             except LLMClientError as error:
                 attempts.append(
@@ -127,7 +131,7 @@ class LLMCommandPlanner:
                 )
                 feedback.append(f"上一次输出未通过校验：{error}")
 
-        return self._fallback_or_response(user_input, project, attempts)
+        return self._fallback_or_response(user_input, project, attempts, token_usage)
 
     def _resolve_referent_before_llm(
         self,
@@ -894,6 +898,7 @@ class LLMCommandPlanner:
         user_input: str,
         project: Project,
         attempts: list[PlannerAttempt],
+        token_usage: TokenUsage,
     ) -> CommandPlan:
         reason = self._summarize_failure(attempts)
         notice = f"LLM 暂不可用：{reason}"
@@ -905,6 +910,7 @@ class LLMCommandPlanner:
                 f"{notice}，未执行任何画布命令，请稍后重试或检查模型配置。",
                 notice=notice,
                 attempts=attempts,
+                token_usage=token_usage,
             )
 
         fallback = self._fallback_planner.plan(user_input, project)
@@ -915,6 +921,7 @@ class LLMCommandPlanner:
             fallback.message,
             notice=fallback_notice,
             attempts=attempts,
+            token_usage=token_usage.plus(fallback.token_usage),
         )
 
     def _summarize_failure(self, attempts: list[PlannerAttempt]) -> str:

@@ -53,7 +53,7 @@ button:disabled {
 
 .prototype-shell {
   height: 100vh;
-  padding: 14px;
+  padding: 10px;
   overflow: hidden;
 }
 
@@ -62,8 +62,8 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  min-height: 72px;
-  padding: 0 2px 14px;
+  min-height: 62px;
+  padding: 0 2px 10px;
 }
 
 .topbar h1 {
@@ -393,10 +393,10 @@ button:disabled {
 
 .workspace-grid {
   display: grid;
-  grid-template-columns: minmax(210px, 240px) minmax(420px, 1fr) minmax(260px, 300px);
-  gap: 12px;
+  grid-template-columns: minmax(196px, 220px) minmax(560px, 1fr) minmax(248px, 286px);
+  gap: 10px;
   align-items: stretch;
-  height: calc(100vh - 92px);
+  height: calc(100vh - 72px);
   min-height: 0;
   overflow: hidden;
 }
@@ -416,8 +416,8 @@ button:disabled {
 .ai-panel {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 14px;
+  gap: 12px;
+  padding: 12px;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -538,7 +538,7 @@ h2 {
 }
 
 .canvas-toolbar {
-  padding: 14px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -614,7 +614,7 @@ h2 {
   display: grid;
   place-items: center;
   min-height: 0;
-  padding: 18px;
+  padding: 8px;
   background:
     linear-gradient(90deg, rgba(27, 43, 52, 0.04) 1px, transparent 1px),
     linear-gradient(rgba(27, 43, 52, 0.04) 1px, transparent 1px);
@@ -623,7 +623,7 @@ h2 {
 
 .canvas-surface {
   position: relative;
-  width: min(100%, 960px);
+  width: min(100%, 1080px);
   aspect-ratio: 16 / 9;
   overflow: hidden;
   border: 1px solid #cfdad6;
@@ -939,6 +939,7 @@ h2 {
 .voice-card,
 .stage-indicator,
 .progress-card,
+.token-card,
 .clarification-card,
 .summary-card,
 .event-card {
@@ -1085,6 +1086,56 @@ h2 {
   gap: 10px;
 }
 
+.token-card {
+  display: grid;
+  gap: 10px;
+}
+
+.token-card > div:first-child,
+.token-card dl,
+.token-card dl div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.token-card > div:first-child span,
+.token-card dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.token-card button {
+  min-height: 28px;
+  padding: 0 9px;
+  color: var(--green-dark);
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.token-card button:hover {
+  border-color: var(--green);
+}
+
+.token-card dl {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.token-card dd {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 800;
+  text-align: right;
+  white-space: nowrap;
+}
+
 .progress-track {
   height: 8px;
   overflow: hidden;
@@ -1143,7 +1194,7 @@ h2 {
 
 @media (max-width: 1180px) {
   .workspace-grid {
-    grid-template-columns: 210px minmax(420px, 1fr) 260px;
+    grid-template-columns: 190px minmax(480px, 1fr) 248px;
   }
 }
 

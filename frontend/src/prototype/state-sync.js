@@ -37,6 +37,36 @@ function summaryCommandCount(summary, patches) {
   return patches?.length || 0;
 }
 
+function normalizeTokenUsage(summary) {
+  const usage = summary && typeof summary === "object" ? summary.tokenUsage : null;
+  return {
+    promptTokens: nonNegativeInteger(usage?.promptTokens),
+    completionTokens: nonNegativeInteger(usage?.completionTokens),
+    totalTokens: nonNegativeInteger(usage?.totalTokens)
+  };
+}
+
+function nonNegativeInteger(value) {
+  return Number.isInteger(value) && value > 0 ? value : 0;
+}
+
+function recordTokenUsage(state, summary, sessionId) {
+  if (!state.telemetry) return;
+  const usage = normalizeTokenUsage(summary);
+  state.telemetry.lastTurnTokenUsage = usage;
+  if (!sessionId || state.telemetry.lastCountedSessionId === sessionId) return;
+  state.telemetry.totalTokenUsage = addTokenUsage(state.telemetry.totalTokenUsage, usage);
+  state.telemetry.lastCountedSessionId = sessionId;
+}
+
+function addTokenUsage(left = {}, right = {}) {
+  return {
+    promptTokens: nonNegativeInteger(left.promptTokens) + nonNegativeInteger(right.promptTokens),
+    completionTokens: nonNegativeInteger(left.completionTokens) + nonNegativeInteger(right.completionTokens),
+    totalTokens: nonNegativeInteger(left.totalTokens) + nonNegativeInteger(right.totalTokens)
+  };
+}
+
 function createPatchChange(patch) {
   const targetName =
     patch.element?.name || patch.scene?.name || patch.elementId || patch.sceneId || patch.type;
@@ -140,6 +170,7 @@ export function applyBackendResponse(state, response, options = {}) {
   }
 
   if (response.sessionId || response.summary || response.nextAction) {
+    recordTokenUsage(state, response.summary, response.sessionId);
     state.session = createSession(response, options.userInput, events);
     state.voiceStatus = summaryMessage(response.summary);
     state.voiceDraftReady = false;
@@ -199,6 +230,7 @@ export function applyBackendEvent(state, event, options = {}) {
   }
 
   if (normalized.type === "TURN_SUMMARY") {
+    recordTokenUsage(state, normalized.summary, normalized.sessionId);
     state.session.lastSummary = normalizeSummary(
       normalized.summary,
       [],

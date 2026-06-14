@@ -20,6 +20,7 @@ from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.history import HistoryEntry
 from voicecanvas.domain.patches import CanvasPatch
 from voicecanvas.domain.project import CanvasElement, Project, Scene
+from voicecanvas.domain.telemetry import TokenUsage
 from voicecanvas.domain.user_memory import UserMemoryContext
 
 
@@ -27,6 +28,7 @@ class TurnSummary(BaseModel):
     completed: bool
     message: str
     command_count: int = Field(alias="commandCount")
+    token_usage: TokenUsage = Field(default_factory=TokenUsage, alias="tokenUsage")
 
     model_config = {"populate_by_name": True}
 
@@ -182,7 +184,12 @@ class OrchestrationService:
                 events,
                 self._clarification_event(session_id, next_action, plan.message),
             )
-            summary = TurnSummary(completed=False, message=plan.message, commandCount=0)
+            summary = TurnSummary(
+                completed=False,
+                message=plan.message,
+                commandCount=0,
+                tokenUsage=plan.token_usage,
+            )
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
             memory.record_turn(
                 user_input=user_input,
@@ -209,6 +216,7 @@ class OrchestrationService:
                 completed=True,
                 message=self._message_with_notice(plan.message, plan.notice),
                 commandCount=0,
+                tokenUsage=plan.token_usage,
             )
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
             memory.record_turn(
@@ -231,11 +239,27 @@ class OrchestrationService:
             return
 
         if plan.action == "undo":
-            yield from self._stream_undo(session_id, project, history, memory, events, user_input)
+            yield from self._stream_undo(
+                session_id,
+                project,
+                history,
+                memory,
+                events,
+                user_input,
+                token_usage=plan.token_usage,
+            )
             return
 
         if plan.action == "redo":
-            yield from self._stream_redo(session_id, project, history, memory, events, user_input)
+            yield from self._stream_redo(
+                session_id,
+                project,
+                history,
+                memory,
+                events,
+                user_input,
+                token_usage=plan.token_usage,
+            )
             return
 
         yield from self._emit_event(
@@ -258,6 +282,7 @@ class OrchestrationService:
                         completed=False,
                         message=self._message_with_notice(str(error), plan.notice),
                         commandCount=applied_count + export_count,
+                        tokenUsage=plan.token_usage,
                     )
                     yield from self._emit_event(
                         events,
@@ -291,6 +316,7 @@ class OrchestrationService:
                     completed=False,
                     message=self._message_with_notice(str(error), plan.notice),
                     commandCount=applied_count,
+                    tokenUsage=plan.token_usage,
                 )
                 yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
                 yield self._result_chunk(
@@ -325,6 +351,7 @@ class OrchestrationService:
                 plan.notice,
             ),
             commandCount=applied_count + export_count,
+            tokenUsage=plan.token_usage,
         )
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
         memory.record_turn(
@@ -612,6 +639,7 @@ class OrchestrationService:
         memory: ConversationMemoryManager,
         events: list[dict[str, Any]],
         user_input: str,
+        token_usage: TokenUsage | None = None,
     ) -> Iterator[OrchestrationStreamChunk]:
         yield from self._emit_event(
             events,
@@ -620,7 +648,12 @@ class OrchestrationService:
         try:
             result = history.undo(project, self._executor.apply_without_recording)
         except ValueError as error:
-            summary = TurnSummary(completed=False, message=str(error), commandCount=0)
+            summary = TurnSummary(
+                completed=False,
+                message=str(error),
+                commandCount=0,
+                tokenUsage=token_usage or TokenUsage(),
+            )
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
             yield self._result_chunk(
                 self._response(
@@ -642,7 +675,12 @@ class OrchestrationService:
                 self._patch_event(session_id, patch, result.history_entry.command.id),
             )
             memory.record_patch(patch, result.project)
-        summary = TurnSummary(completed=True, message="已撤销上一步操作", commandCount=1)
+        summary = TurnSummary(
+            completed=True,
+            message="已撤销上一步操作",
+            commandCount=1,
+            tokenUsage=token_usage or TokenUsage(),
+        )
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
         memory.record_turn(
             user_input=user_input,
@@ -670,6 +708,7 @@ class OrchestrationService:
         memory: ConversationMemoryManager,
         events: list[dict[str, Any]],
         user_input: str,
+        token_usage: TokenUsage | None = None,
     ) -> Iterator[OrchestrationStreamChunk]:
         yield from self._emit_event(
             events,
@@ -678,7 +717,12 @@ class OrchestrationService:
         try:
             result = history.redo(project, self._executor.apply_without_recording)
         except ValueError as error:
-            summary = TurnSummary(completed=False, message=str(error), commandCount=0)
+            summary = TurnSummary(
+                completed=False,
+                message=str(error),
+                commandCount=0,
+                tokenUsage=token_usage or TokenUsage(),
+            )
             yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
             yield self._result_chunk(
                 self._response(
@@ -700,7 +744,12 @@ class OrchestrationService:
                 self._patch_event(session_id, patch, result.history_entry.command.id),
             )
             memory.record_patch(patch, result.project)
-        summary = TurnSummary(completed=True, message="已重做上一步操作", commandCount=1)
+        summary = TurnSummary(
+            completed=True,
+            message="已重做上一步操作",
+            commandCount=1,
+            tokenUsage=token_usage or TokenUsage(),
+        )
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
         memory.record_turn(
             user_input=user_input,

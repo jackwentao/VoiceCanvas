@@ -149,8 +149,14 @@ def test_start_orchestration_returns_real_project_patches_and_history() -> None:
     assert body["patches"]
     assert body["history"]
     assert body["nextAction"] is None
+    assert body["summary"]["tokenUsage"] == {
+        "promptTokens": 0,
+        "completionTokens": 0,
+        "totalTokens": 0,
+    }
     assert any(event["type"] == "CANVAS_PATCH_APPLIED" for event in body["events"])
     assert body["events"][-1]["type"] == "TURN_SUMMARY"
+    assert body["events"][-1]["summary"]["tokenUsage"]["totalTokens"] == 0
 
 
 def test_stream_orchestration_returns_sse_events_and_final_result() -> None:
@@ -180,6 +186,14 @@ def test_stream_orchestration_returns_sse_events_and_final_result() -> None:
     assert blocks[-1]["event"] == "orchestration.result"
     assert blocks[-1]["data"]["status"] == "COMPLETED"
     assert len(blocks[-1]["data"]["patches"]) == len(patch_blocks)
+    summary_blocks = [
+        block
+        for block in blocks
+        if block["event"] == "orchestration.event"
+        and block["data"]["type"] == "TURN_SUMMARY"
+    ]
+    assert summary_blocks[-1]["data"]["summary"]["tokenUsage"]["totalTokens"] == 0
+    assert blocks[-1]["data"]["summary"]["tokenUsage"]["totalTokens"] == 0
 
 
 def test_get_project_returns_backend_project_state_and_history() -> None:

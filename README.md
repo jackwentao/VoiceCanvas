@@ -155,6 +155,18 @@ VoiceCanvas 使用结构化画布，而不是把整张画面当成不可编辑�
 
 本轮修复未新增第三方库、框架、SDK 或外部服务；前端继续使用浏览器原生 `Canvas`、`Blob`、`fetch` 和 `URL.createObjectURL`，后端继续使用 Python 标准库生成可验证 SVG 源。Catalog 素材读取仍通过既有后端代理和存储适配器完成，前端不直连 MinIO，也不接触存储凭证。
 
+## Token 用量统计与页面布局
+
+右侧 AI 交互栏已增加 Token 用量统计：
+
+- `本轮`：展示最近一次后端编排总结中的 `summary.tokenUsage`。
+- `累计`：在浏览器本地累计多轮 Token 用量，刷新页面后仍可查看。
+- `清空`：重置累计 Token 统计，保留本轮展示，便于录制 Demo 前归零。
+
+真实 LLM Planner 使用 OpenAI-compatible Chat Completions 响应里的 `usage` 字段统计输入、输出和总 Token；本地 Demo Planner、确定性指令路由、撤销重做等无 LLM 用量的路径统一显示 0。该遥测链路只用于演示和调试成本感知，不参与命令校验、画布状态判断或业务决策。
+
+页面布局同步做了录屏优化：顶栏、左右面板和画布框架留白收紧，中间画布区域占比提升，减少画布周围大块空白对演示效果的影响。本轮未新增第三方依赖，前端使用原生 HTML/CSS/JavaScript 和浏览器 `localStorage` 完成展示与累计。
+
 ## 项目结构
 
 ```text

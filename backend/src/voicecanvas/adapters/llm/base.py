@@ -2,6 +2,8 @@ from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, Field
 
+from voicecanvas.domain.telemetry import TokenUsage
+
 LLMRole = Literal["system", "user", "assistant"]
 
 
@@ -14,6 +16,7 @@ class LLMCompletion(BaseModel):
     content: str
     model: str | None = None
     provider: str | None = None
+    usage: TokenUsage | None = None
     raw: dict[str, Any] = Field(default_factory=dict)
 
 

@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 
 from voicecanvas.adapters.llm.base import LLMClientError, LLMCompletion, LLMMessage
+from voicecanvas.domain.telemetry import TokenUsage
 
 
 class OpenAICompatibleLLMClient:
@@ -73,6 +74,7 @@ class OpenAICompatibleLLMClient:
             content=content,
             model=body.get("model", self._model),
             provider=self._provider,
+            usage=TokenUsage.from_openai_usage(body.get("usage")),
             raw=body if isinstance(body, dict) else {},
         )
 
