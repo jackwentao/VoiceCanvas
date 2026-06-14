@@ -156,3 +156,23 @@ def test_delete_last_scene_is_valid_because_it_means_clear_page() -> None:
     result = CommandValidator().validate([command], _project())
 
     assert result.ok
+
+
+def test_validator_accepts_export_project_command() -> None:
+    command = _command(CommandType.EXPORT_PROJECT, {"format": "json", "scope": "project"})
+
+    result = CommandValidator().validate([command], _project())
+
+    assert result.ok
+
+
+def test_validator_rejects_export_missing_scene() -> None:
+    command = _command(
+        CommandType.EXPORT_PROJECT,
+        {"format": "png", "scope": "scene", "sceneId": "missing"},
+    )
+
+    result = CommandValidator().validate([command], _project())
+
+    assert not result.ok
+    assert result.issues[0].code == "not_found"

@@ -2,6 +2,64 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：导出与项目载入功能
+
+- 本机未安装 GitHub CLI `gh`，本轮创建 PR 与合并 PR 使用 GitHub 连接器完成。
+- 本轮 PR 只实现一件事：导出图片、导出可再次载入的项目包，以及项目包载入恢复。
+- 本轮未新增第三方库、框架、SDK 或外部服务；导出能力复用浏览器原生 API 和 Python 标准库。
+- 涉及参赛作品有效性，提交前必须同步 README 中的原创功能说明、运行方式和测试手段。
+- 合并前必须通过后端相关测试、后端全量测试、前端契约测试和本次触碰文件的 ruff 检查。
+
+## PR #28：实现导出图片与项目包载入功能
+
+- PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/28
+- PR 状态：Open，待合并
+- 分支：`codex/export-project-assets`
+- 基线分支：`main`
+- 提交：`505c8dd 实现导出与项目载入功能`
+- 创建时间：2026-06-14
+
+### 背景
+
+VoiceCanvas MVP 需要把“导出图片”和“导出整个项目，下次可直接载入项目”补成真实可用能力。前端显式点击导出时应直接下载当前作品；语音输入导出时应继续走 LLM/Planner 生成结构化 `EXPORT_PROJECT`，再调用同一导出服务。
+
+### 改动
+
+- 新增后端 `ExportService`，支持项目包导出、项目包导入和当前镜头图片导出兜底。
+- 新增 `/api/projects/:projectId/export` 与 `/api/projects/import`。
+- 扩展 `CommandValidator`、Demo Planner、真实 LLM Prompt 和 `OrchestrationService`，让语音/LLM 导出走 `EXPORT_PROJECT -> ExportService -> EXPORT_COMPLETED`。
+- 新增前端 `export-service.js`，让按钮导出、项目包载入和语音导出事件复用同一套下载/载入函数。
+- 更新 README 原创功能说明、导出/载入 API 示例和无新增第三方依赖说明。
+
+### 测试
+
+已运行：
+
+```powershell
+cd backend
+uv run pytest
+```
+
+结果：`116 passed`，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能。
+
+已运行：
+
+```powershell
+cd frontend
+npm test
+```
+
+结果：前端交互原型契约测试通过。
+
+已运行本次触碰 Python 文件 ruff：
+
+```powershell
+cd backend
+uv run ruff check src/voicecanvas/application/export_service.py src/voicecanvas/application/orchestration_service.py src/voicecanvas/application/command_validator.py src/voicecanvas/application/demo_command_planner.py src/voicecanvas/application/llm_command_planner.py src/voicecanvas/api/main.py src/voicecanvas/api/schemas.py tests/test_export_service.py tests/test_api.py tests/test_command_validator.py tests/test_orchestration_service.py
+```
+
+结果：`All checks passed!`
+
 ## PR #1：scaffold VoiceCanvas architecture
 
 - PR 链接：https://github.com/jackwentao/VoiceCanvas/pull/1

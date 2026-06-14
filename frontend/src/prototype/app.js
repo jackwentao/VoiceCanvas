@@ -4,6 +4,7 @@ import {
   DEFAULT_PROJECT_ID,
   createUserMemory,
   deleteUserMemory,
+  importProjectState,
   listUserMemories,
   loadProjectState,
   resumeOrchestration,
@@ -19,6 +20,12 @@ import {
 import { mergeElementPatch } from "./element-patch.js";
 import { sceneDisplayNumber, visibleSceneEntries } from "./scene-numbering.js";
 import { fitTextFontSize } from "./text-layout.js";
+import {
+  exportFromBackendResult,
+  exportProjectFile,
+  exportSceneImage,
+  importProjectFile
+} from "./export-service.js";
 import {
   BrowserSpeechRecognitionAdapter,
   BrowserVoiceFeedbackAdapter,
@@ -358,8 +365,11 @@ async function runBackendInput(userInput, fallback) {
 
   try {
     const response = await startOrchestrationStream(state.backend.projectId, userInput, {
-      onEvent: (event) => {
+      onEvent: async (event) => {
         applyBackendEvent(state, event, { userInput });
+        if (event.type === "EXPORT_COMPLETED") {
+          await exportFromBackendResult(event.export, state.project);
+        }
         state.backend.connected = true;
         state.backend.lastError = null;
         render();
@@ -772,52 +782,76 @@ function resumeClarification(elementId) {
   ]);
 }
 
-function runExportDemo() {
-  const input = COMMAND_BINDINGS[3].userInput;
-  beginSession(input);
-  playEvents([
-    {
-      run: () => publishStage("executing", "调用 Exporter 导出 Project JSON")
-    },
-    {
-      run: () => {
-        executeCommand({
-          id: makeId("cmd"),
-          type: "EXPORT_PROJECT",
-          source: "ai",
-          reason: "导出项目结构化数据",
-          createdAt: nowIso(),
-          payload: {
-            format: "json",
-            scope: "project"
-          }
-        });
-        state.session.status = "COMPLETED";
-        state.session.lastSummary = {
-          userInput: input,
-          completed: true,
-          stage: "completed",
-          changes: [
-            {
-              type: "exported",
-              targetType: "export",
-              targetName: "Project JSON",
-              description: "已导出结构化项目数据"
-            }
-          ]
-        };
-        publishStage("completed", "导出完成");
-        pushEvent({
-          type: "TURN_SUMMARY",
-          sessionId: state.session.id,
-          summary: state.session.lastSummary
-        });
-      }
-    }
-  ]);
+async function runExportDemo() {
+  return runDirectProjectExport();
 }
 
-function runProjectAction(action) {
+async function runDirectProjectExport() {
+  const input = COMMAND_BINDINGS[3].userInput;
+  beginSession(input);
+  publishStage("executing", "调用 Exporter 导出 Project JSON");
+
+  try {
+    exportProjectFile(state.project);
+    completeExportSession(input, "Project JSON", "已导出可再次载入的项目文件");
+  } catch (error) {
+    appendBackendError(state, error);
+  }
+
+  render();
+}
+
+async function runDirectSceneImageExport() {
+  const input = "导出当前分镜图片";
+  beginSession(input);
+  publishStage("executing", "导出当前分镜图片");
+
+  try {
+    await exportSceneImage(state.project, { sceneId: state.project.activeSceneId });
+    completeExportSession(input, "PNG 图片", "已导出当前分镜图片");
+  } catch (error) {
+    appendBackendError(state, error);
+  }
+
+  render();
+}
+
+function completeExportSession(userInput, targetName, description) {
+  state.session.status = "COMPLETED";
+  state.session.stage = "completed";
+  state.session.progress = {
+    completedSteps: 1,
+    totalSteps: 1,
+    message: "导出完成"
+  };
+  state.session.lastSummary = {
+    userInput,
+    completed: true,
+    stage: "completed",
+    message: "导出完成",
+    changes: [
+      {
+        type: "exported",
+        targetType: "export",
+        targetName,
+        description
+      }
+    ]
+  };
+  publishStage("completed", "导出完成");
+  pushEvent({
+    type: "EXPORT_COMPLETED",
+    sessionId: state.session.id,
+    message: description
+  });
+  pushEvent({
+    type: "TURN_SUMMARY",
+    sessionId: state.session.id,
+    summary: state.session.lastSummary
+  });
+}
+
+async function runProjectAction(action) {
   state.settingsOpen = false;
 
   if (action === "new") {
@@ -854,59 +888,55 @@ function runProjectAction(action) {
   }
 
   if (action === "load") {
-    state.voiceStatus = "已触发载入项目入口";
-    pushHistory(
-      {
-        id: makeId("cmd"),
-        type: "SWITCH_SCENE",
-        source: "user_ui",
-        reason: "载入项目入口已触发",
-        createdAt: nowIso()
-      },
-      [],
-      "载入项目：真实实现将打开项目列表"
-    );
-    pushEvent({
-      type: "STAGE_CHANGED",
-      sessionId: state.session.id,
-      stage: "calling_tool",
-      message: "真实实现将调用 GET /api/projects"
-    });
+    openProjectFilePicker();
   }
 
   if (action === "export-image") {
-    beginSession("导出当前分镜图片");
-    executeCommand({
-      id: makeId("cmd"),
-      type: "EXPORT_PROJECT",
-      source: "user_ui",
-      reason: "从设置菜单导出图片",
-      createdAt: nowIso(),
-      payload: {
-        format: "png",
-        scope: "active_scene"
-      }
-    });
-    state.session.status = "COMPLETED";
-    state.session.stage = "completed";
-    state.session.lastSummary = {
-      userInput: "导出当前分镜图片",
-      completed: true,
-      stage: "completed",
-      changes: [
-        {
-          type: "exported",
-          targetType: "export",
-          targetName: "PNG 图片",
-          description: "已触发当前镜头图片导出"
-        }
-      ]
-    };
+    await runDirectSceneImageExport();
+  }
+
+  render();
+}
+
+function openProjectFilePicker() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".json,.voicecanvas.json,application/json";
+  input.addEventListener(
+    "change",
+    async () => {
+      const file = input.files?.[0];
+      if (file) await loadProjectFromFile(file);
+    },
+    { once: true }
+  );
+  input.click();
+}
+
+async function loadProjectFromFile(file) {
+  try {
+    const imported = await importProjectFile(file);
+    try {
+      const response = await importProjectState(imported.payload);
+      applyBackendResponse(state, response);
+      state.backend.projectId = response.project.id;
+      state.backend.connected = true;
+      state.backend.lastError = null;
+    } catch (error) {
+      state.project = structuredClone(imported.project);
+      state.history = [];
+      state.backend.connected = false;
+      state.backend.lastError = error.message || String(error);
+    }
+    state.voiceStatus = "项目已载入";
     pushEvent({
-      type: "TURN_SUMMARY",
+      type: "PROJECT_IMPORTED",
       sessionId: state.session.id,
-      summary: state.session.lastSummary
+      projectId: state.project.id,
+      message: "项目已载入"
     });
+  } catch (error) {
+    appendBackendError(state, error);
   }
 
   render();
@@ -1999,7 +2029,7 @@ function renderAIPanel() {
     .map((event) => `
       <li>
         <span>${event.type}</span>
-        <strong>${event.message || event.stage || event.question || event.patch?.type || event.text || "事件已接收"}</strong>
+        <strong>${event.message || event.export?.filename || event.stage || event.question || event.patch?.type || event.text || "事件已接收"}</strong>
       </li>
     `)
     .join("");

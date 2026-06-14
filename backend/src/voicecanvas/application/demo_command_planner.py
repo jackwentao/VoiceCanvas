@@ -51,6 +51,24 @@ class DemoCommandPlanner:
                 },
             )
 
+        if "导出" in text or "保存项目" in text or "保存当前画面" in text:
+            image_keywords = ["图片", "当前画面", "当前分镜", "这一镜", "png", "PNG"]
+            is_image_export = self._contains_any(text, image_keywords)
+            return DemoCommandPlan(
+                "commands",
+                [
+                    self._command(
+                        CommandType.EXPORT_PROJECT,
+                        {
+                            "format": "png" if is_image_export else "json",
+                            "scope": "active_scene" if is_image_export else "project",
+                        },
+                        "导出当前作品",
+                    )
+                ],
+                "导出图片" if is_image_export else "导出项目数据",
+            )
+
         if "创建" in text and "分镜" in text:
             return DemoCommandPlan(
                 "commands",

@@ -106,6 +106,48 @@ def test_get_project_returns_backend_project_state_and_history() -> None:
     assert body["events"] == []
 
 
+def test_export_project_endpoint_returns_reloadable_bundle() -> None:
+    client = _client()
+    client.post(
+        "/api/orchestrations",
+        json={
+            "projectId": "project_demo",
+            "userInput": "加标题，写新品上市",
+        },
+    )
+
+    response = client.post(
+        "/api/projects/project_demo/export",
+        json={"format": "json", "scope": "project"},
+    )
+
+    body = response.json()
+    exported_payload = json.loads(body["export"]["content"])
+    assert response.status_code == 200
+    assert body["export"]["filename"].endswith(".voicecanvas.json")
+    assert exported_payload["type"] == "voicecanvas.project"
+    assert exported_payload["project"]["id"] == "project_demo"
+
+
+def test_import_project_endpoint_restores_exported_bundle() -> None:
+    client = _client()
+    exported = client.post(
+        "/api/projects/project_demo/export",
+        json={"format": "json", "scope": "project"},
+    ).json()
+    payload = json.loads(exported["export"]["content"])
+    payload["project"]["id"] = "project_imported"
+    payload["project"]["title"] = "载入后的项目"
+
+    response = client.post("/api/projects/import", json={"payload": payload})
+
+    body = response.json()
+    assert response.status_code == 200
+    assert body["project"]["id"] == "project_imported"
+    assert body["project"]["title"] == "载入后的项目"
+    assert body["events"][-1]["type"] == "PROJECT_IMPORTED"
+
+
 def test_orchestration_api_keeps_project_state_between_calls() -> None:
     client = _client()
     client.post(

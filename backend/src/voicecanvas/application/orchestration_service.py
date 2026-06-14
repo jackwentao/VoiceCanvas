@@ -11,6 +11,7 @@ from voicecanvas.application.command_planner import CommandPlanner, PlanningCont
 from voicecanvas.application.command_validator import CommandValidator
 from voicecanvas.application.conversation_memory import ConversationMemoryManager
 from voicecanvas.application.demo_command_planner import DemoCommandPlanner
+from voicecanvas.application.export_service import ExportRequest, ExportResult, ExportService
 from voicecanvas.application.history_manager import HistoryManager
 from voicecanvas.application.project_repository import InMemoryProjectRepository
 from voicecanvas.domain.commands import CanvasCommand, CommandType
@@ -64,11 +65,13 @@ class OrchestrationService:
         planner: CommandPlanner | None = None,
         executor: CommandExecutor | None = None,
         validator: CommandValidator | None = None,
+        export_service: ExportService | None = None,
     ) -> None:
         self._repository = repository or InMemoryProjectRepository()
         self._planner = planner or DemoCommandPlanner()
         self._validator = validator or CommandValidator()
         self._executor = executor or CommandExecutor(self._validator)
+        self._export_service = export_service or ExportService()
         self._histories: dict[str, HistoryManager] = {}
         self._conversation_memories: dict[str, ConversationMemoryManager] = {}
         self._pending_clarifications: dict[str, dict[str, Any]] = {}
@@ -217,7 +220,44 @@ class OrchestrationService:
 
         current_project = project
         applied_count = 0
+        export_count = 0
         for command in plan.commands:
+            if command.type == CommandType.EXPORT_PROJECT:
+                try:
+                    export_result = self._export_service.export(
+                        current_project,
+                        ExportRequest.model_validate(command.payload),
+                    )
+                except ValueError as error:
+                    summary = TurnSummary(
+                        completed=False,
+                        message=self._message_with_notice(str(error), plan.notice),
+                        commandCount=applied_count + export_count,
+                    )
+                    yield from self._emit_event(
+                        events,
+                        self._turn_summary_event(session_id, summary),
+                    )
+                    yield self._result_chunk(
+                        self._response(
+                            session_id,
+                            "FAILED",
+                            current_project,
+                            patches,
+                            history.entries(),
+                            events,
+                            summary,
+                        )
+                    )
+                    return
+
+                export_count += 1
+                yield from self._emit_event(
+                    events,
+                    self._export_event(session_id, command.id, export_result),
+                )
+                continue
+
             try:
                 result = self._executor.execute(command, current_project)
             except ValueError as error:
@@ -256,17 +296,17 @@ class OrchestrationService:
         summary = TurnSummary(
             completed=True,
             message=self._message_with_notice(
-                f"已执行 {applied_count} 条命令",
+                self._execution_summary(applied_count, export_count),
                 plan.notice,
             ),
-            commandCount=applied_count,
+            commandCount=applied_count + export_count,
         )
         yield from self._emit_event(events, self._turn_summary_event(session_id, summary))
         memory.record_turn(
             user_input=user_input,
             assistant_message=summary.message,
             action=plan.action,
-            command_count=applied_count,
+            command_count=applied_count + export_count,
         )
         yield self._result_chunk(
             self._response(
@@ -492,6 +532,26 @@ class OrchestrationService:
         project = self._repository.get_or_create(project_id)
         history = self._history_for(project.id)
         return ProjectState(project=project, history=history.entries(), events=[])
+
+    def export_project(self, project_id: str, request: ExportRequest) -> ExportResult:
+        project = self._repository.get_or_create(project_id)
+        return self._export_service.export(project, request)
+
+    def import_project(self, payload: dict[str, Any]) -> ProjectState:
+        imported = self._export_service.import_project(payload)
+        self._repository.save(imported.project)
+        history = self._history_for(imported.project.id)
+        return ProjectState(
+            project=imported.project,
+            history=history.entries(),
+            events=[
+                {
+                    "type": "PROJECT_IMPORTED",
+                    "projectId": imported.project.id,
+                    "createdAt": imported.imported_at,
+                }
+            ],
+        )
 
     def _stream_undo(
         self,
@@ -754,6 +814,20 @@ class OrchestrationService:
             "createdAt": self._now(),
         }
 
+    def _export_event(
+        self,
+        session_id: str,
+        command_id: str,
+        export_result: ExportResult,
+    ) -> dict[str, Any]:
+        return {
+            "type": "EXPORT_COMPLETED",
+            "sessionId": session_id,
+            "commandId": command_id,
+            "export": export_result.model_dump(by_alias=True),
+            "createdAt": self._now(),
+        }
+
     def _turn_summary_event(self, session_id: str, summary: TurnSummary) -> dict[str, Any]:
         return {
             "type": "TURN_SUMMARY",
@@ -786,6 +860,13 @@ class OrchestrationService:
 
     def _message_with_notice(self, message: str, notice: str | None) -> str:
         return f"{notice}；{message}" if notice else message
+
+    def _execution_summary(self, applied_count: int, export_count: int) -> str:
+        if applied_count and export_count:
+            return f"已执行 {applied_count} 条命令，并完成 {export_count} 个导出"
+        if export_count:
+            return f"已完成 {export_count} 个导出"
+        return f"已执行 {applied_count} 条命令"
 
     def _stage_from_status(
         self, status: Literal["COMPLETED", "FAILED", "WAITING_FOR_USER"]
