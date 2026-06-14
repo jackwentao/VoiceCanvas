@@ -271,6 +271,7 @@ class Scene(BaseModel):
     canvas: CanvasSpec = Field(default_factory=CanvasSpec)
     elements: list[CanvasElement] = Field(default_factory=list)
     description: str | None = None
+    narration: str | None = None
 
     @model_validator(mode="after")
     def validate_element_references(self) -> "Scene":

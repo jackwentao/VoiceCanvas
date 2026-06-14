@@ -74,6 +74,7 @@ const stageLabels = {
 };
 
 const commandSummaries = {
+  UPDATE_PROJECT: "更新项目",
   CREATE_SCENE: "创建镜头",
   UPDATE_SCENE: "更新镜头",
   DELETE_SCENE: "删除镜头",
@@ -191,6 +192,7 @@ function createLocalBlankProject(title = "未命名项目", mode = "storyboard")
         name: "空白画布",
         order: 1,
         description: null,
+        narration: null,
         canvas: {
           width: 960,
           height: 540,
@@ -268,6 +270,18 @@ function executeCommand(command) {
         createdAt: timestamp
       });
     }
+  }
+
+  if (command.type === "UPDATE_PROJECT") {
+    const patch = command.payload.patch || {};
+    Object.assign(state.project, patch, { updatedAt: timestamp });
+    patches.push({
+      id: makeId("patch"),
+      commandId: command.id,
+      type: "PROJECT_UPDATED",
+      patch,
+      createdAt: timestamp
+    });
   }
 
   if (command.type === "SWITCH_SCENE") {
@@ -1437,7 +1451,7 @@ function renderHistory() {
           <span class="scene-order">${displayNumber}</span>
           <span>
             <strong>${scene.name}</strong>
-            <small>${scene.description}</small>
+            <small>${scene.description || scene.narration || ""}</small>
           </span>
         </button>
       `;

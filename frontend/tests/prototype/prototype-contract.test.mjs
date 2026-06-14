@@ -315,6 +315,58 @@ function testSceneDeletePatchKeepsCanvasOnNearestScene() {
   );
 }
 
+function testBackendPatchUpdatesProjectTitleAndNarration() {
+  const state = {
+    project: {
+      id: "project_patch_test",
+      title: "旧项目名",
+      mode: "storyboard",
+      activeSceneId: "scene_1",
+      scenes: [
+        {
+          id: "scene_1",
+          name: "主图",
+          order: 1,
+          description: null,
+          narration: null,
+          canvas: { width: 960, height: 540, background: { type: "solid", color: "#ffffff" } },
+          elements: []
+        }
+      ]
+    },
+    session: { id: "session_patch_test", progress: {} },
+    eventLog: [],
+    voiceStatus: ""
+  };
+
+  applyBackendEvent(state, {
+    type: "CANVAS_PATCH_APPLIED",
+    sessionId: "session_patch_test",
+    commandId: "cmd_update_project",
+    patch: {
+      id: "patch_project_updated",
+      type: "PROJECT_UPDATED",
+      patch: { title: "低糖奶茶带货" },
+      createdAt: "2026-06-14T00:00:00+00:00"
+    }
+  });
+  applyBackendEvent(state, {
+    type: "CANVAS_PATCH_APPLIED",
+    sessionId: "session_patch_test",
+    commandId: "cmd_update_narration",
+    patch: {
+      id: "patch_scene_updated",
+      type: "SCENE_UPDATED",
+      sceneId: "scene_1",
+      patch: { narration: "快来买奶茶吧" },
+      createdAt: "2026-06-14T00:00:01+00:00"
+    }
+  });
+
+  assert.equal(state.project.title, "低糖奶茶带货");
+  assert.equal(state.project.scenes[0].narration, "快来买奶茶吧");
+}
+
 async function testPrototypeHtml() {
   const html = await readFile(new URL("../../src/prototype/index.html", import.meta.url), "utf-8");
   const app = await readFile(new URL("../../src/prototype/app.js", import.meta.url), "utf-8");
@@ -769,6 +821,7 @@ testElementPatchMirrorSync();
 testTextLayoutFontFit();
 testSceneDisplayNumberingUsesSortedVisibleIndex();
 testSceneDeletePatchKeepsCanvasOnNearestScene();
+testBackendPatchUpdatesProjectTitleAndNarration();
 await testVoiceSessionController();
 await testVoiceSessionDoesNotListenDuringFeedback();
 await testVoiceSessionDropsAmbientNoise();

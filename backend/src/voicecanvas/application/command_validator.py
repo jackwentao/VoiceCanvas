@@ -42,6 +42,8 @@ class CommandValidator:
         self, command: CanvasCommand, project: Project, path: str
     ) -> list[ValidationIssue]:
         match command.type:
+            case CommandType.UPDATE_PROJECT:
+                return self._validate_update_project(command, path)
             case CommandType.CREATE_SCENE:
                 return self._validate_create_scene(command, project, path)
             case CommandType.UPDATE_SCENE:
@@ -62,6 +64,42 @@ class CommandValidator:
                 return self._validate_arrange_layout(command, project, path)
             case CommandType.EXPORT_PROJECT:
                 return self._validate_export_project(command, project, path)
+
+    def _validate_update_project(
+        self, command: CanvasCommand, path: str
+    ) -> list[ValidationIssue]:
+        issues: list[ValidationIssue] = []
+        patch = command.payload.get("patch")
+        if not isinstance(patch, dict):
+            return [
+                self._issue(
+                    f"{path}.payload.patch",
+                    "missing_field",
+                    "UPDATE_PROJECT 需要 patch",
+                )
+            ]
+
+        allowed_fields = {"title"}
+        for field_name in patch:
+            if field_name not in allowed_fields:
+                issues.append(
+                    self._issue(
+                        f"{path}.payload.patch.{field_name}",
+                        "unsupported_field",
+                        f"UPDATE_PROJECT 不支持更新 {field_name}",
+                    )
+                )
+
+        if "title" in patch and not self._is_non_empty_string(patch["title"]):
+            issues.append(
+                self._issue(
+                    f"{path}.payload.patch.title",
+                    "invalid_field",
+                    "项目名称不能为空",
+                )
+            )
+
+        return issues
 
     def _validate_create_scene(
         self, command: CanvasCommand, project: Project, path: str
@@ -120,7 +158,7 @@ class CommandValidator:
             )
             return issues
 
-        allowed_fields = {"name", "description", "canvas"}
+        allowed_fields = {"name", "description", "narration", "canvas"}
         if command.source == "system":
             allowed_fields.add("elements")
 

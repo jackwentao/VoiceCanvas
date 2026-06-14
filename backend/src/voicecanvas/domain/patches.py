@@ -7,6 +7,7 @@ from voicecanvas.domain.project import CanvasElement, Scene
 
 
 class PatchType(StrEnum):
+    PROJECT_UPDATED = "PROJECT_UPDATED"
     SCENE_CREATED = "SCENE_CREATED"
     SCENE_UPDATED = "SCENE_UPDATED"
     SCENE_DELETED = "SCENE_DELETED"
