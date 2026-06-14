@@ -300,6 +300,41 @@ def test_service_routes_pure_switch_scene_without_calling_planner() -> None:
     assert response.patches[-1].type == PatchType.ACTIVE_SCENE_CHANGED
 
 
+def test_service_routes_project_rename_without_calling_planner() -> None:
+    planner = CountingPlanner()
+    service = OrchestrationService(planner=planner)
+
+    response = service.handle_user_input("project_rename", "把项目名称改成低糖奶茶带货")
+
+    assert response.project.title == "低糖奶茶带货"
+    assert response.patches[0].type == PatchType.PROJECT_UPDATED
+    assert planner.calls == []
+
+
+def test_service_routes_scene_narration_without_calling_planner() -> None:
+    planner = CountingPlanner()
+    service = OrchestrationService(planner=planner)
+    service.handle_user_input("project_narration", "创建初始标题")
+    project = service.handle_user_input("project_narration", "创建另一个标题").project
+    scene = project.scenes[0].model_copy(update={"id": "scene_2", "name": "第二镜头", "order": 2})
+    service._repository.save(
+        project.model_copy(
+            update={
+                "scenes": [*project.scenes, scene],
+                "active_scene_id": project.active_scene_id,
+            }
+        )
+    )
+
+    response = service.handle_user_input("project_narration", "第二镜头设置旁白快来买奶茶吧")
+
+    target_scene = next(scene for scene in response.project.scenes if scene.id == "scene_2")
+    assert target_scene.narration == "快来买奶茶吧"
+    assert response.patches[0].type == PatchType.SCENE_UPDATED
+    assert response.patches[0].patch == {"narration": "快来买奶茶吧"}
+    assert planner.calls == ["创建初始标题", "创建另一个标题"]
+
+
 def test_service_routes_pure_undo_and_redo_without_calling_planner() -> None:
     planner = CountingPlanner()
     service = OrchestrationService(planner=planner)

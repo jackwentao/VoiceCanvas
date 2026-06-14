@@ -65,6 +65,42 @@ def test_executor_creates_scene_and_records_patch_history() -> None:
     assert result.history_entry.inverse_command.type == CommandType.DELETE_SCENE
 
 
+def test_executor_updates_project_title_and_records_inverse() -> None:
+    result = CommandExecutor().execute(
+        _command(
+            CommandType.UPDATE_PROJECT,
+            {"patch": {"title": "低糖奶茶带货项目"}},
+            "cmd_update_project",
+        ),
+        _project(),
+    )
+
+    assert result.project.title == "低糖奶茶带货项目"
+    assert result.patches[0].type == PatchType.PROJECT_UPDATED
+    assert result.patches[0].patch == {"title": "低糖奶茶带货项目"}
+    assert result.history_entry.inverse_command.type == CommandType.UPDATE_PROJECT
+    assert result.history_entry.inverse_command.payload == {"patch": {"title": "Demo"}}
+
+
+def test_executor_updates_scene_narration() -> None:
+    result = CommandExecutor().execute(
+        _command(
+            CommandType.UPDATE_SCENE,
+            {"sceneId": "scene_1", "patch": {"narration": "快来买奶茶吧"}},
+            "cmd_update_narration",
+        ),
+        _project(),
+    )
+
+    assert result.project.scenes[0].narration == "快来买奶茶吧"
+    assert result.patches[0].type == PatchType.SCENE_UPDATED
+    assert result.patches[0].patch == {"narration": "快来买奶茶吧"}
+    assert result.history_entry.inverse_command.payload == {
+        "sceneId": "scene_1",
+        "patch": {"narration": None},
+    }
+
+
 def test_executor_adds_updates_and_deletes_element() -> None:
     executor = CommandExecutor()
     add_result = executor.execute(

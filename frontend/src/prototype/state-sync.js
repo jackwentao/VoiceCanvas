@@ -225,6 +225,10 @@ export function appendBackendError(state, error) {
 function applyCanvasPatch(project, patch) {
   if (!patch || !project?.scenes) return;
 
+  if (patch.type === "PROJECT_UPDATED") {
+    Object.assign(project, patch.patch || {});
+  }
+
   if (patch.type === "SCENE_CREATED" && patch.scene) {
     if (!project.scenes.some((scene) => scene.id === patch.scene.id)) {
       project.scenes.push(structuredClone(patch.scene));

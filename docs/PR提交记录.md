@@ -2,6 +2,33 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 本轮发布决策：语音修改项目名称与镜头旁白字幕
+
+- 标题：语音支持修改项目名称与镜头旁白字幕。
+- 本轮 PR 只实现一件事：补齐语音项目设置能力，让用户可以通过语音修改项目名称，并为当前镜头或指定镜头设置旁白字幕。
+- 功能描述：用户可说“把项目名称改成低糖奶茶带货”修改项目名；可说“设置旁白快来买奶茶吧”修改当前镜头旁白；也可说“第二镜头设置旁白新品低糖配方”为指定镜头设置旁白字幕。
+- 实现思路：新增受控 `UPDATE_PROJECT` 命令与 `PROJECT_UPDATED` Patch，给 `Scene` 增加 `narration` 字段；确定性指令路由在进入 LLM 前识别项目改名和旁白设置，CommandValidator/CommandExecutor 负责校验、执行和撤销恢复，前端状态归并层消费 Patch 同步标题与旁白展示。
+- 依赖声明：本轮未新增第三方库、框架、SDK 或外部服务；复用既有 FastAPI、Pydantic、前端原生 JS 状态投影和现有测试工具。
+- 原创功能说明：项目名修改、镜头旁白字段、语音路由、命令执行、历史逆命令和前端 Patch 投影均为本项目原创业务实现，第三方框架仅作为服务运行、模型校验和测试基础设施。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable ruff check src/voicecanvas/domain/commands.py src/voicecanvas/domain/patches.py src/voicecanvas/domain/project.py src/voicecanvas/application/command_validator.py src/voicecanvas/application/command_executor.py src/voicecanvas/application/deterministic_command_router.py src/voicecanvas/application/llm_command_planner.py tests/test_command_validator.py tests/test_command_executor.py tests/test_deterministic_command_router.py tests/test_orchestration_service.py
+uv run --no-editable pytest tests/test_command_validator.py tests/test_command_executor.py tests/test_deterministic_command_router.py tests/test_orchestration_service.py
+uv run --no-editable pytest
+```
+
+```powershell
+cd frontend
+npm test -- --runInBand
+```
+
+结果：触碰文件 ruff 通过；相关后端测试 50 passed；后端全量测试 164 passed，存在 1 个 FastAPI TestClient 上游弃用 warning，不影响当前功能；前端交互原型契约测试通过。
+
 ## 本轮发布决策：真实素材包下载与 MinIO 启动前检查
 
 - 本轮 PR 只实现一件事：把 Render Catalog 的 8 个带货素材从占位图升级为可下载的真实公开 PNG 素材，并规定后端连接 MinIO 时必须先检查素材包是否已完整上传。

@@ -44,6 +44,7 @@ def _command(command_type: CommandType, payload: dict) -> CanvasCommand:
 def test_validator_accepts_core_supported_commands() -> None:
     project = _project()
     commands = [
+        _command(CommandType.UPDATE_PROJECT, {"patch": {"title": "奶茶带货项目"}}),
         _command(CommandType.CREATE_SCENE, {"name": "产品特写", "activate": True}),
         _command(
             CommandType.ADD_ELEMENT,
@@ -75,6 +76,26 @@ def test_validator_accepts_core_supported_commands() -> None:
 
     assert result.ok
     assert result.value == commands
+
+
+def test_validator_rejects_empty_project_title() -> None:
+    command = _command(CommandType.UPDATE_PROJECT, {"patch": {"title": "  "}})
+
+    result = CommandValidator().validate([command], _project())
+
+    assert not result.ok
+    assert result.issues[0].code == "invalid_field"
+
+
+def test_validator_accepts_scene_narration_patch() -> None:
+    command = _command(
+        CommandType.UPDATE_SCENE,
+        {"sceneId": "scene_1", "patch": {"narration": "快来买奶茶吧"}},
+    )
+
+    result = CommandValidator().validate([command], _project())
+
+    assert result.ok
 
 
 def test_validator_reports_missing_scene_id() -> None:

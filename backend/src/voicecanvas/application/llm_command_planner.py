@@ -277,7 +277,7 @@ class LLMCommandPlanner:
         commands: list[tuple[CommandType, dict[str, Any], str | None]] = []
         patch = {
             key: scene[key]
-            for key in ("name", "description", "canvas")
+            for key in ("name", "description", "narration", "canvas")
             if key in scene
         }
         if patch:
@@ -321,7 +321,7 @@ class LLMCommandPlanner:
     ) -> list[tuple[CommandType, dict[str, Any], str | None]]:
         patch = {
             key: scene_source[key]
-            for key in ("name", "description", "canvas")
+            for key in ("name", "description", "narration", "canvas")
             if key in scene_source
         }
         commands: list[tuple[CommandType, dict[str, Any], str | None]] = []
@@ -368,7 +368,7 @@ class LLMCommandPlanner:
         elements = source_patch.pop("elements", None)
         patch = {
             key: source_patch[key]
-            for key in ("name", "description", "canvas")
+            for key in ("name", "description", "narration", "canvas")
             if key in source_patch
         }
 
@@ -952,6 +952,11 @@ class LLMCommandPlanner:
             "置底",
             "导出",
             "保存",
+            "设置",
+            "项目名称",
+            "项目名",
+            "旁白",
+            "字幕",
         ]
         return any(keyword in user_input for keyword in actionable_keywords)
 
@@ -1002,6 +1007,7 @@ class LLMCommandPlanner:
                     "name": scene.name,
                     "order": scene.order,
                     "description": scene.description,
+                    "narration": scene.narration,
                     "canvas": scene.canvas.model_dump(by_alias=True),
                     "elements": [
                         element.model_dump(by_alias=True) for element in scene.elements
@@ -1012,6 +1018,7 @@ class LLMCommandPlanner:
             "activeScene": {
                 "id": active_scene.id,
                 "name": active_scene.name,
+                "narration": active_scene.narration,
                 "canvas": active_scene.canvas.model_dump(by_alias=True),
                 "elements": [
                     {
@@ -1054,7 +1061,7 @@ Render Catalog（前端本地绘制能力清单）：
   "message": "给用户看的简短中文说明",
   "commands": [
     {{
-      "type": "CREATE_SCENE | UPDATE_SCENE | DELETE_SCENE | SWITCH_SCENE | ADD_ELEMENT",
+      "type": "命令类型见支持列表",
       "payload": {{}},
       "reason": "为什么执行这条命令"
     }}
@@ -1085,6 +1092,9 @@ Render Catalog（前端本地绘制能力清单）：
 - generated_asset 必须包含 asset.kind、asset.status="pending"、asset.prompt 和 placeholderStyle。
 - 不确定用户目标时返回 respond，并在 message 中说明需要用户补充什么。
 - 删除、修改、切换必须优先使用上下文中已有的 sceneId/elementId。
+- 用户要求修改项目名称时，输出 UPDATE_PROJECT，payload 使用 {{"patch":{{"title":"新名称"}}}}。
+- 用户要求修改某个镜头/画布/分镜的旁白、字幕或旁白字幕时，输出 UPDATE_SCENE，
+  payload.patch.narration 写入用户给出的旁白文本；未指定镜头时使用 activeSceneId。
 
 比赛 Demo 默认策略：
 - 用户要求“创建/生成三镜头带货分镜”时，不要询问细节；使用合理默认结构：

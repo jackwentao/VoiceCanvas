@@ -77,6 +77,8 @@ class CommandExecutor:
         self, command: CanvasCommand, project: Project
     ) -> CommandExecutionResult:
         match command.type:
+            case CommandType.UPDATE_PROJECT:
+                return self._update_project(command, project)
             case CommandType.CREATE_SCENE:
                 return self._create_scene(command, project)
             case CommandType.UPDATE_SCENE:
@@ -97,6 +99,30 @@ class CommandExecutor:
                 return self._arrange_layout(command, project)
             case CommandType.EXPORT_PROJECT:
                 raise ValueError("EXPORT_PROJECT 将由后续 Exporter 模块执行")
+
+    def _update_project(self, command: CanvasCommand, project: Project) -> CommandExecutionResult:
+        patch = command.payload["patch"]
+        before = project.model_dump(by_alias=True)
+        actual_patch = {
+            key: value for key, value in patch.items() if before.get(key) != value
+        }
+        next_project = project.model_copy(update=actual_patch)
+        inverse_patch = {key: before.get(key) for key in actual_patch}
+        inverse = self._command(
+            command.id,
+            CommandType.UPDATE_PROJECT,
+            {"patch": inverse_patch},
+            source="system",
+            reason="撤销修改项目",
+        )
+        patches = [
+            self._patch(
+                command.id,
+                PatchType.PROJECT_UPDATED,
+                patch=actual_patch,
+            )
+        ]
+        return self._result(command, next_project, patches, inverse, "修改项目设置")
 
     def _create_scene(self, command: CanvasCommand, project: Project) -> CommandExecutionResult:
         payload = command.payload
@@ -220,7 +246,9 @@ class CommandExecutor:
     def _clear_scene(self, command: CanvasCommand, project: Project) -> CommandExecutionResult:
         scene_id = command.payload["sceneId"]
         scene = self._require_scene(project, scene_id)
-        cleared_scene = scene.model_copy(update={"elements": [], "description": None})
+        cleared_scene = scene.model_copy(
+            update={"elements": [], "description": None, "narration": None}
+        )
         scenes = [cleared_scene if item.id == scene_id else item for item in project.scenes]
         next_project = project.model_copy(update={"scenes": scenes})
         patches = [
@@ -238,6 +266,7 @@ class CommandExecutor:
                 "sceneId": scene_id,
                 "patch": {
                     "description": scene.description,
+                    "narration": scene.narration,
                     "elements": [element.model_dump(by_alias=True) for element in scene.elements],
                 },
             },
