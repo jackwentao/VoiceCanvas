@@ -13,7 +13,7 @@ export async function exportSceneImage(project, options = {}) {
   const exportScene = await prepareSceneForExport(scene, options);
   const svg = sceneToSvg(exportScene);
   const filename = `${safeFilename(project.title)}-${safeFilename(scene.name)}.png`;
-  await downloadSvgAsPng(svg, filename, scene.canvas?.width || 960, scene.canvas?.height || 540, options);
+  await downloadSvgAsPngWithFallback(svg, filename, scene.canvas?.width || 960, scene.canvas?.height || 540, options);
   return { format: "png", sceneId: scene.id, filename };
 }
 
@@ -27,7 +27,7 @@ export async function exportFromBackendResult(exportResult, project, options = {
 
   if (exportResult.format === "png" && exportResult.mimeType === "image/svg+xml") {
     const scene = selectScene(project, exportResult.sceneId);
-    await downloadSvgAsPng(
+    await downloadSvgAsPngWithFallback(
       exportResult.content,
       exportResult.filename,
       scene.canvas?.width || 960,
@@ -39,6 +39,15 @@ export async function exportFromBackendResult(exportResult, project, options = {
 
   downloadBlob(exportResult.content, exportResult.filename, exportResult.mimeType || "image/svg+xml");
   return exportResult;
+}
+
+async function downloadSvgAsPngWithFallback(svg, filename, width, height, options = {}) {
+  try {
+    await downloadSvgAsPng(svg, filename, width, height, options);
+  } catch (error) {
+    console.warn("PNG 导出失败，已降级保存 SVG", error);
+    downloadBlob(svg, filename.replace(/\.png$/i, ".svg"), "image/svg+xml");
+  }
 }
 
 export async function importProjectFile(file) {
@@ -206,7 +215,12 @@ async function inlineSvgImageHrefs(svg, options = {}) {
       const href = node.getAttribute("href") || node.getAttribute("xlink:href");
       if (!href || href.startsWith("data:") || href.startsWith("blob:")) return;
       const resolvedHref = resolveImageHref(href, options);
-      const dataUrl = await imageUrlToDataUrl(resolvedHref);
+      let dataUrl;
+      try {
+        dataUrl = await imageUrlToDataUrl(resolvedHref);
+      } catch {
+        dataUrl = fallbackImageDataUrl(node.getAttribute("data-fallback-label") || "素材");
+      }
       node.setAttribute("href", dataUrl);
       node.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", dataUrl);
     })
@@ -242,6 +256,24 @@ async function imageUrlToDataUrl(url) {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return `data:${blob.type || "application/octet-stream"};base64,${btoa(binary)}`;
+}
+
+function fallbackImageDataUrl(label) {
+  const cleanLabel = String(label || "素材")
+    .replace(/素材加载失败/g, "")
+    .replace(/加载失败/g, "")
+    .trim() || "素材";
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
+    <rect width="320" height="240" rx="18" fill="#fff7e8"/>
+    <path d="M108 82h104l-12 98a20 20 0 0 1-20 18h-40a20 20 0 0 1-20-18z" fill="#f5c27b" stroke="#5c3b26" stroke-width="8"/>
+    <path d="M96 78h128" stroke="#5c3b26" stroke-width="10" stroke-linecap="round"/>
+    <path d="M148 72l24-34" stroke="#2e7d5b" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="142" cy="142" r="10" fill="#5c3b26"/>
+    <circle cx="174" cy="154" r="10" fill="#5c3b26"/>
+    <circle cx="158" cy="176" r="10" fill="#5c3b26"/>
+    <text x="160" y="220" text-anchor="middle" font-size="22" font-weight="700" fill="#173b2c" font-family="Arial, sans-serif">${escapeHtml(cleanLabel)}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
 
 function downloadBlob(content, filename, type) {
@@ -295,8 +327,9 @@ function catalogProxyUrl(assetPath) {
 function imageElementToSvg(element, transform, href) {
   const radius = Number(element.style?.radius ?? element.style?.borderRadius ?? 8);
   const clipId = `clip-${safeSvgId(element.id || element.name || href)}`;
+  const fallbackLabel = element.content?.alt || element.name || "素材";
   return `<defs><clipPath id="${clipId}"><rect x="${transform.x}" y="${transform.y}" width="${transform.width}" height="${transform.height}" rx="${radius}"/></clipPath></defs>
-    <image href="${escapeAttribute(href)}" xlink:href="${escapeAttribute(href)}" x="${transform.x}" y="${transform.y}" width="${transform.width}" height="${transform.height}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/>`;
+    <image href="${escapeAttribute(href)}" xlink:href="${escapeAttribute(href)}" x="${transform.x}" y="${transform.y}" width="${transform.width}" height="${transform.height}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})" data-fallback-label="${escapeAttribute(fallbackLabel)}"/>`;
 }
 
 function connectorElementToSvg(element, layoutIndex) {

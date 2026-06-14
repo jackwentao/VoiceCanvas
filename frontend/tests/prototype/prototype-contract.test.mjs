@@ -492,6 +492,9 @@ async function testPrototypeHtml() {
   assert.ok(backendClient.includes("/api/assets/catalog"), "前端客户端必须绑定 catalog 素材代理 API");
   assert.ok(exportService.includes("exportProjectFile"), "导出模块必须提供项目文件导出函数");
   assert.ok(exportService.includes("exportSceneImage"), "导出模块必须提供图片导出函数");
+  assert.ok(exportService.includes("inlineSvgImageHrefs"), "PNG 导出必须内联远程图片");
+  assert.ok(exportService.includes("fallbackImageDataUrl"), "PNG 导出必须在单张图片拉取失败时提供本地 SVG 兜底");
+  assert.ok(exportService.includes("downloadSvgAsPngWithFallback"), "PNG 导出整体渲染失败时必须降级保存 SVG");
   assert.ok(exportService.includes("importProjectFile"), "导出模块必须提供项目文件载入函数");
   assert.ok(exportService.includes("validateProjectJsonFile"), "载入模块必须在读取前校验 JSON 文件类型");
   assert.ok(exportService.includes("只能载入 JSON 项目文件"), "载入模块必须拒绝非 JSON 文件");
