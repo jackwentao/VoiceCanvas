@@ -441,6 +441,11 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("totalTokenUsage"), "前端状态必须记录累计 Token 用量");
   assert.ok(app.includes("TOKEN_USAGE_STORAGE_KEY"), "累计 Token 用量必须持久化到浏览器本地存储");
   assert.ok(app.includes("clearTokenUsage"), "前端必须提供清空 Token 累计的逻辑");
+  assert.ok(app.includes("if (!targetScene) return patches"), "本地命令兜底必须避免缺失 scene 阻塞演示");
+  assert.ok(app.includes('scene.name?.includes("产品")'), "添加箭头演示必须按当前项目动态定位产品镜头");
+  assert.ok(app.includes("productElement?.id"), "添加箭头演示必须使用当前项目里的真实产品元素");
+  assert.ok(app.includes("lowSugarElement?.id"), "添加箭头演示必须使用当前项目里的真实低糖元素");
+  assert.ok(app.includes("buildClarificationOptions"), "澄清演示必须按当前项目动态生成候选项");
   assert.ok(app.includes("renderConnectorLayer"), "画布必须提供独立 SVG 连接层");
   assert.ok(app.includes("createElementLayoutIndex"), "连接线必须依赖元素布局索引计算端点");
   assert.ok(app.includes("<path"), "连接线必须使用 SVG path 渲染");
