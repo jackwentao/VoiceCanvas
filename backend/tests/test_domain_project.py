@@ -59,6 +59,26 @@ def test_canvas_element_uses_frontend_aliases() -> None:
     assert element.model_dump(by_alias=True)["zIndex"] == 2
 
 
+def test_canvas_element_keeps_optional_description() -> None:
+    element = CanvasElement(
+        id="el_product",
+        type=ElementType.GENERATED_ASSET,
+        name="奶茶",
+        description="草莓味，珍珠加量",
+        x=10,
+        y=20,
+        width=160,
+        height=180,
+        zIndex=2,
+        content={"alt": "奶茶"},
+        asset={"kind": "product", "status": "pending", "prompt": "一杯草莓味珍珠奶茶"},
+        placeholderStyle={"fill": "#ffffff"},
+    )
+
+    assert element.description == "草莓味，珍珠加量"
+    assert element.model_dump(by_alias=True)["description"] == "草莓味，珍珠加量"
+
+
 def test_text_element_requires_content_text() -> None:
     with pytest.raises(ValidationError, match="content.text"):
         CanvasElement(

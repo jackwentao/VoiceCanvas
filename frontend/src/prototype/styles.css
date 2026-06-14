@@ -708,6 +708,25 @@ h2 {
   border-radius: 6px;
 }
 
+.element-description {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  z-index: 2;
+  padding: 4px 6px;
+  overflow: hidden;
+  color: #244236;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(27, 43, 52, 0.08);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .image-element,
 .generated-asset-element[data-status="ready"] {
   padding: 0;
@@ -892,6 +911,12 @@ h2 {
   fill: var(--red);
   font-size: 13px;
   font-weight: 800;
+}
+
+.connector-item .connector-description {
+  fill: #244236;
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .connector-item.is-selected path {

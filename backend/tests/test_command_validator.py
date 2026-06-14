@@ -127,6 +127,21 @@ def test_validator_reports_missing_element() -> None:
     assert "Element" in result.issues[0].message
 
 
+def test_validator_accepts_element_description_patch() -> None:
+    command = _command(
+        CommandType.UPDATE_ELEMENT,
+        {
+            "sceneId": "scene_1",
+            "elementId": "el_title",
+            "patch": {"description": "标题用于展示新品上市卖点"},
+        },
+    )
+
+    result = CommandValidator().validate([command], _project())
+
+    assert result.ok
+
+
 def test_validator_reports_invalid_element_size() -> None:
     command = _command(
         CommandType.ADD_ELEMENT,

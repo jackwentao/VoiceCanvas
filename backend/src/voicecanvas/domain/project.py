@@ -83,6 +83,7 @@ class CanvasElement(BaseModel):
     id: str
     type: ElementType
     name: str | None = None
+    description: str | None = None
 
     transform: ElementTransform
     layer: ElementLayer
@@ -159,14 +160,22 @@ class CanvasElement(BaseModel):
             for field_name in ("assetId", "url", "alt"):
                 if field_name not in content and field_name in migrated:
                     content[field_name] = migrated[field_name]
-        if element_type == ElementType.CONNECTOR and "label" not in content and migrated.get("text"):
+        if (
+            element_type == ElementType.CONNECTOR
+            and "label" not in content
+            and migrated.get("text")
+        ):
             content["label"] = migrated["text"]
         if content:
             migrated["content"] = content
 
         if element_type == ElementType.SHAPE and isinstance(migrated.get("shape"), str):
             migrated["shape"] = {"kind": migrated["shape"]}
-        if element_type == ElementType.SHAPE and "shape" not in migrated and not has_structured_transform:
+        if (
+            element_type == ElementType.SHAPE
+            and "shape" not in migrated
+            and not has_structured_transform
+        ):
             migrated["shape"] = {"kind": "rectangle"}
 
         if element_type == ElementType.CONNECTOR:
@@ -212,7 +221,9 @@ class CanvasElement(BaseModel):
             self.text = self.content["text"]
 
         if self.type == ElementType.SHAPE:
-            if not isinstance(self.shape, dict) or not self._non_empty_string(self.shape.get("kind")):
+            if not isinstance(self.shape, dict) or not self._non_empty_string(
+                self.shape.get("kind")
+            ):
                 raise ValueError("shape 元素必须提供 shape.kind")
             if isinstance(self.content, dict) and self.content.get("label"):
                 self.label = str(self.content["label"])
