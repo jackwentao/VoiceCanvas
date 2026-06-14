@@ -2,6 +2,26 @@
 
 > 本文档用于记录 VoiceCanvas 项目的 PR 提交历史，便于后续回看每次变更的背景、范围、验证方式和遗留风险。
 
+## 最终验收维护：修复 mypy 类型检查问题
+
+- 标题：修复最终 mypy 类型检查问题。
+- 本轮 PR 只实现一件事：修复两个功能 PR 合并后最终总验收暴露的类型收窄问题，让 `uv run --no-editable mypy src` 可以通过。
+- 功能描述：不新增用户功能，不改变演示链路；仅补充动态 payload、公开素材 URL 和颜色三元组的类型保护。
+- 实现思路：在 LLM planner 中把 `scene`、`content`、`asset`、`subject`、`metadata` 显式收窄为 `dict[str, Any]`；在 MinIO 公开素材读取中为 `public_base_url` 增加非空保护；在 Catalog seed 图片绘制中显式构造三通道颜色 tuple。
+- 依赖声明：本轮未新增第三方库、框架、SDK 或外部服务。
+- 原创功能说明：该 PR 为项目本地类型质量维护，不包含第三方模板功能或外部代码复制。
+
+### 测试方式
+
+已运行：
+
+```powershell
+cd backend
+uv run --no-editable mypy src
+```
+
+结果：`Success: no issues found in 48 source files`。
+
 ## 本轮发布决策：美化前端画布布局并增加 Token 用量统计
 
 - 标题：美化前端画布布局并增加 Token 用量统计。

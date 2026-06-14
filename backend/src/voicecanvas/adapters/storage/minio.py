@@ -46,7 +46,10 @@ class MinioAssetStorage:
         return self._read_minio_asset(safe_path)
 
     def _read_public_asset(self, path: str) -> CatalogAssetContent:
-        url = f"{self._config.public_base_url.rstrip('/')}/{quote(path)}"
+        base_url = self._config.public_base_url
+        if base_url is None:
+            raise CatalogAssetUnavailableError("公开素材地址未配置")
+        url = f"{base_url.rstrip('/')}/{quote(path)}"
         try:
             response = httpx.get(url, timeout=10)
             response.raise_for_status()

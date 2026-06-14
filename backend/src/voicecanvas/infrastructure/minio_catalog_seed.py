@@ -241,7 +241,11 @@ def _draw_rounded_product(
             if _inside_round_rect(x, y, left, top, right, bottom, radius):
                 _set_pixel(pixels, width, x, y, color)
 
-    cap_color = tuple(max(channel - 35, 0) for channel in color)
+    cap_color = (
+        max(color[0] - 35, 0),
+        max(color[1] - 35, 0),
+        max(color[2] - 35, 0),
+    )
     for y in range(top - 18, top + 8):
         for x in range(left + 14, right - 14):
             if 0 <= y < height:
