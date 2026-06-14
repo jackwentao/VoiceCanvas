@@ -429,6 +429,8 @@ async function testPrototypeHtml() {
   assert.ok(app.includes("createNewProject"), "新建项目入口必须创建真实 Project State");
   assert.ok(app.includes("createProjectState"), "新建项目入口必须优先调用后端创建接口");
   assert.ok(app.includes("createLocalBlankProject"), "新建项目必须提供后端不可用时的本地空白项目兜底");
+  assert.ok(app.includes("resetProjectUiState"), "切换项目时必须重置旧会话、事件和选中元素状态");
+  assert.ok(app.includes("state.selectedElementId = null"), "新建或载入项目必须清空旧选中元素");
   assert.ok(app.includes("loadProjectFromFile"), "载入项目入口必须能读取导出的项目文件");
   assert.ok(app.includes("openMemoryPanel"), "长期记忆入口必须打开管理面板");
   assert.ok(app.includes("refreshUserMemories"), "长期记忆面板必须支持刷新列表");

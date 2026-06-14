@@ -251,6 +251,16 @@ function publishStage(stage, message) {
   });
 }
 
+function resetProjectUiState() {
+  state.session = structuredClone(initialSession);
+  state.eventLog = [];
+  state.selectedElementId = null;
+  state.voiceDraftReady = false;
+  state.voiceSessionActive = false;
+  state.voiceListening = false;
+  state.voiceRecording = null;
+}
+
 function publishPatch(patch, commandId) {
   pushEvent({
     type: "CANVAS_PATCH_APPLIED",
@@ -1011,6 +1021,7 @@ async function createNewProject() {
 
   try {
     const response = await createProjectState({ title, mode: "storyboard" });
+    resetProjectUiState();
     applyBackendResponse(state, response, { userInput: "新建项目" });
     state.backend.projectId = response.project.id;
     state.backend.connected = true;
@@ -1018,9 +1029,9 @@ async function createNewProject() {
     state.voiceStatus = "项目已新建";
   } catch (error) {
     const project = createLocalBlankProject(title);
+    resetProjectUiState();
     state.project = project;
     state.history = [];
-    state.session = structuredClone(initialSession);
     state.backend.projectId = project.id;
     state.backend.connected = false;
     state.backend.lastError = error.message || String(error);
@@ -1057,11 +1068,13 @@ async function loadProjectFromFile(file) {
     const imported = await importProjectFile(file);
     try {
       const response = await importProjectState(imported.payload);
+      resetProjectUiState();
       applyBackendResponse(state, response);
       state.backend.projectId = response.project.id;
       state.backend.connected = true;
       state.backend.lastError = null;
     } catch (error) {
+      resetProjectUiState();
       state.project = structuredClone(imported.project);
       state.history = [];
       state.backend.connected = false;
