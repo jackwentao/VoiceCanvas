@@ -1,0 +1,242 @@
+{
+  "version": 1,
+  "description": "VoiceCanvas 原型可渲染对象能力目录。后端用它归一化语义对象，前端用它选择本地 renderer 或 MinIO 素材；目录外对象必须降级为 generated_asset 占位。",
+  "styleFamily": "commerce_clean_illustration_v1",
+  "assetPolicy": {
+    "provider": "minio",
+    "pathPrefix": "catalog/commerce/",
+    "access": "backend_proxy",
+    "notes": "Catalog 只保存稳定对象路径，不保存临时 URL；前端通过后端 /api/assets/catalog 解析代理地址。"
+  },
+  "primitives": {
+    "shapeKinds": ["rectangle", "rounded_rectangle", "circle", "ellipse", "triangle", "diamond", "star", "line"],
+    "connectorKinds": ["straight", "orthogonal", "bezier"],
+    "notes": "基础几何图形由 shape/connector renderer 管理，不进入语义插画匹配。"
+  },
+  "items": [
+    {
+      "renderKey": "character",
+      "displayName": "人物",
+      "assetKind": "character",
+      "subjectType": "character",
+      "category": "common",
+      "directRender": true,
+      "renderer": "characterIllustrationSvg",
+      "aliases": ["人物", "人", "人像", "角色", "顾客", "用户", "消费者", "person", "human", "character", "customer", "user"],
+      "variants": [
+        {
+          "key": "male",
+          "displayName": "男生",
+          "aliases": ["男生", "男孩", "男人", "男性", "男士", "小男孩", "boy", "man", "male", "gentleman"]
+        },
+        {
+          "key": "female",
+          "displayName": "女生",
+          "aliases": ["女生", "女孩", "女人", "女性", "女士", "小女孩", "girl", "woman", "female", "lady"]
+        },
+        {
+          "key": "neutral",
+          "displayName": "人物",
+          "aliases": ["人物", "人", "角色", "顾客", "用户", "person", "human", "character"]
+        }
+      ]
+    },
+    {
+      "renderKey": "cat",
+      "displayName": "猫",
+      "assetKind": "character",
+      "subjectType": "character",
+      "category": "common",
+      "directRender": true,
+      "renderer": "catIllustrationSvg",
+      "aliases": ["猫", "小猫", "猫咪", "橘猫", "喵", "cat", "kitten"]
+    },
+    {
+      "renderKey": "table",
+      "displayName": "桌子",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "common",
+      "directRender": true,
+      "renderer": "tableIllustrationSvg",
+      "aliases": ["桌子", "桌", "餐桌", "书桌", "办公桌", "table", "desk"]
+    },
+    {
+      "renderKey": "bubble-tea",
+      "displayName": "奶茶",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "food_drink",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/food-drink/bubble-tea.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["奶茶", "珍珠奶茶", "饮品", "茶饮", "杯装饮料", "bubble tea", "milk tea", "drink"],
+      "supportedAttributes": [
+        {
+          "key": "flavor",
+          "aliases": ["草莓味", "原味", "低糖", "芋泥", "抹茶", "巧克力", "新口味"]
+        },
+        {
+          "key": "toppings",
+          "aliases": ["珍珠", "椰果", "布丁", "奶盖"]
+        },
+        {
+          "key": "sellingPoint",
+          "aliases": ["低糖", "新品", "限时", "优惠", "第二杯半价"]
+        }
+      ]
+    },
+    {
+      "renderKey": "skincare-bottle",
+      "displayName": "护肤瓶",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "beauty",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/beauty/skincare-bottle.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["护肤品", "精华", "面霜", "护肤瓶", "美妆", "化妆品", "skincare", "cosmetic"],
+      "supportedAttributes": [
+        {
+          "key": "benefit",
+          "aliases": ["保湿", "提亮", "修护", "控油", "敏感肌"]
+        }
+      ]
+    },
+    {
+      "renderKey": "smartphone",
+      "displayName": "手机",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "digital",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/digital/smartphone.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["手机", "智能手机", "旗舰手机", "数码产品", "iphone", "phone", "smartphone"],
+      "supportedAttributes": [
+        {
+          "key": "sellingPoint",
+          "aliases": ["大屏", "长续航", "拍照", "快充", "新品", "旗舰"]
+        }
+      ]
+    },
+    {
+      "renderKey": "sneaker",
+      "displayName": "运动鞋",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "fashion",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/fashion/sneaker.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["运动鞋", "鞋子", "跑鞋", "球鞋", "服饰", "鞋包", "sneaker", "shoe"],
+      "supportedAttributes": [
+        {
+          "key": "sellingPoint",
+          "aliases": ["轻便", "透气", "耐磨", "百搭", "新品"]
+        }
+      ]
+    },
+    {
+      "renderKey": "storage-box",
+      "displayName": "收纳盒",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "home",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/home/storage-box.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["收纳盒", "家居", "日用", "整理箱", "储物盒", "home storage", "storage box"],
+      "supportedAttributes": [
+        {
+          "key": "sellingPoint",
+          "aliases": ["大容量", "可叠放", "透明", "防尘", "省空间"]
+        }
+      ]
+    },
+    {
+      "renderKey": "baby-bottle",
+      "displayName": "奶瓶",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "baby_care",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/baby-care/baby-bottle.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["奶瓶", "母婴", "婴儿用品", "宝宝用品", "baby bottle", "baby care"],
+      "supportedAttributes": [
+        {
+          "key": "sellingPoint",
+          "aliases": ["防胀气", "安全材质", "易清洗", "新生儿"]
+        }
+      ]
+    },
+    {
+      "renderKey": "pet-food-bag",
+      "displayName": "宠物粮",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "pet",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/pet/pet-food-bag.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["宠物粮", "猫粮", "狗粮", "宠物用品", "pet food", "cat food", "dog food"],
+      "supportedAttributes": [
+        {
+          "key": "sellingPoint",
+          "aliases": ["高蛋白", "冻干", "无谷", "适口性", "营养"]
+        }
+      ]
+    },
+    {
+      "renderKey": "snack-pack",
+      "displayName": "零食包装",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "snack",
+      "directRender": true,
+      "assetProvider": "minio",
+      "assetPath": "catalog/commerce/snack/snack-pack.png",
+      "styleFamily": "commerce_clean_illustration_v1",
+      "aliases": ["零食", "薯片", "饼干", "小吃", "生鲜零食", "snack", "chips", "cookie"],
+      "supportedAttributes": [
+        {
+          "key": "flavor",
+          "aliases": ["草莓味", "海盐味", "番茄味", "原味", "低脂"]
+        }
+      ]
+    },
+    {
+      "renderKey": "dog",
+      "displayName": "狗",
+      "assetKind": "illustration",
+      "subjectType": "character",
+      "category": "common",
+      "directRender": false,
+      "renderer": null,
+      "aliases": ["狗", "小狗", "狗狗", "犬", "dog", "puppy"]
+    },
+    {
+      "renderKey": "cup",
+      "displayName": "杯子",
+      "assetKind": "product",
+      "subjectType": "product",
+      "category": "common",
+      "directRender": false,
+      "renderer": null,
+      "aliases": ["杯子", "水杯", "咖啡杯", "杯", "cup", "mug"]
+    }
+  ],
+  "fallback": {
+    "type": "generated_asset",
+    "status": "pending",
+    "reason": "对象不在直接渲染能力目录中，前端只显示生成素材占位，不进行语义猜画。"
+  }
+}

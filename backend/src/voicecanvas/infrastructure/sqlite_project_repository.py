@@ -2,7 +2,7 @@ import json
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from uuid import uuid4
 
 from voicecanvas.application.project_repository import ProjectRepository
@@ -79,6 +79,21 @@ class SQLiteProjectRepository(ProjectRepository):
             activeSceneId="scene_1",
         )
 
+    def save_runtime(self, project_id: str, payload: dict[str, Any]) -> None:
+        with self._connect() as connection:
+            connection.execute(
+                "insert into workspace_runtime (project_id, payload) values (?, ?) "
+                "on conflict(project_id) do update set payload=excluded.payload",
+                (project_id, json.dumps(payload, ensure_ascii=False)),
+            )
+
+    def load_runtime(self, project_id: str) -> dict[str, Any] | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "select payload from workspace_runtime where project_id = ?", (project_id,)
+            ).fetchone()
+        return json.loads(row[0]) if row else None
+
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self._db_path)
 
@@ -92,6 +107,11 @@ class SQLiteProjectRepository(ProjectRepository):
                     updated_at text not null
                 )
                 """
+            )
+
+            connection.execute(
+                "create table if not exists workspace_runtime "
+                "(project_id text primary key, payload text not null)"
             )
 
     def _next_project_id(self) -> str:

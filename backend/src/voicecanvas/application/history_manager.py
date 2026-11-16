@@ -77,3 +77,14 @@ class HistoryManager:
 
     def entries(self) -> list[HistoryEntry]:
         return [entry.model_copy(deep=True) for entry in self._undo_stack]
+
+    def snapshot(self) -> dict[str, Any]:
+        """保存两条历史栈，重启后继续复用同一套命令。"""
+        return {
+            "undo": [entry.model_dump(by_alias=True) for entry in self._undo_stack],
+            "redo": [entry.model_dump(by_alias=True) for entry in self._redo_stack],
+        }
+
+    def restore(self, snapshot: dict[str, Any]) -> None:
+        self._undo_stack = [HistoryEntry.model_validate(item) for item in snapshot.get("undo", [])]
+        self._redo_stack = [HistoryEntry.model_validate(item) for item in snapshot.get("redo", [])]

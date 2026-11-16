@@ -26,6 +26,7 @@ from voicecanvas.api.schemas import (
     UserMemoryListResponse,
     UserMemoryResponse,
 )
+from voicecanvas.api.workspace import workspace_router
 from voicecanvas.application.asset_storage import (
     AssetStorage,
     CatalogAssetPathError,
@@ -148,6 +149,8 @@ def create_app(
     )
     if orchestration_service is not None and user_memory_service is not None:
         service.set_user_memory_service(memory_service)
+
+    app.include_router(workspace_router(service))
 
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:
