@@ -9,7 +9,8 @@ def test_dockerfile_keeps_backend_runtime_inputs() -> None:
     assert "uv sync --frozen --no-dev --no-editable" in dockerfile
     assert "backend/src ./src" in dockerfile
     assert "backend/scripts ./scripts" in dockerfile
-    assert "frontend/src/prototype/render-catalog.json" in dockerfile
+    assert "COPY frontend/" not in dockerfile
+    assert (ROOT_DIR / "backend/src/voicecanvas/resources/render-catalog.json").is_file()
     assert "VOICECANVAS_PROJECT_DB_PATH=/app/backend/data/voicecanvas.sqlite3" in dockerfile
     assert 'uvicorn", "voicecanvas.api.main:app"' in dockerfile
 

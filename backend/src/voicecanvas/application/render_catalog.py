@@ -38,13 +38,7 @@ class RenderCatalog:
 
     @classmethod
     def load_default(cls) -> RenderCatalog:
-        catalog_path = (
-            Path(__file__).resolve().parents[4]
-            / "frontend"
-            / "src"
-            / "prototype"
-            / "render-catalog.json"
-        )
+        catalog_path = Path(__file__).resolve().parents[1] / "resources" / "render-catalog.json"
         with catalog_path.open("r", encoding="utf-8") as file:
             return cls(json.load(file))
 

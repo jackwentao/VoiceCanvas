@@ -235,3 +235,16 @@ uv run --no-editable mypy src
 - `domain/`：Pydantic 领域模型与纯业务规则。
 - `adapters/`：LLM、ASR、七牛云、导出和存储适配器。
 - `infrastructure/`：配置、日志、HTTP、持久化等基础设施。
+
+
+## 工作台固定接口
+
+页面使用固定的工作台查询和动作接口，不需要构造领域命令。所有动作均由后端
+创建命令，经过既有校验器与执行器，再保存项目、撤销重做历史、待澄清任务和用量。
+SQLite 默认保存 `projects` 与 `workspace_runtime`；用户偏好继续由后端记忆仓储保存。
+语义素材目录位于 `src/voicecanvas/resources/render-catalog.json`，后端运行和镜像构建
+不再依赖前端目录。接口与复现方式见 [工作台接口](../docs/工作台接口.md)。
+
+```powershell
+uv run --no-editable pytest tests/test_workspace_api.py tests/test_api.py tests/test_history_manager.py
+```
