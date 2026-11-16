@@ -6,34 +6,24 @@
 
 ```mermaid
 flowchart TD
-    User["用户语音 / 点击 Demo 指令"]
-    Voice["voice-session.js<br/>持续监听 / 噪声过滤 / 播报恢复"]
-    App["app.js<br/>页面状态编排"]
-    Client["backend-client.js<br/>HTTP / SSE / 降级"]
-    State["state-sync.js<br/>Project State 归并"]
-    Patch["element-patch.js<br/>CanvasPatch 应用"]
-    Layout["text-layout.js<br/>文字自适应排版"]
-    Catalog["render-catalog.json<br/>语义素材目录"]
-    Canvas["主画布渲染"]
-    History["左侧历史区"]
-    AIPanel["右侧 AI 交互栏<br/>阶段 / 澄清 / 总结 / Token"]
-    Export["export-service.js<br/>PNG / JSON 导出"]
-
-    User --> Voice
-    User --> App
-    Voice --> App
-    App --> Client
-    Client --> State
-    State --> Patch
-    Patch --> Canvas
-    Catalog --> Canvas
-    Layout --> Canvas
-    State --> History
-    State --> AIPanel
-    Canvas --> Export
+    User[语音或文字输入] --> App[app.js 页面与交互]
+    App --> Controller[workspace-controller.js 请求与展示状态]
+    Controller --> Client[backend-client.js 固定 HTTP / SSE 接口]
+    Client --> Backend[后端业务服务与存储]
+    Backend --> Snapshot[完整工作台快照]
+    Snapshot --> Renderer[canvas-renderer.js 画布投影]
+    Snapshot --> Panels[镜头 / 历史 / 助手 / 用量]
+    Backend --> Export[导出内容或获准的展示转换]
+    Export --> Download[file-download.js 浏览器下载]
 ```
 
-前端只负责交互体验、画布投影、导出入口和降级展示；不持有后端可信业务规则。后端不可用时，前端会记录 `BACKEND_REQUEST_FAILED` 并回退到本地演示链路，保证比赛现场仍可展示基本流程。
+前端只持有后端快照和临时 UI 状态，不执行领域命令、不生成项目数据、不解析澄清候选。
+SSE 中间事件用于进度展示，最终画面重新读取后端工作台快照。后端失败时展示错误并
+重新读取状态，不用本地演示修改数据，也不自动重放请求。
+
+后端保存项目、撤销重做历史、待澄清任务与用量。语义素材目录属于后端资源，页面通过
+`GET /api/render-catalog` 获取展示配置。固定按钮动作与自然语言编排复用同一套
+CommandValidator / CommandExecutor，接口见[工作台接口](工作台接口.md)。
 
 ## 后端架构
 
@@ -73,7 +63,7 @@ flowchart TD
 
 - AI 负责理解和规划，系统负责确定性执行。
 - 所有画布写操作都经过 `CommandValidator` 和 `CommandExecutor`。
-- Project State 是唯一可信状态，前端 CanvasPatch 只是 UI 增量投影。
+- Project State 是唯一可信状态，前端完整工作台快照只是 UI 展示副本。
 - LLM、MinIO、未来七牛云能力都通过 adapter 接入，领域层不依赖外部 SDK。
 
 ## 数据完整流转

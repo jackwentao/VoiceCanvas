@@ -81,6 +81,24 @@ export function loadProjectState(projectId = DEFAULT_PROJECT_ID) {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}`);
 }
 
+export function loadWorkspace(projectId) {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/workspace`);
+}
+
+export function listProjects() {
+  return requestJson("/api/projects");
+}
+
+export function loadRenderCatalog() {
+  return requestJson("/api/render-catalog");
+}
+
+export function executeWorkspaceAction(projectId, payload) {
+  return requestJson(`/api/projects/${encodeURIComponent(projectId)}/actions`, {
+    method: "POST", body: JSON.stringify(payload)
+  });
+}
+
 export function createProjectState(payload = {}) {
   return requestJson("/api/projects", {
     method: "POST",

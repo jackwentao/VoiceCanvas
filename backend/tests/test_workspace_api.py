@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 
+import pytest
 from fastapi.testclient import TestClient
 
 from voicecanvas.api.main import create_app
@@ -103,3 +104,23 @@ def test_token_usage_is_stored_on_backend(tmp_path):
     assert reset.status_code == 200
     assert reset.json()["usage"] == {}
     assert client_for(path).get("/api/projects/test/workspace").json()["usage"] == {}
+
+
+@pytest.mark.parametrize("choice", ["confirm", "cancel"])
+def test_clear_confirmation_accepts_backend_option_values(tmp_path, choice):
+    client = client_for(tmp_path / "workspace.sqlite")
+    created = client.post("/api/orchestrations", json={
+        "projectId": "test", "userInput": "创建三镜头奶茶带货分镜"
+    }).json()
+    before = created["project"]["scenes"][0]["elements"]
+    assert before
+    pending = client.post("/api/orchestrations", json={
+        "projectId": "test", "userInput": "清空当前画布"
+    }).json()
+    option = next(item for item in pending["nextAction"]["options"] if item["value"] == choice)
+    response = client.post(f"/api/orchestrations/{pending['sessionId']}/resume", json={
+        "projectId": "test", "answer": option["value"]
+    }).json()
+    assert response["status"] == "COMPLETED"
+    assert response["project"]["scenes"][0]["elements"] == ([] if choice == "confirm" else before)
+    assert client.get("/api/projects/test/workspace").json()["pending"] is None

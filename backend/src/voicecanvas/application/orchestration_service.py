@@ -1211,6 +1211,8 @@ class OrchestrationService:
 
     def _resolve_confirmation_answer(self, answer: str) -> bool | None:
         normalized = self._normalize_answer(answer)
+        if normalized in {"confirm", "cancel"}:
+            return normalized == "confirm"
         cancel_words = ["取消", "不清空", "不要清空", "别清空", "算了", "不用", "否", "不"]
         if any(word in normalized for word in cancel_words):
             return False

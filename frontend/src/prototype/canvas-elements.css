@@ -1,0 +1,301 @@
+.canvas-element {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+  padding: 6px;
+  overflow: hidden;
+  line-height: 1.1;
+  letter-spacing: 0;
+  border-radius: 8px;
+  transition:
+    transform 160ms ease,
+    outline-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.canvas-element:hover,
+.canvas-element.is-selected {
+  outline: 3px solid rgba(45, 108, 223, 0.38);
+  outline-offset: 2px;
+  transform: translateY(-1px);
+}
+
+.text-element {
+  border: 1px solid rgba(27, 43, 52, 0.08);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.shape-element,
+.unknown-element,
+.generated-asset-element,
+.group-element {
+  color: var(--green-dark);
+  font-weight: 800;
+}
+
+.shape-element {
+  padding: 0;
+  overflow: visible;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.shape-geometry {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.shape-element span,
+.unknown-element span,
+.generated-asset-element span,
+.group-element span,
+.image-element span {
+  position: relative;
+  z-index: 1;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.72);
+  border-radius: 6px;
+}
+
+.shape-element .shape-label {
+  pointer-events: none;
+}
+
+.element-description {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  z-index: 2;
+  padding: 4px 6px;
+  overflow: hidden;
+  color: #244236;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(27, 43, 52, 0.08);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-element,
+.generated-asset-element[data-status="ready"] {
+  padding: 0;
+  background: #ffffff;
+  border: 1px solid rgba(27, 43, 52, 0.08);
+}
+
+.generated-asset-element[data-status="loading"] {
+  color: #386154;
+}
+
+.generated-asset-element[data-status="failed"] {
+  color: #8a3a2a;
+  border-style: dashed;
+}
+
+.image-element img,
+.generated-asset-element img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.illustration-element {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  overflow: visible;
+}
+
+.object-illustration {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.character-shadow,
+.cat-shadow,
+.table-shadow {
+  fill: rgba(27, 43, 52, 0.12);
+}
+
+.character-hair-back,
+.character-hair-front {
+  fill: #3b2417;
+  stroke: #25150d;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.character-face,
+.character-neck {
+  fill: #ffd2ad;
+  stroke: #8a4b2a;
+  stroke-width: 4;
+}
+
+.character-eye {
+  fill: #1b2b34;
+}
+
+.character-smile,
+.character-arm,
+.character-leg,
+.character-shoe {
+  fill: none;
+  stroke: #8a4b2a;
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.character-dress {
+  fill: #f15b8a;
+  stroke: #8b2450;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.character-shirt {
+  fill: #2d6cdf;
+  stroke: #173f8a;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.character-pants {
+  fill: #243b53;
+  stroke: #1b2b34;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.character-illustration.is-neutral .character-shirt {
+  fill: #1f8a5b;
+  stroke: #176146;
+}
+
+.character-illustration.is-neutral .character-hair-back,
+.character-illustration.is-neutral .character-hair-front {
+  fill: #5a3825;
+}
+
+.cat-body,
+.cat-head,
+.cat-ear {
+  fill: #f6b25f;
+  stroke: #7c3f15;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.cat-tail,
+.cat-mouth,
+.cat-whisker,
+.cat-leg {
+  fill: none;
+  stroke: #7c3f15;
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.cat-eye,
+.cat-nose {
+  fill: #1b2b34;
+}
+
+.table-top {
+  fill: #9a5424;
+  stroke: #5d2d12;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.table-front,
+.table-leg {
+  fill: #7d3f18;
+  stroke: #5d2d12;
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.table-grain {
+  fill: none;
+  stroke: #d7a46c;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.8;
+}
+
+.table-object {
+  fill: var(--yellow);
+  stroke: #b7791f;
+  stroke-width: 4;
+}
+
+.connector-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.connector-item {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.connector-item path {
+  filter: drop-shadow(0 2px 2px rgba(27, 43, 52, 0.12));
+}
+
+.connector-item text {
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  fill: var(--red);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.connector-item .connector-description {
+  fill: #244236;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.connector-item.is-selected path {
+  stroke-width: 6px;
+}
+
+.connector-item.is-selected text {
+  fill: var(--blue);
+}
+
+.connector-element {
+  height: 4px;
+  min-height: 4px;
+  padding: 4px 8px;
+  overflow: visible;
+  border: 0;
+  border-radius: 999px;
+}
+
