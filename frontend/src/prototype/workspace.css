@@ -1345,6 +1345,15 @@ kbd {
 .text-element {
   border-color:transparent;
 }
+.image-element,
+.generated-asset-element[data-status="ready"] {
+  display:block;
+  border:0;
+  background:transparent;
+}
+.generated-asset-element[data-status="ready"] img {
+  object-fit:contain;
+}
 .element-description {
   display:none;
 }
