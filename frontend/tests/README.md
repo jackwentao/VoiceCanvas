@@ -48,3 +48,17 @@ node tests/prototype/prototype-contract.test.mjs
 - 前端 E2E 测试：等正式前端引入后再添加 `playwright`。
 
 新增模块时，需要同步说明测试文件位置、运行命令、覆盖场景和未覆盖风险。
+
+
+## 工作台展示与后端边界测试
+
+```powershell
+npm --prefix frontend run test:prototype
+```
+
+新增 `prototype/workspace-controller.test.mjs` 使用 Node 内置测试器，不需要安装浏览器
+依赖。覆盖首次连接失败无本地项目、固定动作透传、SSE 不改写业务快照、断流后读取
+事实而不重发、服务端澄清恢复、重复请求互斥、导出/导入边界与纯渲染。
+原型 HTML 断言已更新为禁止导入本地命令、Mock 和 localStorage 业务持久化。
+
+页面手动验收见 `docs/工作台使用与验收.md`。

@@ -5,16 +5,16 @@ import {
   COMMAND_BINDINGS,
   UI_BINDINGS,
   initialProject
-} from "../../src/prototype/mock-data.js";
-import { mergeElementPatch } from "../../src/prototype/element-patch.js";
+} from "../fixtures/mock-data.js";
+import { mergeElementPatch } from "../fixtures/element-patch.js";
 import {
   sceneAtDisplayNumber,
   sceneDisplayNumber,
   visibleSceneEntries
 } from "../../src/prototype/scene-numbering.js";
 import { estimateTextUnits, fitTextFontSize } from "../../src/prototype/text-layout.js";
-import { importProjectFile, sceneToSvg } from "../../src/prototype/export-service.js";
-import { applyBackendEvent } from "../../src/prototype/state-sync.js";
+import { importProjectFile, sceneToSvg } from "../fixtures/export-service.js";
+import { applyBackendEvent } from "../fixtures/state-sync.js";
 import {
   isAmbientNoiseTranscript,
   isLikelyFeedbackEcho,
@@ -368,179 +368,25 @@ function testBackendPatchUpdatesProjectTitleAndNarration() {
 }
 
 async function testPrototypeHtml() {
-  const html = await readFile(new URL("../../src/prototype/index.html", import.meta.url), "utf-8");
-  const app = await readFile(new URL("../../src/prototype/app.js", import.meta.url), "utf-8");
-  const css = await readFile(new URL("../../src/prototype/styles.css", import.meta.url), "utf-8");
-  const textLayout = await readFile(new URL("../../src/prototype/text-layout.js", import.meta.url), "utf-8");
-  const renderCatalog = JSON.parse(
-    await readFile(new URL("../../src/prototype/render-catalog.json", import.meta.url), "utf-8")
-  );
-  const backendClient = await readFile(
-    new URL("../../src/prototype/backend-client.js", import.meta.url),
-    "utf-8"
-  );
-  const exportService = await readFile(
-    new URL("../../src/prototype/export-service.js", import.meta.url),
-    "utf-8"
-  );
-  const stateSync = await readFile(
-    new URL("../../src/prototype/state-sync.js", import.meta.url),
-    "utf-8"
-  );
-
-  assert.ok(html.includes('data-run="voice"'), "AI 交互栏必须提供语音输入按钮");
-  assert.ok(html.includes('aria-label="开始语音创作"'), "语音按钮必须提供可访问名称");
-  assert.ok(html.includes("开始语音创作"), "语音按钮必须明确进入持续创作模式");
-  assert.ok(html.includes("voiceStatus"), "AI 交互栏必须展示语音识别状态");
-  assert.ok(html.includes("turnTokenUsage"), "AI 交互栏必须展示本轮 Token 用量");
-  assert.ok(html.includes("totalTokenUsage"), "AI 交互栏必须展示累计 Token 用量");
-  assert.ok(html.includes('data-telemetry-action="clear-tokens"'), "AI 交互栏必须提供 Token 累计清空入口");
-  assert.ok(html.includes('data-menu-toggle="settings"'), "顶部必须提供设置菜单入口");
-  assert.ok(html.includes('data-project-action="new"'), "设置菜单必须提供新建项目入口");
-  assert.ok(html.includes('data-project-action="load"'), "设置菜单必须提供载入项目入口");
-  assert.ok(html.includes('data-memory-action="open"'), "设置菜单必须提供长期记忆入口");
-  assert.ok(html.includes("memoryOverlay"), "前端必须提供长期记忆管理面板");
-  assert.ok(html.includes("memoryContentInput"), "长期记忆面板必须提供新增内容输入");
-  assert.ok(html.includes('data-project-action="export-image"'), "设置菜单必须提供导出图片入口");
-  assert.ok(html.includes("backgroundColorInput"), "画布工具栏必须提供背景色自定义输入");
-  assert.ok(html.includes("data-background-color"), "画布工具栏必须提供背景色 swatch");
-  assert.ok(!html.includes("contract-panel"), "开发契约面板不应出现在最终交互原型界面中");
-  assert.ok(!app.includes("renderContractPanel"), "前端原型不应渲染底部契约调试面板");
-  assert.ok(app.includes("isVoiceShortcut"), "原型必须封装语音快捷键判断");
-  assert.ok(app.includes('event.altKey && event.code === "KeyV"'), "原型必须支持 Alt+V 语音快捷键");
-  assert.ok(app.includes('runButton.dataset.run === "voice"'), "语音按钮必须保留点击触发");
-  assert.ok(app.includes('voiceButton?.addEventListener("click"'), "语音按钮必须有直接点击监听");
-  assert.ok(app.includes('sendButton?.addEventListener("click"'), "发送按钮必须有直接点击监听");
-  assert.ok(app.includes("VoiceSessionController"), "原型必须接入持续语音会话控制器");
-  assert.ok(app.includes("handleVoiceTranscript"), "最终语音转写必须自动进入命令编排");
-  assert.ok(app.includes("resumeOrchestration"), "澄清回答必须能恢复后端挂起会话");
-  assert.ok(app.includes("resolveClarificationOption"), "澄清回答必须支持本地候选解析兜底");
-  assert.ok(app.includes("结束创作"), "语音创作模式必须支持语音或按钮结束");
-  assert.ok(app.includes("hydrateBackendState"), "原型启动时必须拉取后端 Project State");
-  assert.ok(app.includes("runBackendInput"), "AI 指令必须统一进入后端编排入口");
-  assert.ok(app.includes("exportFromBackendResult"), "语音导出必须复用导出结果下载函数");
-  assert.ok(app.includes("resolveBackendUrl"), "语音导出的后端代理图片必须能解析到后端地址");
-  assert.ok(app.includes("updateBackgroundColor"), "画布背景色修改必须有统一入口");
-  assert.ok(app.includes("sceneCanvasWithBackground"), "背景色修改必须复用 Scene canvas 字段");
-  assert.ok(app.includes('type: "UPDATE_SCENE"'), "背景色修改必须通过 UPDATE_SCENE 命令投影");
-  assert.ok(app.includes("runDirectProjectExport"), "显式项目导出按钮必须直接触发导出函数");
-  assert.ok(app.includes("runDirectSceneImageExport"), "显式图片导出按钮必须直接触发图片导出函数");
-  assert.ok(app.includes("resolveAssetUrl: resolveCatalogAssetUrl"), "显式导出图片必须解析 Catalog 素材 URL");
-  assert.ok(app.includes("createNewProject"), "新建项目入口必须创建真实 Project State");
-  assert.ok(app.includes("createProjectState"), "新建项目入口必须优先调用后端创建接口");
-  assert.ok(app.includes("createLocalBlankProject"), "新建项目必须提供后端不可用时的本地空白项目兜底");
-  assert.ok(app.includes("resetProjectUiState"), "切换项目时必须重置旧会话、事件和选中元素状态");
-  assert.ok(app.includes("state.selectedElementId = null"), "新建或载入项目必须清空旧选中元素");
-  assert.ok(app.includes("loadProjectFromFile"), "载入项目入口必须能读取导出的项目文件");
-  assert.ok(app.includes("openMemoryPanel"), "长期记忆入口必须打开管理面板");
-  assert.ok(app.includes("refreshUserMemories"), "长期记忆面板必须支持刷新列表");
-  assert.ok(app.includes("createMemoryFromPanel"), "长期记忆面板必须支持显式新增");
-  assert.ok(app.includes("saveMemoryEdit"), "长期记忆面板必须支持编辑保存");
-  assert.ok(app.includes("deleteMemoryFromPanel"), "长期记忆面板必须支持显式删除");
-  assert.ok(app.includes("updateMemoryStatus"), "长期记忆面板必须支持状态流转");
-  assert.ok(app.includes("applyBackendResponse"), "后端响应必须统一归并到页面状态");
-  assert.ok(app.includes("lastTurnTokenUsage"), "前端状态必须记录本轮 Token 用量");
-  assert.ok(app.includes("totalTokenUsage"), "前端状态必须记录累计 Token 用量");
-  assert.ok(app.includes("TOKEN_USAGE_STORAGE_KEY"), "累计 Token 用量必须持久化到浏览器本地存储");
-  assert.ok(app.includes("clearTokenUsage"), "前端必须提供清空 Token 累计的逻辑");
-  assert.ok(app.includes("if (!targetScene) return patches"), "本地命令兜底必须避免缺失 scene 阻塞演示");
-  assert.ok(app.includes('scene.name?.includes("产品")'), "添加箭头演示必须按当前项目动态定位产品镜头");
-  assert.ok(app.includes("productElement?.id"), "添加箭头演示必须使用当前项目里的真实产品元素");
-  assert.ok(app.includes("lowSugarElement?.id"), "添加箭头演示必须使用当前项目里的真实低糖元素");
-  assert.ok(app.includes("buildClarificationOptions"), "澄清演示必须按当前项目动态生成候选项");
-  assert.ok(app.includes("renderConnectorLayer"), "画布必须提供独立 SVG 连接层");
-  assert.ok(app.includes("createElementLayoutIndex"), "连接线必须依赖元素布局索引计算端点");
-  assert.ok(app.includes("<path"), "连接线必须使用 SVG path 渲染");
-  assert.ok(app.includes("marker-end"), "箭头必须使用 SVG marker 渲染");
-  assert.ok(app.includes("renderGeneratedAssetElement"), "画布必须支持生成素材渲染");
-  assert.ok(app.includes("resolveCatalogAssetUrl"), "前端必须通过后端代理解析 MinIO 素材 URL");
-  assert.ok(app.includes("catalogAssetState"), "前端必须缓存 catalog 素材加载状态");
-  assert.ok(app.includes("renderCatalogAssetElement"), "前端必须支持 catalog 图片素材渲染");
-  assert.ok(app.includes('data-status="ready"'), "catalog 图片加载成功时必须进入 ready 状态");
-  assert.ok(app.includes('data-status="${status}"'), "catalog 图片加载中或失败时必须保留状态");
-  assert.ok(app.includes("hydrateRenderCatalog"), "前端必须加载 Render Catalog");
-  assert.ok(app.includes("renderCatalogState"), "前端必须建立 Render Catalog 索引");
-  assert.ok(app.includes("getIllustrationRenderer"), "前端必须通过 renderer registry 分发语义插画");
-  assert.ok(app.includes("metadata.renderKey"), "前端必须优先使用后端显式 renderKey");
-  assert.ok(app.includes("renderSemanticIllustrationElement"), "画布必须支持语义对象插画渲染");
-  assert.ok(app.includes("renderElementDescription"), "画布必须展示元素 description 字段");
-  assert.ok(app.includes("connector-description"), "连接线必须支持展示 description 字段");
-  assert.ok(app.includes("characterIllustrationSvg"), "画布必须使用通用人物插画渲染器");
-  assert.ok(app.includes("renderVariant"), "画布必须支持后端传入的人物渲染变体");
-  assert.ok(app.includes('data-variant="${spec.variant || ""}"'), "人物渲染变体必须落到 DOM 便于视觉 QA");
-  assert.ok(app.includes("fitTextFontSize"), "文字渲染必须根据元素边界自适应字号");
-  assert.ok(textLayout.includes("estimateTextUnits"), "文字布局模块必须估算中英文混排宽度");
-  assert.ok(app.includes("catIllustrationSvg"), "画布必须能把猫渲染成专门插画");
-  assert.ok(app.includes("tableIllustrationSvg"), "画布必须能把桌子渲染成专门插画");
-  assert.ok(app.includes("metadata?.renderHint"), "前端必须优先使用后端显式渲染提示");
-  assert.ok(app.includes("semanticSpecFromSubject"), "前端必须支持 subject 结构化主体识别");
-  assert.ok(!app.includes('|| "girl"'), "人物识别不能把未知 character 默认画成女生");
-  assert.ok(!app.includes("asset?.prompt ||"), "前端不能根据 prompt 场景词决定插画主体");
-  assert.ok(app.indexOf('text.includes("男生")') < app.indexOf('text.includes("女生")'), "男生主体识别必须在通用人物识别前处理");
-  assert.ok(!app.includes("element.name || element.shape"), "shape 不应把图层 name 当画面内容渲染");
-  assert.ok(css.includes(".connector-layer"), "CSS 必须定义连接层样式");
-  assert.ok(css.includes(".background-controls"), "CSS 必须定义背景色 swatch 控件");
-  assert.ok(css.includes(".element-description"), "CSS 必须定义元素描述标签样式");
-  assert.ok(css.includes(".illustration-element"), "CSS 必须定义语义插画元素样式");
-  assert.ok(css.includes("overflow-wrap: anywhere"), "文字元素必须支持长文本断行，避免裁剪");
-  assert.ok(css.includes("word-break: break-word"), "文字元素必须支持混合长词断行");
-  assert.ok(css.includes(".character-shirt"), "CSS 必须定义人物上衣样式");
-  assert.ok(css.includes(".character-dress"), "CSS 必须定义女性人物裙装样式");
-  assert.ok(css.includes(".character-pants"), "CSS 必须定义男性人物裤装样式");
-  assert.ok(css.includes(".cat-body"), "CSS 必须定义猫插画样式");
-  assert.ok(css.includes(".table-top"), "CSS 必须定义桌子插画样式");
-  assert.ok(backendClient.includes("/api/orchestrations"), "前端客户端必须绑定编排 API");
-  assert.ok(backendClient.includes("/api/orchestrations/"), "前端客户端必须绑定澄清恢复 API");
-  assert.ok(backendClient.includes("/resume"), "前端客户端必须提供 resume 调用");
-  assert.ok(backendClient.includes("/api/projects/"), "前端客户端必须绑定项目状态 API");
-  assert.ok(backendClient.includes('requestJson("/api/projects"'), "前端客户端必须绑定新建项目 API");
-  assert.ok(backendClient.includes("/export"), "前端客户端必须绑定项目导出 API");
-  assert.ok(backendClient.includes("/api/projects/import"), "前端客户端必须绑定项目载入 API");
-  assert.ok(backendClient.includes("/api/assets/catalog"), "前端客户端必须绑定 catalog 素材代理 API");
-  assert.ok(exportService.includes("exportProjectFile"), "导出模块必须提供项目文件导出函数");
-  assert.ok(exportService.includes("exportSceneImage"), "导出模块必须提供图片导出函数");
-  assert.ok(exportService.includes("inlineSvgImageHrefs"), "PNG 导出必须内联远程图片");
-  assert.ok(exportService.includes("fallbackImageDataUrl"), "PNG 导出必须在单张图片拉取失败时提供本地 SVG 兜底");
-  assert.ok(exportService.includes("downloadSvgAsPngWithFallback"), "PNG 导出整体渲染失败时必须降级保存 SVG");
-  assert.ok(exportService.includes("importProjectFile"), "导出模块必须提供项目文件载入函数");
-  assert.ok(exportService.includes("validateProjectJsonFile"), "载入模块必须在读取前校验 JSON 文件类型");
-  assert.ok(exportService.includes("只能载入 JSON 项目文件"), "载入模块必须拒绝非 JSON 文件");
-  assert.ok(exportService.includes("voicecanvas.project"), "项目包必须包含可识别的类型标记");
-  assert.ok(backendClient.includes("DEFAULT_USER_ID"), "前端客户端必须提供演示默认用户");
-  assert.ok(backendClient.includes("/api/users/"), "前端客户端必须绑定长期记忆用户 API");
-  assert.ok(backendClient.includes("/api/memories/"), "前端客户端必须绑定长期记忆单条 API");
-  assert.ok(backendClient.includes('method: "PATCH"'), "前端客户端必须提供长期记忆 PATCH 调用");
-  assert.ok(backendClient.includes('method: "DELETE"'), "前端客户端必须提供长期记忆 DELETE 调用");
-  assert.ok(stateSync.includes("CANVAS_PATCH_APPLIED"), "状态归并层必须保留画布事件投影能力");
-  assert.ok(stateSync.includes("CLARIFICATION_REQUESTED"), "状态归并层必须保留澄清事件投影能力");
-  assert.ok(stateSync.includes("tokenUsage"), "状态归并层必须读取后端 Token 用量");
-  assert.ok(stateSync.includes("lastCountedSessionId"), "状态归并层必须避免 SSE 与最终响应重复累计 Token");
-  assert.ok(css.includes(".settings-popover[hidden]"), "设置菜单 hidden 状态必须真正隐藏");
-  assert.ok(css.includes(".memory-overlay[hidden]"), "长期记忆面板 hidden 状态必须真正隐藏");
-  assert.ok(css.includes(".memory-list"), "长期记忆列表必须有独立滚动区域");
-  assert.ok(css.includes(".memory-item[data-status=\"active\"]"), "长期记忆条目必须区分生效状态");
-  assert.ok(css.includes(".token-card"), "CSS 必须定义 Token 用量卡片样式");
-  assert.ok(css.includes("grid-template-columns: minmax(196px, 220px) minmax(560px, 1fr)"), "画布布局必须提高中间画布区域占比");
-  assert.ok(css.includes("padding: 8px"), "画布框架必须收紧周围留白");
-
-  const catalogItems = new Map(renderCatalog.items.map((item) => [item.renderKey, item]));
-  assert.equal(renderCatalog.version, 1, "Render Catalog 必须有版本");
-  assert.equal(catalogItems.get("character")?.directRender, true, "人物必须声明本地 direct renderer");
-  assert.equal(catalogItems.get("dog")?.directRender, false, "未接入 renderer 的对象必须走 placeholder");
-  assert.equal(catalogItems.get("bubble-tea")?.assetProvider, "minio", "奶茶素材必须声明 MinIO provider");
-  assert.equal(
-    catalogItems.get("bubble-tea")?.assetPath,
-    "catalog/commerce/food-drink/bubble-tea.png",
-    "奶茶素材必须保存稳定 MinIO 对象路径"
-  );
-  assert.ok(
-    catalogItems.get("bubble-tea")?.supportedAttributes?.some((attribute) => attribute.key === "flavor"),
-    "奶茶素材必须支持口味属性"
-  );
-  assert.ok(
-    catalogItems.get("character")?.variants?.some((variant) => variant.key === "male"),
-    "人物 catalog 必须声明 male variant"
-  );
+  const root = new URL("../../src/prototype/", import.meta.url);
+  const html = await readFile(new URL("index.html", root), "utf-8");
+  const app = await readFile(new URL("app.js", root), "utf-8");
+  const model = await readFile(new URL("workspace-controller.js", root), "utf-8");
+  const css = await readFile(new URL("workspace.css", root), "utf-8");
+  for (const id of ["voiceButton", "voiceInput", "canvasSurface", "sceneList", "undoButton",
+    "redoButton", "clarificationCard", "exportButton", "memoryDialog", "retryButton"]) {
+    assert.ok(html.includes(`id="${id}"`), `工作台缺少入口 ${id}`);
+  }
+  for (const forbidden of ["mock-data", "executeCommand", "LocalFallback", "localStorage",
+    "createProjectBundle", "resolveClarificationOption"]) {
+    assert.ok(!app.includes(forbidden) && !model.includes(forbidden), `页面不得包含本地业务：${forbidden}`);
+  }
+  assert.ok(app.includes("createWorkspaceController"));
+  assert.ok(app.includes('action:"switch_scene"'));
+  assert.ok(app.includes('action:"set_background"'));
+  assert.ok(html.includes("data-requires-project"));
+  assert.ok(css.includes("prefers-reduced-motion"));
+  assert.ok(css.includes("max-width:680px"));
 }
 
 class MockRecognition {
