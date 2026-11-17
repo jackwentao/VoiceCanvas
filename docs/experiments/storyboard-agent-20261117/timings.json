@@ -1,0 +1,46 @@
+[
+  {
+    "board": "board_ac970bda7aea44cb",
+    "run": "run_0d10d98c42d34c03",
+    "createdAt": "2026-11-17T10:34:54.922674+00:00",
+    "draws": [
+      {
+        "title": "雨中入店",
+        "createdAt": "2026-11-17T10:35:48.839173+00:00",
+        "secondsAfterStart": 53.917
+      },
+      {
+        "title": "递杯交接",
+        "createdAt": "2026-11-17T10:35:42.425733+00:00",
+        "secondsAfterStart": 47.503
+      },
+      {
+        "title": "热咖啡与优惠字幕",
+        "createdAt": "2026-11-17T10:36:10.943659+00:00",
+        "secondsAfterStart": 76.021
+      }
+    ]
+  },
+  {
+    "board": "board_a1894921acd34619",
+    "run": "run_c1ef2b0b01364f55",
+    "createdAt": "2026-11-17T10:41:55.133551+00:00",
+    "draws": [
+      {
+        "title": "雨中进店",
+        "createdAt": "2026-11-17T10:42:49.023299+00:00",
+        "secondsAfterStart": 53.89
+      },
+      {
+        "title": "递接热咖啡",
+        "createdAt": "2026-11-17T10:42:43.616733+00:00",
+        "secondsAfterStart": 48.483
+      },
+      {
+        "title": "热咖啡与优惠字幕",
+        "createdAt": "2026-11-17T10:43:14.296224+00:00",
+        "secondsAfterStart": 79.163
+      }
+    ]
+  }
+]

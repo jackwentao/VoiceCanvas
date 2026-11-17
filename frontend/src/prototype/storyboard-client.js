@@ -2,7 +2,9 @@ import { ShotApiError } from "./shot-client.js";
 
 // 编排和绘图共享一个忙碌锁；异步响应始终绑定稳定镜头 id，禁止串写。
 export class StoryboardClient {
-  constructor({ shots, onChange = () => {}, exportShot = async () => {}, fetchImpl = (...args) => globalThis.fetch(...args) }) {
+  constructor({ shots, onChange = () => {}, exportShot = async () => {}, fetchImpl = (...args) => globalThis.fetch(...args), pause = ms => new Promise(resolve => setTimeout(resolve, ms)) }) {
+    this.pause = pause;
+    this.agent = null;
     this.shots = shots;
     this.onChange = onChange;
     this.fetch = fetchImpl;
@@ -43,10 +45,11 @@ export class StoryboardClient {
     } finally { this.busy = false; this.onChange(this); }
   }
 
-  create() {
+  create(title = "未命名分镜") {
     return this.run(async () => {
-      const board = await this.request("", { title: "未命名分镜" });
+      const board = await this.request("", { title });
       this.pendingDelete = null;
+      this.agent = null;
       this.accept(board);
       return board;
     });
@@ -54,11 +57,33 @@ export class StoryboardClient {
 
   load(id) {
     return this.run(async () => {
-      const board = await this.request(`/${encodeURIComponent(id)}`);
-      this.pendingDelete = null;
-      this.accept(board);
-      return board;
+      const reply = await this.request(`/${encodeURIComponent(id)}/agent/run`);
+      this.acceptRun(reply);
+      if (this.agent?.status === "running") await this.follow();
+      return this.board;
     });
+  }
+
+  acceptRun(reply) {
+    this.agent = reply.run;
+    const pending = this.agent?.pendingDelete;
+    const target = reply.board.shots.find(s => s.id === pending?.shotId);
+    this.pendingDelete = pending && target && pending.version === reply.board.version ? {
+      boardId: reply.board.id, version: pending.version, targetId: pending.shotId,
+      message: `删除镜头“${target.title}”？请确认删除或取消。`,
+    } : null;
+    this.accept(reply.board);
+  }
+
+  async follow() {
+    const id = this.board.id;
+    while (this.agent?.status === "running") {
+      await this.pause(1200);
+      const reply = await this.request(`/${id}/agent/run`);
+      if (this.board.id !== id) throw new Error("当前项目已变化，请重新打开任务");
+      this.acceptRun(reply);
+    }
+    if (["failed", "interrupted"].includes(this.agent?.status)) throw new Error(this.agent.summary);
   }
 
   async manageRequest(fields, version = this.board.version) {
@@ -72,70 +97,35 @@ export class StoryboardClient {
 
   async refresh() {
     if (!this.board) return;
-    // 画面修改之后只刷新同一项目；保留当次网络错误，调用方可稍后重试。
-    this.accept(await this.request(`/${this.board.id}`));
+    const reply = await this.request(`/${this.board.id}/agent/run`);
+    this.acceptRun(reply);
+    if (this.agent?.status === "running") return this.run(() => this.follow());
   }
 
-  cancelDelete() { this.pendingDelete = null; this.onChange(this); }
+  cancelDelete() { return this.execute("取消删除"); }
+  confirmDelete() { return this.execute("确认删除"); }
 
-  confirmDelete() {
-    return this.run(async () => {
-      const pending = this.pendingDelete;
-      if (!pending || pending.boardId !== this.board.id) throw new Error("当前没有待确认的删除操作");
-      if (pending.version !== this.board.version) { this.pendingDelete = null; throw new Error("分镜已变化，请重新指定删除目标"); }
-      return this.manageRequest({ action: "delete", targetId: pending.targetId, confirmed: true }, pending.version);
-    });
-  }
-
-  execute(transcript, { allowDrawing = true } = {}) {
+  execute(request, { allowDrawing = true } = {}) {
     return this.run(async () => {
       if (!this.board) throw new Error("请先打开分镜项目");
-      const reply = await this.request(`/${this.board.id}/command`, { expectedVersion: this.board.version, transcript });
-      const pending = this.pendingDelete;
-      this.accept(reply.board);
-      const currentNumber = () => this.board.shots.findIndex(s => s.id === this.board.activeId) + 1;
-      if (reply.action === "cancel") { this.cancelDelete(); return "已取消删除"; }
-      if (reply.action === "confirm") {
-        if (!pending || pending.boardId !== this.board.id || pending.version !== this.board.version) {
-          this.cancelDelete(); throw new Error("当前没有有效的删除确认，请重新指定镜头");
-        }
-        await this.manageRequest({ action: "delete", targetId: pending.targetId, confirmed: true }, pending.version);
-        return `已删除镜头。可说“撤销分镜操作”恢复。当前第 ${currentNumber()} 镜头。`;
+      if (!allowDrawing) throw new Error("文字预览尚未应用，请先应用或关闭编辑面板");
+      const reply = await this.request(`/${this.board.id}/agent/runs`, {
+        expectedVersion: this.board.version, request,
+      });
+      this.acceptRun(reply);
+      await this.follow();
+      let summary = this.agent?.summary || "任务已保存";
+      // 只有本次主动提交才触发下载；刷新恢复不重复下载历史任务。
+      const actions = this.agent?.clientActions || [];
+      const seen = new Set();
+      for (const action of actions) {
+        const key = `${action.shotId}:${action.format}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        await this.exportShot(action.format, action.shotId);
       }
-      this.pendingDelete = null;
-      if (reply.action === "request_delete") {
-        const index = this.board.shots.findIndex(s => s.id === reply.targetId);
-        const target = this.board.shots[index];
-        this.pendingDelete = { boardId: this.board.id, version: this.board.version, targetId: target.id,
-          message: `删除第 ${index + 1} 镜头“${target.title}”？说“确认删除”或“取消”。` };
-        this.onChange(this);
-        return this.pendingDelete.message;
-      }
-      if (reply.action === "new_project") {
-        this.accept(await this.request("", { title: "未命名分镜" }));
-        return "已新建分镜项目，当前是第一个镜头。";
-      }
-      if (reply.action === "export_png" || reply.action === "export_svg") {
-        await this.exportShot(reply.action === "export_svg" ? "svg" : "png");
-        return "已导出当前镜头。";
-      }
-      if (reply.action === "list") return `共 ${this.board.shots.length} 个镜头：${this.board.shots.map((s, i) => `${i + 1}，${s.title}`).join("；")}。当前第 ${currentNumber()} 镜头。`;
-      if (reply.action === "draw") {
-        if (!allowDrawing) throw new Error("文字预览尚未应用，请先应用或关闭编辑面板，再绘制画面");
-        if (reply.targetId !== this.board.activeId) await this.manageRequest({ action: "switch", targetId: reply.targetId });
-        const previousSvg = this.shots.shot.svg;
-        await this.shots.change("generate", reply.instruction);
-        const unchanged = previousSvg && previousSvg === this.shots.shot.svg;
-        await this.refresh();
-        if (unchanged) return `第 ${currentNumber()} 镜头没有变化：模型返回了相同画面，请具体说明要修改的对象和效果。`;
-        return `第 ${currentNumber()} 镜头已保存。`;
-      }
-      if (reply.action === "undo_shot" || reply.action === "redo_shot") {
-        await this.shots.change(reply.action === "undo_shot" ? "undo" : "redo");
-        await this.refresh();
-        return `已${reply.action === "undo_shot" ? "撤销" : "重做"}当前镜头的画面修改。`;
-      }
-      return `已完成。共 ${this.board.shots.length} 个镜头，当前第 ${currentNumber()} 镜头“${this.board.shots[currentNumber() - 1].title}”。`;
+      if (seen.size) summary += `\n已向浏览器发起 ${seen.size} 个文件下载。`;
+      return summary;
     });
   }
 }

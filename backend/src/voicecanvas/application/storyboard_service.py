@@ -73,6 +73,7 @@ class StoryboardService:
         """Agent 的结构化工具；镜头数量、内容和调用次序由 Agent 决定。"""
         board = self.current(board_id, version)
         state = board.state.model_copy(deep=True)
+        state.active_id = board.active_id
         created = []
         expected_shots = {}
         if context is not None:
@@ -134,6 +135,7 @@ class StoryboardService:
     ) -> Storyboard:
         board = self.current(board_id, version)
         state = board.state.model_copy(deep=True)
+        state.active_id = board.active_id
         new_shots: list[ShotDocument] = []
         target = next(
             (shot for shot in state.shots if shot.id == (target_id or board.active_id)), None

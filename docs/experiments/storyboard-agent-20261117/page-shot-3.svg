@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    
+    <radialGradient id="bgWarm" cx="50%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#F5D9A8" />
+      <stop offset="45%" stop-color="#E8B96A" />
+      <stop offset="100%" stop-color="#B5763A" />
+    </radialGradient>
+    
+    <linearGradient id="windowCold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7A8FA6" />
+      <stop offset="100%" stop-color="#4A5E72" />
+    </linearGradient>
+    
+    <linearGradient id="woodBar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C98B4B" />
+      <stop offset="40%" stop-color="#A96B32" />
+      <stop offset="100%" stop-color="#7A4A1E" />
+    </linearGradient>
+    
+    <linearGradient id="cupBody" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E8E0D4" />
+      <stop offset="25%" stop-color="#FDFAF5" />
+      <stop offset="70%" stop-color="#F5EFE6" />
+      <stop offset="100%" stop-color="#D4C8B8" />
+    </linearGradient>
+    
+    <radialGradient id="coffeeSurface" cx="45%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#8B5A2B" />
+      <stop offset="60%" stop-color="#5C3317" />
+      <stop offset="100%" stop-color="#3E1F0A" />
+    </radialGradient>
+    
+    <filter id="steamBlur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+    
+    <filter id="bgBlur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="8" />
+    </filter>
+    
+    <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFE8A0" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#FFD060" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#FFD060" stop-opacity="0" />
+    </radialGradient>
+    
+    <linearGradient id="subtitleBg" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#E87A2A" />
+      <stop offset="50%" stop-color="#F59A3A" />
+      <stop offset="100%" stop-color="#E87A2A" />
+    </linearGradient>
+    
+    <filter id="paperGrain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch" result="noise" />
+      <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise" />
+      <feComponentTransfer in="grayNoise" result="softNoise">
+        <feFuncA type="linear" slope="0.06" intercept="0" />
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="softNoise" mode="multiply" />
+    </filter>
+    
+    <filter id="rainBlur">
+      <feGaussianBlur stdDeviation="1.5" />
+    </filter>
+  </defs>
+
+  
+  <g filter="url(#paperGrain)">
+    
+    <rect x="0" y="0" width="1280" height="720" fill="url(#bgWarm)" />
+
+    
+    <g filter="url(#bgBlur)" opacity="0.85">
+      
+      <rect x="680" y="40" width="560" height="420" rx="12" fill="url(#windowCold)" />
+      
+      <rect x="680" y="40" width="560" height="420" rx="12" fill="none" stroke="#8B6B4A" stroke-width="10" />
+      <line x1="960" y1="40" x2="960" y2="460" stroke="#8B6B4A" stroke-width="8" />
+      <line x1="680" y1="250" x2="1240" y2="250" stroke="#8B6B4A" stroke-width="8" />
+      
+      <g fill="#A8C4D8" opacity="0.6">
+        <ellipse cx="750" cy="120" rx="3" ry="8" />
+        <ellipse cx="820" cy="180" rx="2.5" ry="7" />
+        <ellipse cx="900" cy="100" rx="3" ry="9" />
+        <ellipse cx="1050" cy="150" rx="2" ry="6" />
+        <ellipse cx="1120" cy="200" rx="3" ry="8" />
+        <ellipse cx="780" cy="300" rx="2.5" ry="7" />
+        <ellipse cx="880" cy="350" rx="3" ry="9" />
+        <ellipse cx="1000" cy="320" rx="2" ry="6" />
+        <ellipse cx="1150" cy="380" rx="3" ry="8" />
+        <ellipse cx="720" cy="400" rx="2" ry="5" />
+      </g>
+      
+      <circle cx="800" cy="380" r="30" fill="#FFD060" opacity="0.3" />
+      <circle cx="1100" cy="350" r="25" fill="#FFE8A0" opacity="0.25" />
+      <circle cx="950" cy="420" r="20" fill="#FFD060" opacity="0.2" />
+    </g>
+
+    
+    <g opacity="0.7">
+      <circle cx="320" cy="180" r="180" fill="url(#lampGlow)" />
+      <circle cx="580" cy="120" r="120" fill="url(#lampGlow)" />
+      <circle cx="150" cy="300" r="100" fill="url(#lampGlow)" />
+    </g>
+
+    
+    <g filter="url(#bgBlur)" opacity="0.5">
+      <ellipse cx="320" cy="100" rx="40" ry="20" fill="#FFE8A0" />
+      <ellipse cx="580" cy="80" rx="30" ry="15" fill="#FFE8A0" />
+      <line x1="320" y1="0" x2="320" y2="90" stroke="#8B6B4A" stroke-width="3" />
+      <line x1="580" y1="0" x2="580" y2="70" stroke="#8B6B4A" stroke-width="3" />
+    </g>
+
+    
+    <rect x="0" y="480" width="1280" height="240" fill="url(#woodBar)" />
+    
+    <g stroke="#8B5A2B" stroke-width="1.5" opacity="0.3">
+      <path d="M0 520 Q200 515 400 522 T800 518 T1280 525" fill="none" />
+      <path d="M0 560 Q250 555 500 562 T1000 558 T1280 565" fill="none" />
+      <path d="M0 600 Q300 595 600 602 T1100 598 T1280 605" fill="none" />
+      <path d="M0 640 Q200 635 400 642 T800 638 T1280 645" fill="none" />
+    </g>
+    
+    <rect x="0" y="480" width="1280" height="8" fill="#D4A060" opacity="0.5" />
+
+    
+    <ellipse cx="640" cy="530" rx="160" ry="30" fill="#5C3317" opacity="0.35" />
+
+    
+    <g id="coffeeCup">
+      
+      <ellipse cx="640" cy="520" rx="150" ry="28" fill="#E8E0D4" />
+      <ellipse cx="640" cy="516" rx="150" ry="28" fill="#FDFAF5" />
+      <ellipse cx="640" cy="516" rx="130" ry="22" fill="#F0EAE0" />
+      
+      <path d="M530 380 Q525 460 540 500 Q560 520 640 520 Q720 520 740 500 Q755 460 750 380 Z" fill="url(#cupBody)" />
+      
+      <ellipse cx="640" cy="380" rx="110" ry="28" fill="#FDFAF5" />
+      <ellipse cx="640" cy="380" rx="100" ry="24" fill="#E8E0D4" />
+      
+      <ellipse cx="640" cy="382" rx="92" ry="20" fill="url(#coffeeSurface)" />
+      
+      <ellipse cx="620" cy="376" rx="30" ry="8" fill="#C4884A" opacity="0.5" />
+      
+      <path d="M745 410 Q800 410 800 450 Q800 490 745 490" fill="none" stroke="#E8E0D4" stroke-width="18" stroke-linecap="round" />
+      <path d="M745 410 Q790 410 790 450 Q790 490 745 490" fill="none" stroke="#FDFAF5" stroke-width="10" stroke-linecap="round" />
+      
+      <g transform="translate(640,455)">
+        <circle cx="0" cy="0" r="22" fill="#E87A2A" opacity="0.9" />
+        <circle cx="0" cy="0" r="18" fill="none" stroke="#FDFAF5" stroke-width="1.5" />
+        
+        <path d="M-8 -4 L-8 6 Q-8 10 -3 10 L3 10 Q8 10 8 6 L8 -4 Z" fill="#FDFAF5" />
+        <path d="M8 -2 Q13 -2 13 3 Q13 8 8 8" fill="none" stroke="#FDFAF5" stroke-width="2" />
+        
+        <path d="M-3 -8 Q-5 -12 -3 -15" fill="none" stroke="#FDFAF5" stroke-width="1.5" stroke-linecap="round" />
+        <path d="M2 -8 Q4 -13 2 -16" fill="none" stroke="#FDFAF5" stroke-width="1.5" stroke-linecap="round" />
+      </g>
+      
+      <path d="M560 400 Q555 450 565 490" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.3" stroke-linecap="round" />
+    </g>
+
+    
+    <g id="steam" filter="url(#steamBlur)" opacity="0.7">
+      <path d="M600 360 Q580 320 600 280 Q620 240 600 200" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" opacity="0.6" />
+      <path d="M640 355 Q660 310 640 270 Q620 230 645 190" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" opacity="0.5" />
+      <path d="M680 360 Q700 325 680 285 Q660 245 685 210" fill="none" stroke="#FFFFFF" stroke-width="9" stroke-linecap="round" opacity="0.55" />
+      <path d="M620 350 Q610 300 625 260" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.4" />
+      <path d="M660 350 Q670 305 655 265" fill="none" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" opacity="0.45" />
+    </g>
+
+    
+    <g id="subtitleGroup">
+      
+      <rect x="290" y="560" width="700" height="80" rx="40" fill="url(#subtitleBg)" opacity="0.95" />
+      
+      <rect x="290" y="560" width="700" height="80" rx="40" fill="none" stroke="#C45A1A" stroke-width="3" />
+      
+      <rect x="310" y="568" width="660" height="20" rx="10" fill="#FFD080" opacity="0.3" />
+      
+      <text x="640" y="612" text-anchor="middle" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',sans-serif" font-size="42" font-weight="bold" fill="#FFFFFF" letter-spacing="4">雨天咖啡买一送一</text>
+    </g>
+
+    
+    <g id="windowRaindrops" opacity="0.7">
+      
+      <ellipse cx="120" cy="150" rx="6" ry="10" fill="#A8C4D8" opacity="0.5" />
+      <ellipse cx="200" cy="220" rx="4" ry="7" fill="#A8C4D8" opacity="0.4" />
+      <ellipse cx="80" cy="320" rx="5" ry="9" fill="#A8C4D8" opacity="0.45" />
+      <ellipse cx="250" cy="380" rx="3" ry="6" fill="#A8C4D8" opacity="0.35" />
+      
+      <ellipse cx="1180" cy="180" rx="5" ry="9" fill="#A8C4D8" opacity="0.5" />
+      <ellipse cx="1100" cy="280" rx="4" ry="7" fill="#A8C4D8" opacity="0.4" />
+      <ellipse cx="1220" cy="350" rx="6" ry="10" fill="#A8C4D8" opacity="0.45" />
+      
+      <ellipse cx="118" cy="147" rx="2" ry="3" fill="#FFFFFF" opacity="0.6" />
+      <ellipse cx="1178" cy="177" rx="2" ry="3" fill="#FFFFFF" opacity="0.6" />
+    </g>
+
+    
+    <rect x="0" y="478" width="1280" height="4" fill="#FFD080" opacity="0.4" />
+
+    
+    <rect x="0" y="0" width="1280" height="720" fill="none" stroke="#5C3317" stroke-width="60" opacity="0.15" rx="20" />
+  </g>
+</svg>

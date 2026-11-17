@@ -6,152 +6,114 @@ import { VoiceSessionController } from "../../src/prototype/voice-session.js";
 
 const response = (value, status = 200) => ({ ok: status < 400, status, json: async () => value });
 const board = (version = 0, activeId = "a") => ({ id: "board_a", version, title: "故事", activeId,
-  shots: [{ id: "a", title: "开场", version: 1 }, { id: "b", title: "相遇", version: 0 }],
+  shots: [{ id: "a", title: "开场", version: 1, svg: "saved" }, { id: "b", title: "相遇", version: 0 }],
   activeShot: { id: activeId, version: activeId === "a" ? 1 : 0, svg: "saved SVG", revisions: [] } });
+const reply = (status = "completed", extra = {}, current = board()) => response({ board: current,
+  run: { id: "run_one", status, summary: "已处理相遇镜头", steps: [], clientActions: [], ...extra } });
 
-function setup(answers, shotFetch = async () => response({ id: "b", version: 1, svg: "drawn", revisions: [] })) {
-  const requests = [];
-  const shots = new ShotClient({ baseUrl: "https://api.test", fetchImpl: shotFetch });
-  const client = new StoryboardClient({ shots, fetchImpl: async (url, options) => {
-    requests.push({ url, method: options.method, body: options.body && JSON.parse(options.body) });
-    const answer = answers.shift();
-    return typeof answer === "function" ? answer() : answer;
-  } });
+function setup(answers) {
+  const requests = [], exports = [], changes = [];
+  const shots = new ShotClient({ baseUrl: "https://api.test" });
+  const client = new StoryboardClient({ shots, pause: async () => {},
+    exportShot: async (format, sid) => exports.push([format, sid]),
+    onChange: c => changes.push(c.agent?.status),
+    fetchImpl: async (url, options) => {
+      requests.push({ url, method: options.method, body: options.body && JSON.parse(options.body) });
+      const answer = answers.shift();
+      assert.ok(answer, `未预期请求：${url}`);
+      return typeof answer === "function" ? answer() : answer;
+    },
+  });
   client.accept(board());
-  return { client, shots, requests };
+  return { client, shots, requests, exports, changes };
 }
 
-test("删除转写只建立确认，确认绑定稳定id和版本", async () => {
-  const next = { ...board(1, "b"), shots: [board().shots[1]] };
-  const { client, requests } = setup([
-    response({ board: board(), action: "request_delete", targetId: "a" }),
-    response({ board: board(), action: "confirm" }), response(next),
+test("完整复合需求原文交给Agent，逐次接受真实进展，不走命令路由", async () => {
+  const { client, requests, changes } = setup([reply("running"), reply("running", {}, board(1)), reply("completed", {}, board(2, "b"))]);
+  const request = "15秒三个镜头，雨中进店、递咖啡、优惠特写，请全部画好";
+  assert.match(await client.execute(request), /已处理/);
+  assert.deepEqual(requests[0].body, { request, expectedVersion: 0 });
+  assert.match(requests[0].url, /\/agent\/runs$/);
+  assert.deepEqual(requests.map(r => r.method), ["POST", "GET", "GET"]);
+  assert.equal(requests.some(r => r.url.endsWith("/command")), false);
+  assert.equal(client.shots.shot.id, "b");
+  assert.ok(changes.includes("running"));
+});
+
+test("刷新恢复原任务，只查询不重放付费请求或历史下载", async () => {
+  const { client, requests, exports } = setup([
+    reply("running"), reply("completed", { clientActions: [{ shotId: "a", format: "svg" }] }),
   ]);
-  assert.match(await client.execute("删除第一个镜头"), /确认删除/);
-  assert.equal(requests.length, 1);
+  await client.load("board_a");
+  assert.equal(requests.every(r => r.method === "GET"), true);
+  assert.deepEqual(exports, []);
+  assert.equal(client.busy, false);
+});
+
+test("删除确认从持久化任务恢复，确认仍提交给Agent", async () => {
+  const { client, requests } = setup([
+    reply("needs_input", { pendingDelete: { shotId: "a", version: 0 } }), reply(),
+  ]);
+  await client.execute("删除第一个镜头");
   assert.equal(client.pendingDelete.targetId, "a");
-  await client.execute("确认删除");
-  assert.deepEqual(requests[2].body, { action: "delete", targetId: "a", confirmed: true, expectedVersion: 0 });
-  assert.equal(client.board.shots.length, 1);
+  await client.confirmDelete();
+  assert.equal(requests[1].body.request, "确认删除");
   assert.equal(client.pendingDelete, null);
+  assert.equal(requests.some(r => r.url.endsWith("/manage")), false);
 });
 
-test("其他操作清除待删除确认，不能删除后来切到的镜头", async () => {
-  const { client, requests } = setup([
-    response({ board: board(), action: "request_delete", targetId: "a" }),
-    response({ board: board(1, "b"), action: "switch" }),
-    response({ board: board(1, "b"), action: "confirm" }),
-  ]);
-  await client.execute("删除当前镜头");
-  await client.execute("切换到第二个镜头");
-  await assert.rejects(client.execute("确认删除"), /没有有效/);
-  assert.equal(requests.filter(r => r.url.endsWith('/manage')).length, 0);
+test("按稳定镜头id导出整组，同轮重复动作只发起一次", async () => {
+  const { client, exports } = setup([reply("completed", { clientActions: [
+    { shotId: "a", format: "svg" }, { shotId: "b", format: "png" }, { shotId: "a", format: "svg" },
+  ] })]);
+  assert.match(await client.execute("全部导出"), /2 个文件/);
+  assert.deepEqual(exports, [["svg", "a"], ["png", "b"]]);
 });
 
-test("409同步项目与当前画面，不重试管理或付费绘制", async () => {
+test("409同步项目，不重试任务", async () => {
   const { client, requests, shots } = setup([response({ detail: "分镜冲突" }, 409), response(board(3, "b"))]);
   await assert.rejects(client.execute("新建镜头"), /分镜冲突/);
   assert.equal(client.board.version, 3);
   assert.equal(shots.shot.id, "b");
   assert.deepEqual(requests.map(r => r.method), ["POST", "GET"]);
-  assert.equal(client.busy, false);
 });
 
-test("指定镜头绘图先切换，再使用该镜头自己的版本提交", async () => {
-  const draws = [];
-  const { client, shots } = setup([
-    response({ board: board(), action: "draw", targetId: "b", instruction: "画雨夜" }),
-    response(board(1, "b")), response({ ...board(1, "b"), activeShot: { id: "b", version: 1, svg: "drawn" } }),
-  ], async (url, options) => { draws.push({ url, body: JSON.parse(options.body) }); return response({ id: "b", version: 1, svg: "drawn" }); });
-  await client.execute("第二个镜头画雨夜");
-  assert.match(draws[0].url, /\/b\/generate$/);
-  assert.equal(draws[0].body.expectedVersion, 0);
-  assert.equal(shots.shot.svg, "drawn");
-});
-
-test("执行期间拒绝第二条请求，网络失败后保留旧项目", async () => {
+test("执行时拒绝重复请求，轮询失败后不重复POST，手动刷新继续查询", async () => {
   let fail;
-  const { client, requests } = setup([() => new Promise((_, reject) => { fail = reject; })]);
-  const pending = client.execute("新建镜头");
+  const { client, requests } = setup([reply("running"), () => new Promise((_, reject) => { fail = reject; }), reply()]);
+  const pending = client.execute("完整故事");
+  while (!fail) await new Promise(resolve => setImmediate(resolve));
   await assert.rejects(client.manage({ action: "add" }), /上一条/);
   fail(new TypeError("network"));
   await assert.rejects(pending, /network/);
-  assert.equal(client.board.version, 0);
+  await client.refresh();
   assert.equal(client.busy, false);
+  assert.equal(requests.filter(r => r.method === "POST").length, 1);
+});
+
+test("后端失败传播真实错误并保留画面，文字预览阻止任何提交", async () => {
+  const { client, requests } = setup([reply("failed", { summary: "模型连接中断" })]);
+  await assert.rejects(client.execute("改画"), /连接中断/);
+  assert.equal(client.shots.shot.svg, "saved SVG");
+  await assert.rejects(client.execute("改画", { allowDrawing: false }), /文字预览/);
   assert.equal(requests.length, 1);
 });
 
-test("模型返回相同画面时说明没有变化，不误报保存成功", async () => {
-  const { client, requests } = setup([
-    response({ board: board(), action: "draw", targetId: "a", instruction: "把伞改蓝" }),
-    response(board()),
-  ], async () => response(board().activeShot));
-  const result = await client.execute("把伞改蓝");
-  assert.match(result, /没有变化/);
-  assert.doesNotMatch(result, /已保存/);
-  assert.equal(client.shots.shot.svg, "saved SVG");
-  assert.equal(requests.length, 2);
-});
-
-test("模型服务失败保留画面并传播可见错误，不自动重试", async () => {
-  let calls = 0;
-  const { client } = setup([
-    response({ board: board(), action: "draw", targetId: "a", instruction: "把伞改蓝" }),
-  ], async () => { calls++; return response({ detail: "绘图服务连接中断" }, 502); });
-  await assert.rejects(client.execute("把伞改蓝"), /连接中断/);
-  assert.equal(client.shots.shot.svg, "saved SVG");
-  assert.equal(client.busy, false);
-  assert.equal(client.shots.busy, false);
-  assert.equal(calls, 1);
-});
-
-test("持续语音会话执行最终转写后恢复监听，播报期间不重复执行", async () => {
-  let handlers;
+test("语音最终转写走同一Agent，完成后恢复监听", async () => {
+  let handlers, starts = 0;
   const spoken = [];
-  let startCount = 0;
-  const { client } = setup([response({ board: board(1, "b"), action: "switch" })]);
-  const recognition = { isSupported: () => true, start: h => { handlers = h; startCount++; }, stop() {}, abort() {} };
-  const session = new VoiceSessionController({ recognition,
-    feedback: { say: async text => { spoken.push(text); }, playReadyTone: async () => {} },
+  const { client, requests } = setup([reply("completed", {}, board(1, "b"))]);
+  const session = new VoiceSessionController({
+    recognition: { isSupported: () => true, start: h => { handlers = h; starts++; }, stop() {}, abort() {} },
+    feedback: { say: async text => spoken.push(text), playReadyTone: async () => {} },
     submitTranscript: text => client.execute(text),
   });
   await session.start();
   assert.ok(handlers.onFinal);
-  await session.handleFinalTranscript("切换到第二个镜头");
+  await session.handleFinalTranscript("切换到第二镜然后改名相遇");
   assert.equal(client.board.activeId, "b");
-  assert.ok(startCount >= 2 && session.isListening());
-  assert.ok(spoken.some(text => text.includes("相遇")));
+  assert.ok(starts >= 2 && session.isListening());
+  assert.equal(requests[0].body.request, "切换到第二镜然后改名相遇");
+  assert.ok(spoken.some(s => s.includes("相遇")));
   await session.stop({ speak: false });
-});
-
-test("麦克风权限拒绝后停止会话，不无限重启识别", async () => {
-  let handlers;
-  const session = new VoiceSessionController({ recognition: { isSupported: () => true, start: h => { handlers = h; }, stop() {}, abort() {} },
-    feedback: { say: async () => {}, playReadyTone: async () => {} }, submitTranscript: async () => { throw new Error("不应执行"); } });
-  await session.start();
-  handlers.onError(new Error("not-allowed"));
-  assert.equal(session.isActive(), false);
-});
-
-test("语音取消不提交删除，导出使用当前画面，新项目不覆盖旧项目", async () => {
-  const next = { ...board(), id: "board_new", shots: [board().shots[0]] };
-  const { client, requests } = setup([
-    response({ board: board(), action: "request_delete", targetId: "b" }),
-    response({ board: board(), action: "cancel" }),
-    response({ board: board(), action: "export_svg" }),
-    response({ board: board(), action: "export_png" }),
-    response({ board: board(), action: "new_project" }), response(next),
-  ]);
-  const exports = [];
-  client.exportShot = async format => exports.push([format, client.shots.shot.id]);
-  await client.execute("删除第二个镜头");
-  await client.execute("取消");
-  assert.equal(client.pendingDelete, null);
-  await client.execute("导出SVG");
-  await client.execute("导出当前镜头");
-  assert.deepEqual(exports, [["svg", "a"], ["png", "a"]]);
-  await client.execute("新建分镜项目");
-  assert.equal(client.board.id, "board_new");
-  assert.equal(requests.filter(r => r.url.endsWith("/manage")).length, 0);
-  assert.deepEqual(requests.at(-1).body, { title: "未命名分镜" });
 });
