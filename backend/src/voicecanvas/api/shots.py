@@ -11,6 +11,7 @@ from pydantic import BaseModel, Field, field_validator
 from voicecanvas.adapters.llm.svg_shot import ShotModelError
 from voicecanvas.application.shot_service import ShotConflict, ShotNotFound, ShotService
 from voicecanvas.domain.shot import ShotDocument
+from voicecanvas.domain.svg_text import list_text_blocks
 
 
 class CreateShot(BaseModel):
@@ -32,12 +33,21 @@ class GenerateShot(ShotChange):
         return value.strip()
 
 
+class EditShotText(ShotChange):
+    index: int = Field(ge=0)
+    lines: list[str] = Field(min_length=1, max_length=100)
+    font_size: float = Field(alias="fontSize", ge=8, le=160, allow_inf_nan=False)
+    line_height: float = Field(default=1.35, alias="lineHeight", ge=1, le=3, allow_inf_nan=False)
+    y: float = Field(ge=-10000, le=10000, allow_inf_nan=False)
+
+
 def present_shot(shot: ShotDocument) -> dict:
     return {
         "id": shot.id,
         "title": shot.title,
         "version": shot.version,
         "svg": shot.svg,
+        "texts": list_text_blocks(shot.svg),
         "cursor": shot.cursor,
         "canUndo": shot.cursor >= 0,
         "canRedo": shot.cursor + 1 < len(shot.revisions),
@@ -89,6 +99,20 @@ def create_shot_router(factory: Callable[[], ShotService]) -> APIRouter:
     def generate(shot_id: str, request: GenerateShot) -> dict:
         return execute(
             lambda: get_service().generate(shot_id, request.expected_version, request.instruction)
+        )
+
+    @router.post("/{shot_id}/text")
+    def edit_text(shot_id: str, request: EditShotText) -> dict:
+        return execute(
+            lambda: get_service().edit_text(
+                shot_id,
+                request.expected_version,
+                request.index,
+                request.lines,
+                request.font_size,
+                request.line_height,
+                request.y,
+            )
         )
 
     @router.post("/{shot_id}/{action}")

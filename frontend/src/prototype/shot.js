@@ -1,5 +1,6 @@
 import { ShotClient } from "./shot-client.js";
 import { BrowserSpeechRecognitionAdapter } from "./voice-session.js";
+import { ShotTextEditor } from "./shot-text-editor.js";
 
 const $ = (id) => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -13,6 +14,7 @@ let renderSerial = 0;
 let startedAt = 0;
 let generating = false;
 let listening = false;
+let textEditor;
 const recognition = new BrowserSpeechRecognitionAdapter();
 
 function status(message, kind = "") {
@@ -53,7 +55,7 @@ async function showSvg(svg) {
     $("preview").hidden = false;
     $("emptyFrame").hidden = true;
     if (oldUrl) URL.revokeObjectURL(oldUrl);
-    update(client);
+    $("exportPng").disabled = client.busy || renderedSvg !== client.shot?.svg;
   } catch {
     URL.revokeObjectURL(nextUrl);
     shownSvg = null;
@@ -62,6 +64,7 @@ async function showSvg(svg) {
 }
 
 function update({ shot, busy }) {
+  textEditor?.setState(shot, busy);
   document.body.classList.toggle("is-busy", busy);
   $("newShot").disabled = busy;
   $("instruction").disabled = busy || !shot;
@@ -69,7 +72,7 @@ function update({ shot, busy }) {
   $("dictate").disabled = busy || !shot || !recognition.isSupported();
   $("undo").disabled = busy || !shot?.canUndo;
   $("redo").disabled = busy || !shot?.canRedo;
-  $("exportSvg").disabled = busy || !shot?.svg;
+  $("exportSvg").disabled = busy || !shot?.svg || Boolean(textEditor?.previewSvg);
   $("exportPng").disabled = busy || !shot?.svg || !previewUrl || renderedSvg !== shot.svg;
   $("saveState").textContent = busy ? "处理中…" : shot ? "已保存到本地服务" : "尚未连接";
   $("generate").replaceChildren(document.createTextNode(busy ? "正在处理…" : shot?.svg ? "修改这个镜头" : "生成这个镜头"));
@@ -94,10 +97,21 @@ function update({ shot, busy }) {
     empty.textContent = "每一次生成和修改，都会保存在这里。";
     $("history").replaceChildren(empty);
   }
-  void showSvg(shot.svg);
+  void showSvg(textEditor?.previewSvg || shot.svg);
 }
 
 const client = new ShotClient({ baseUrl, onChange: update });
+textEditor = new ShotTextEditor({
+  frame: $("frame"),
+  preview: svg => {
+    void showSvg(svg);
+    $("saveState").textContent = textEditor?.previewSvg ? "文字预览未应用"
+      : client.busy ? "处理中…" : "已保存到本地服务";
+    $("exportSvg").disabled = client.busy || !client.shot?.svg || Boolean(textEditor?.previewSvg);
+    $("exportPng").disabled = client.busy || !client.shot?.svg || Boolean(textEditor?.previewSvg);
+  },
+  save: layout => action(() => client.editText(layout), "正在保存文字…"),
+});
 
 async function action(fn, message) {
   recognition.stop();

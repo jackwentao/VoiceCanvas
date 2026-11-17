@@ -48,6 +48,20 @@ test("刷新恢复读取现有镜头，不自动生成", async () => {
   assert.equal(calls[0].options.method, "GET");
 });
 
+test("直接文字编辑发送布局和当前版本，不走 generate", async () => {
+  const calls = [];
+  const client = new ShotClient({ fetchImpl: async (url, options) => {
+    calls.push({ url, body: JSON.parse(options.body) });
+    return response(state(2, "edited text"));
+  } });
+  client.shot = state(1, "initial");
+  await client.editText({ index: 3, lines: ["第一行", "第二行"], fontSize: 28, lineHeight: 1.35, y: 120 });
+  assert.match(calls[0].url, /\/shot_a\/text$/);
+  assert.deepEqual(calls[0].body, { index: 3, lines: ["第一行", "第二行"], fontSize: 28,
+    lineHeight: 1.35, y: 120, expectedVersion: 1 });
+  assert.equal(client.shot.svg, "edited text");
+});
+
 test("生成失败保留上一画面并释放忙碌状态", async () => {
   const events = [];
   const client = new ShotClient({ fetchImpl: async () => response({ detail: "输出预算不足" }, 502),

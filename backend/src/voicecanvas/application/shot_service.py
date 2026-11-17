@@ -6,6 +6,7 @@ from uuid import uuid4
 
 from voicecanvas.domain.shot import ShotDocument, ShotRevision
 from voicecanvas.domain.svg_document import validate_svg
+from voicecanvas.domain.svg_text import replace_text_block
 
 
 class ShotConflict(ValueError):
@@ -57,6 +58,34 @@ class ShotService:
         if shot.cursor >= 39:
             raise ValueError("当前镜头已保存 40 个版本，请新建镜头继续创作")
         svg, usage, model = self.generator.generate(instruction, shot.svg)
+        return self._commit(shot, svg, instruction, usage, model)
+
+    def edit_text(
+        self,
+        shot_id: str,
+        expected_version: int,
+        index: int,
+        lines: list[str],
+        font_size: float,
+        line_height: float,
+        y: float,
+    ) -> ShotDocument:
+        shot = self._editable(shot_id, expected_version)
+        if not shot.svg:
+            raise ValueError("当前镜头还没有可编辑文字")
+        svg = replace_text_block(shot.svg, index, lines, font_size, line_height, y)
+        return self._commit(shot, svg, f"直接改字：{''.join(lines)[:60]}", {}, None)
+
+    def _commit(
+        self,
+        shot: ShotDocument,
+        svg: str,
+        instruction: str,
+        usage: dict[str, int],
+        model: str | None,
+    ) -> ShotDocument:
+        if shot.cursor >= 39:
+            raise ValueError("当前镜头已保存 40 个版本，请新建镜头继续创作")
         svg = validate_svg(svg)
         revision = ShotRevision(
             svg=svg,
@@ -73,7 +102,7 @@ class ShotService:
             }
         )
         # 模型调用期间文档可能被另一请求改动，仓储必须再次原子检查版本。
-        self.repository.save(next_shot, expected_version)
+        self.repository.save(next_shot, shot.version)
         return next_shot
 
     def move(self, shot_id: str, expected_version: int, direction: int) -> ShotDocument:

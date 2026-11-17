@@ -38,7 +38,18 @@
           <div class="empty-frame" id="emptyFrame"><span class="frame-corner">＋</span><div class="empty-icon" aria-hidden="true">▧</div><h3>画面从你的描述开始</h3><p>一个人物、一束光、一个正在发生的瞬间。</p><span class="empty-tag">自由构图 · 可继续修改</span></div>
         </div>
       </div>
-      <footer class="canvas-footer"><div class="history-controls"><button id="undo" disabled aria-label="撤销">↶ 撤销</button><button id="redo" disabled aria-label="重做">↷ 重做</button><span id="versionLabel">还没有画面</span></div><div class="export-controls"><button id="exportSvg" disabled>导出 SVG</button><button id="exportPng" disabled>导出 PNG ↗</button></div></footer>
+      <footer class="canvas-footer"><div class="history-controls"><button id="undo" disabled aria-label="撤销">↶ 撤销</button><button id="redo" disabled aria-label="重做">↷ 重做</button><span id="versionLabel">还没有画面</span></div><div class="export-controls"><button id="editTextToggle" disabled>编辑文字</button><button id="exportSvg" disabled>导出 SVG</button><button id="exportPng" disabled>导出 PNG ↗</button></div></footer>
+      <section id="textEditor" class="text-editor" aria-label="直接编辑镜头文字" hidden>
+        <div class="text-editor-heading"><div><h3>编辑画面文字</h3><p>改字即时预览，应用后可撤销。</p></div><button id="closeTextEditor" type="button">关闭</button></div>
+        <label for="textTarget">选择文字</label>
+        <select id="textTarget"></select>
+        <label for="textContent">文字内容</label>
+        <textarea id="textContent" maxlength="2000" rows="3"></textarea>
+        <div class="text-layout-controls"><label for="textFontSize">字号<input id="textFontSize" type="number" min="8" max="160" step="0.5" /></label><label for="textWrapWidth">换行宽度<input id="textWrapWidth" type="number" min="20" max="1280" step="1" /></label><button type="button" id="recommendedTextSize">按预览放大字号</button></div>
+        <p id="textReadability" class="text-edit-feedback"></p>
+        <p id="textEditFeedback" class="text-edit-feedback" role="status" aria-live="polite"></p>
+        <div class="text-edit-actions"><button type="button" id="resetTextDraft">还原预览</button><button type="button" id="applyTextEdit" disabled>应用改字</button></div>
+      </section>
       <p class="canvas-note">生成后可继续描述局部修改。撤销与重做可以随时找回之前的画面。</p>
     </section>
   </main>

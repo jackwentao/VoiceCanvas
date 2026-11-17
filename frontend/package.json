@@ -5,7 +5,7 @@
   "scripts": {
     "prototype": "node scripts/serve-prototype.mjs",
     "test": "npm run test:prototype && npm run test:shot",
-    "test:shot": "node --test tests/shot/shot-client.test.mjs",
+    "test:shot": "node --test tests/shot/shot-client.test.mjs tests/shot/shot-text-layout.test.mjs",
     "test:prototype": "node tests/prototype/prototype-contract.test.mjs"
   },
   "dependencies": {
