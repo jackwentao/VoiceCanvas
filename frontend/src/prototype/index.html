@@ -14,6 +14,7 @@
           <p id="projectMeta"></p>
         </section>
         <section class="topbar-actions">
+          <a href="./shot.html" id="shotStudioLink">单镜头创作 ↗</a>
           <nav class="scenario-actions" aria-label="演示指令">
             <button type="button" data-run="storyboard">三镜头分镜</button>
             <button type="button" data-run="arrow">添加箭头</button>
@@ -184,5 +185,9 @@
     </main>
 
     <script type="module" src="./app.js?v=backend-state-events"></script>
+    <script type="module">
+      const apiBaseUrl = new URLSearchParams(location.search).get("apiBaseUrl");
+      if (apiBaseUrl) document.getElementById("shotStudioLink").href = `./shot.html?${new URLSearchParams({ apiBaseUrl })}`;
+    </script>
   </body>
 </html>
