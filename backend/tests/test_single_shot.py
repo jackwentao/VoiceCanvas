@@ -1,6 +1,7 @@
 """自由 SVG 镜头闭环，不依赖在线模型或浏览器。"""
 
 import json
+from pathlib import Path
 
 import httpx
 import pytest
@@ -326,3 +327,33 @@ def test_api_model_failure_is_502_and_keeps_previous_state(service):
     )
     assert result.status_code == 502
     assert service.get(shot.id) == first
+
+
+@pytest.mark.parametrize(
+    "sample_name",
+    [
+        "rain-baseline",
+        "rain-compact",
+        "bench-baseline",
+        "bench-subject-first",
+        "bench-compact",
+    ],
+)
+def test_recorded_model_svgs_survive_streaming_persistence_and_history(service, sample_name):
+    """回放实际产物，覆盖自由路径、复杂分组、滤镜和文字的完整保存链路。"""
+    sample = (
+        Path(__file__).resolve().parents[2]
+        / "docs/experiments"
+        / "subject-quality-20261117"
+        / f"{sample_name}.svg"
+    )
+    svg = sample.read_text(encoding="utf-8")
+    service.generator = generator_with_response(svg)
+    shot = service.create(sample_name)
+    drawn = service.generate(shot.id, 0, "回放保存的模型响应")
+    assert drawn.svg == svg
+    # 重新打开连接再读取，不能只验证返回对象中的内容。
+    restored = SQLiteShotRepository(service.repository.db_path).load(shot.id)
+    assert restored.svg == svg
+    assert service.move(shot.id, 1, -1).svg is None
+    assert service.move(shot.id, 2, 1).svg == svg
