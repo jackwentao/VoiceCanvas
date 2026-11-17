@@ -11,7 +11,6 @@ RUN uv sync --frozen --no-dev --no-editable
 
 COPY backend/src ./src
 COPY backend/scripts ./scripts
-COPY frontend/src/prototype/render-catalog.json /app/frontend/src/prototype/render-catalog.json
 
 RUN mkdir -p /app/backend/data
 

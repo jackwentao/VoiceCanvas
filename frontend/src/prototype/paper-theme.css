@@ -1,0 +1,13 @@
+/* 首页与工作台共用的纸张视觉令牌，仅作用于界面外观。 */
+:root {
+  --paper-background:#f8f6ef;
+  --paper-surface:#fffdf7;
+  --paper-ink:#303b30;
+  --paper-muted:#7e8174;
+  --paper-line:#dcded0;
+  --paper-accent:#526b46;
+  --paper-wash:#e8ecdb;
+  --paper-action:#dce5bb;
+  --paper-hand:"KaiTi","STKaiti","Segoe Print","Comic Sans MS",cursive;
+  --paper-texture:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.045' filter='url(%23n)'/%3E%3C/svg%3E");
+}

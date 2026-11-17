@@ -16,6 +16,14 @@ from voicecanvas.application.export_service import ExportRequest, ExportResult, 
 from voicecanvas.application.history_manager import HistoryManager
 from voicecanvas.application.project_repository import InMemoryProjectRepository, ProjectRepository
 from voicecanvas.application.user_memory_service import UserMemoryService
+from voicecanvas.application.workspace_actions import (
+    HistoryAction,
+    RenameProject,
+    ResetUsage,
+    SetBackground,
+    SwitchScene,
+    WorkspaceAction,
+)
 from voicecanvas.domain.commands import CanvasCommand, CommandType
 from voicecanvas.domain.history import HistoryEntry
 from voicecanvas.domain.patches import CanvasPatch
@@ -81,9 +89,101 @@ class OrchestrationService:
         self._export_service = export_service or ExportService()
         self._user_memory_service = user_memory_service
         self._deterministic_router = deterministic_router or DeterministicCommandRouter()
+        self._usage: dict[str, dict[str, Any]] = {}
         self._histories: dict[str, HistoryManager] = {}
         self._conversation_memories: dict[str, ConversationMemoryManager] = {}
         self._pending_clarifications: dict[str, dict[str, Any]] = {}
+
+    def list_projects(self) -> list[dict[str, Any]]:
+        return [
+            {"id": project.id, "title": project.title, "mode": project.mode}
+            for project in self._repository.list()
+        ]
+
+    def workspace_state(self, project_id: str) -> dict[str, Any]:
+        state = self.get_project_state(project_id)
+        pending = next(
+            (
+                (session_id, item)
+                for session_id, item in self._pending_clarifications.items()
+                if item.get("projectId") == project_id
+            ),
+            None,
+        )
+        return {
+            **state.model_dump(by_alias=True),
+            "undoRedo": self._history_for(project_id).state().model_dump(by_alias=True),
+            "usage": self._usage.get(project_id, {}),
+            "pending": {"sessionId": pending[0], "nextAction": pending[1]["nextAction"]}
+            if pending
+            else None,
+        }
+
+    def execute_ui_action(self, project_id: str, action: WorkspaceAction) -> dict[str, Any]:
+        """确定性页面动作：后端补全命令、校验、执行、记录并存储。"""
+        project = self._repository.get_or_create(project_id)
+        history = self._history_for(project_id)
+        if isinstance(action, ResetUsage):
+            self._usage[project_id] = {}
+            self._save_runtime(project_id)
+            return self.workspace_state(project_id)
+        if isinstance(action, HistoryAction):
+            operation = history.undo if action.action == "undo" else history.redo
+            result = operation(project, self._executor.apply_without_recording)
+            self._save_project(result.project)
+            return self.workspace_state(project_id)
+        payload: dict[str, Any]
+        if isinstance(action, SwitchScene):
+            kind, payload = CommandType.SWITCH_SCENE, {"sceneId": action.scene_id}
+        elif isinstance(action, SetBackground):
+            scene = next((item for item in project.scenes if item.id == action.scene_id), None)
+            if scene is None:
+                raise ValueError("目标镜头不存在")
+            canvas = scene.canvas.model_dump(by_alias=True)
+            canvas["background"] = {"type": "solid", "color": action.color.lower()}
+            kind, payload = (
+                CommandType.UPDATE_SCENE,
+                {"sceneId": scene.id, "patch": {"canvas": canvas}},
+            )
+        elif isinstance(action, RenameProject):
+            title = action.title.strip()
+            if not title:
+                raise ValueError("项目名称不能为空")
+            kind, payload = CommandType.UPDATE_PROJECT, {"patch": {"title": title}}
+        else:
+            raise ValueError("不支持的页面操作")
+        command = CanvasCommand(
+            id=f"ui_{uuid4().hex[:12]}",
+            type=kind,
+            source="user_ui",
+            payload=payload,
+            createdAt=self._now(),
+        )
+        applied = self._executor.execute(command, project)
+        history.record(applied.history_entry)
+        self._save_project(applied.project)
+        return self.workspace_state(project_id)
+
+    def _save_project(self, project: Project) -> None:
+        self._repository.save(project)
+        self._save_runtime(project.id)
+
+    def _save_runtime(self, project_id: str) -> None:
+        save = getattr(self._repository, "save_runtime", None)
+        if save is not None:
+            history = self._history_for(project_id)
+            save(
+                project_id,
+                {
+                    "history": history.snapshot(),
+                    "usage": self._usage.get(project_id, {}),
+                    "pending": {
+                        key: value
+                        for key, value in self._pending_clarifications.items()
+                        if value.get("projectId") == project_id
+                    },
+                },
+            )
 
     def set_user_memory_service(self, user_memory_service: UserMemoryService) -> None:
         self._user_memory_service = user_memory_service
@@ -311,7 +411,7 @@ class OrchestrationService:
             try:
                 result = self._executor.execute(command, current_project)
             except ValueError as error:
-                self._repository.save(current_project)
+                self._save_project(current_project)
                 summary = TurnSummary(
                     completed=False,
                     message=self._message_with_notice(str(error), plan.notice),
@@ -343,7 +443,7 @@ class OrchestrationService:
                 )
                 memory.record_patch(patch, current_project)
 
-        self._repository.save(current_project)
+        self._save_project(current_project)
         summary = TurnSummary(
             completed=True,
             message=self._message_with_notice(
@@ -461,7 +561,7 @@ class OrchestrationService:
             )
             for patch in applied.patches:
                 memory.record_patch(patch, result.project)
-        self._repository.save(result.project)
+        self._save_project(result.project)
         message = f"已根据澄清回答修改 {selected.get('label') or selected.get('elementId')}"
         summary = TurnSummary(completed=True, message=message, commandCount=len(result.applied))
         events.append(self._turn_summary_event(session_id, summary))
@@ -561,7 +661,7 @@ class OrchestrationService:
             )
             for patch in applied.patches:
                 memory.record_patch(patch, result.project)
-        self._repository.save(result.project)
+        self._save_project(result.project)
         summary = TurnSummary(completed=True, message="已清空当前画布", commandCount=1)
         events.append(self._turn_summary_event(session_id, summary))
         memory.record_turn(
@@ -596,7 +696,7 @@ class OrchestrationService:
             mode=mode,
             project_id=project_id,
         )
-        self._repository.save(project)
+        self._save_project(project)
         self._reset_project_context(project.id)
         created_at = self._now()
         return ProjectState(
@@ -617,7 +717,7 @@ class OrchestrationService:
 
     def import_project(self, payload: dict[str, Any]) -> ProjectState:
         imported = self._export_service.import_project(payload)
-        self._repository.save(imported.project)
+        self._save_project(imported.project)
         self._reset_project_context(imported.project.id)
         return ProjectState(
             project=imported.project,
@@ -668,7 +768,7 @@ class OrchestrationService:
             )
             return
 
-        self._repository.save(result.project)
+        self._save_project(result.project)
         for patch in result.patches:
             yield from self._emit_event(
                 events,
@@ -737,7 +837,7 @@ class OrchestrationService:
             )
             return
 
-        self._repository.save(result.project)
+        self._save_project(result.project)
         for patch in result.patches:
             yield from self._emit_event(
                 events,
@@ -792,7 +892,7 @@ class OrchestrationService:
                 summary,
             )
 
-        self._repository.save(result.project)
+        self._save_project(result.project)
         events.extend(
             self._patch_event(session_id, patch, result.history_entry.command.id)
             for patch in result.patches
@@ -832,7 +932,7 @@ class OrchestrationService:
                 summary,
             )
 
-        self._repository.save(result.project)
+        self._save_project(result.project)
         events.extend(
             self._patch_event(session_id, patch, result.history_entry.command.id)
             for patch in result.patches
@@ -860,6 +960,18 @@ class OrchestrationService:
         summary: TurnSummary,
         next_action: dict[str, Any] | None = None,
     ) -> OrchestrationServiceResponse:
+        usage = self._usage.setdefault(project.id, {})
+        if usage.get("sessionId") != session_id:
+            last = summary.token_usage.model_dump(by_alias=True)
+            total = usage.get("total", {})
+            usage.update(
+                {
+                    "sessionId": session_id,
+                    "lastTurn": last,
+                    "total": {key: total.get(key, 0) + value for key, value in last.items()},
+                }
+            )
+        self._save_runtime(project.id)
         return OrchestrationServiceResponse(
             sessionId=session_id,
             status=status,
@@ -883,7 +995,14 @@ class OrchestrationService:
 
     def _history_for(self, project_id: str) -> HistoryManager:
         if project_id not in self._histories:
-            self._histories[project_id] = HistoryManager()
+            history = HistoryManager()
+            load = getattr(self._repository, "load_runtime", None)
+            runtime = load(project_id) if load is not None else None
+            if runtime:
+                history.restore(runtime.get("history", {}))
+                self._usage[project_id] = runtime.get("usage", {})
+                self._pending_clarifications.update(runtime.get("pending", {}))
+            self._histories[project_id] = history
         return self._histories[project_id]
 
     def _conversation_memory_for(self, project_id: str) -> ConversationMemoryManager:
@@ -903,12 +1022,15 @@ class OrchestrationService:
 
     def _reset_project_context(self, project_id: str) -> None:
         self._histories[project_id] = HistoryManager()
+        self._usage[project_id] = {}
         self._conversation_memories[project_id] = ConversationMemoryManager()
         self._pending_clarifications = {
             session_id: pending
             for session_id, pending in self._pending_clarifications.items()
             if pending.get("projectId") != project_id
         }
+
+        self._save_runtime(project_id)
 
     def _collect_patches(self, applied: list[Any]) -> list[CanvasPatch]:
         return [patch for result in applied for patch in result.patches]
@@ -922,9 +1044,7 @@ class OrchestrationService:
             "createdAt": self._now(),
         }
 
-    def _patch_event(
-        self, session_id: str, patch: CanvasPatch, command_id: str
-    ) -> dict[str, Any]:
+    def _patch_event(self, session_id: str, patch: CanvasPatch, command_id: str) -> dict[str, Any]:
         return {
             "type": "CANVAS_PATCH_APPLIED",
             "sessionId": session_id,
@@ -1091,6 +1211,8 @@ class OrchestrationService:
 
     def _resolve_confirmation_answer(self, answer: str) -> bool | None:
         normalized = self._normalize_answer(answer)
+        if normalized in {"confirm", "cancel"}:
+            return normalized == "confirm"
         cancel_words = ["取消", "不清空", "不要清空", "别清空", "算了", "不用", "否", "不"]
         if any(word in normalized for word in cancel_words):
             return False
@@ -1211,14 +1333,7 @@ class OrchestrationService:
         )
 
     def _normalize_answer(self, value: object) -> str:
-        return (
-            str(value or "")
-            .strip()
-            .replace(" ", "")
-            .replace("，", "")
-            .replace("。", "")
-            .lower()
-        )
+        return str(value or "").strip().replace(" ", "").replace("，", "").replace("。", "").lower()
 
     def _ordinal_index_from_answer(self, answer: str) -> int | None:
         pairs = [
@@ -1238,9 +1353,7 @@ class OrchestrationService:
         axis: str,
         chooser: Any,
     ) -> dict[str, Any] | None:
-        with_bounds = [
-            option for option in options if isinstance(option.get("bounds"), dict)
-        ]
+        with_bounds = [option for option in options if isinstance(option.get("bounds"), dict)]
         if not with_bounds:
             return None
         return chooser(
@@ -1248,18 +1361,15 @@ class OrchestrationService:
             key=lambda option: float(option["bounds"].get(axis, 0)),
         )
 
-    def _area_option(
-        self, options: list[dict[str, Any]], chooser: Any
-    ) -> dict[str, Any] | None:
-        with_bounds = [
-            option for option in options if isinstance(option.get("bounds"), dict)
-        ]
+    def _area_option(self, options: list[dict[str, Any]], chooser: Any) -> dict[str, Any] | None:
+        with_bounds = [option for option in options if isinstance(option.get("bounds"), dict)]
         if not with_bounds:
             return None
         return chooser(
             with_bounds,
-            key=lambda option: float(option["bounds"].get("width", 0))
-            * float(option["bounds"].get("height", 0)),
+            key=lambda option: (
+                float(option["bounds"].get("width", 0)) * float(option["bounds"].get("height", 0))
+            ),
         )
 
     def _contains_any(self, value: str, keywords: list[str]) -> bool:
