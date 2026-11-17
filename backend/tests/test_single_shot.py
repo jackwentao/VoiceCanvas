@@ -310,6 +310,40 @@ def test_api_lifecycle_export_and_validation(service):
     assert client.get("/api/shots/nonexistent").status_code == 404
 
 
+def test_optional_local_address_reaches_transport_without_retry(monkeypatch):
+    """连接族可配置；沿用证书验证与单次请求，不降级关闭 TLS。"""
+    import voicecanvas.adapters.llm.svg_shot as adapter
+
+    options = []
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": SVG}, "finish_reason": "stop"}],
+        })
+
+    def transport(**kwargs):
+        options.append(kwargs)
+        return httpx.MockTransport(handler)
+
+    monkeypatch.setattr(adapter.httpx, "HTTPTransport", transport)
+    generator = OpenAICompatibleShotGenerator(
+        ShotModelConfig("https://example.test/v1", "test", local_address="::")
+    )
+    assert generator.generate("画猫", None)[0] == validate_svg(SVG)
+    assert options == [{"local_address": "::"}]
+    assert len(calls) == 1
+
+
+def test_factory_local_address_is_optional(tmp_path, monkeypatch):
+    monkeypatch.setenv("VOICECANVAS_SHOT_DB_PATH", str(tmp_path / "shots.sqlite3"))
+    monkeypatch.delenv("VOICECANVAS_SHOT_LOCAL_ADDRESS", raising=False)
+    assert create_shot_service().generator.config.local_address is None
+    monkeypatch.setenv("VOICECANVAS_SHOT_LOCAL_ADDRESS", "::")
+    assert create_shot_service().generator.config.local_address == "::"
+
+
 def test_api_model_failure_is_502_and_keeps_previous_state(service):
     shot = service.create("test")
     first = service.generate(shot.id, 0, "draw")

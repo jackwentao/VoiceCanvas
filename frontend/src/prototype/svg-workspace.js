@@ -38,6 +38,8 @@ let previewSerial = 0;
 let thumbnails = [];
 let listKey = "";
 let toastTimer;
+let actionStarted = 0;
+let progressTimer;
 const recognition = new BrowserSpeechRecognitionAdapter();
 const shots = new ShotClient({ baseUrl, onChange: () => render() });
 boards = new StoryboardClient({ shots, onChange: () => render(), exportShot });
@@ -58,6 +60,12 @@ voice = new VoiceSessionController({ recognition, feedback: new BrowserVoiceFeed
 });
 
 function isBusy() { return working || shots.busy || boards.busy; }
+function renderStatus() {
+  const elapsed = Math.floor((Date.now() - actionStarted) / 1000);
+  const status = failure || (isBusy() && shots.busy ? `正在绘制画面 · 已等待 ${elapsed} 秒，完成后自动保存` : message);
+  if (!voice?.isActive() || failure || shots.busy) $("voiceStatus").textContent = status;
+  $("resultMessage").textContent = status;
+}
 function renderVoice() {
   if (!voice) return;
   $("voiceButton").setAttribute("aria-pressed", String(voice.isActive()));
@@ -109,12 +117,12 @@ function render() {
   $("assistantConnection").textContent = busy ? "正在协助创作" : board ? "准备好和你一起创作" : "等待连接";
   $("backendStatus").textContent = busy ? "正在执行，完成后自动保存" : "每次修改，自动保存";
   $("composerContext").dataset.busy = String(busy);
-  if (!voice?.isActive()) $("voiceStatus").textContent = message;
+  renderStatus();
+  $("sendButton").setAttribute("aria-label", busy ? "正在执行指令" : "发送指令");
   $("turnCard").hidden = !lastInput;
   $("assistantPanel").dataset.active = String(Boolean(lastInput || boards.pendingDelete));
   $("lastInput").textContent = lastInput;
   $("resultHeading").textContent = busy ? "正在完成你的指令" : failure ? "这次需要再试一下" : "已完成";
-  $("resultMessage").textContent = failure || message;
   $("clarificationCard").hidden = !boards.pendingDelete;
   if (boards.pendingDelete) $("clarificationQuestion").textContent = boards.pendingDelete.message;
   document.querySelectorAll("[data-delete-answer]").forEach(button => { button.disabled = busy; });
@@ -163,15 +171,17 @@ function fitCanvas() {
   const maxHeight = Math.max(160, $("canvasViewport").clientHeight - 125);
   $("canvasStage").style.maxWidth = innerWidth > 640 ? `${Math.min(1200, maxHeight * 16 / 9)}px` : "100%";
 }
-function showError(error) { failure = error?.message || String(error); render(); }
+function errorMessage(error) { return error instanceof TypeError ? "连接失败，请检查服务并刷新确认结果后再试。" : error?.message || String(error); }
+function showError(error) { failure = errorMessage(error); render(); }
 function toast(text) { $("toast").textContent = text; $("toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3500); }
 async function act(fn, { guard = true } = {}) {
   if (isBusy()) throw new Error("正在完成上一条指令，请稍候");
   if (guard && textEditor?.previewSvg) { const e = new Error("请先应用或关闭文字预览，再切换镜头或执行指令。"); showError(e); throw e; }
-  working = true; failure = ""; message = "正在完成指令，请稍候…"; render();
+  working = true; failure = ""; message = "正在完成指令，请稍候…";
+  actionStarted = Date.now(); progressTimer = setInterval(renderStatus, 1000); render();
   try { const result = await fn(); message = typeof result === "string" ? result : "已保存，可以继续创作。"; return message; }
-  catch (error) { failure = error instanceof TypeError ? "连接失败，请检查服务并刷新确认结果后再试。" : error.message; throw error; }
-  finally { working = false; render(); }
+  catch (error) { failure = errorMessage(error); message = "本次指令未完成，输入已保留。"; throw error; }
+  finally { clearInterval(progressTimer); working = false; render(); }
 }
 // 按钮吞掉已展示的错误；语音路径保留异常供语音反馈播报。
 const clickAction = fn => { void fn().catch(showError); };

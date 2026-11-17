@@ -81,6 +81,30 @@ test("执行期间拒绝第二条请求，网络失败后保留旧项目", async
   assert.equal(requests.length, 1);
 });
 
+test("模型返回相同画面时说明没有变化，不误报保存成功", async () => {
+  const { client, requests } = setup([
+    response({ board: board(), action: "draw", targetId: "a", instruction: "把伞改蓝" }),
+    response(board()),
+  ], async () => response(board().activeShot));
+  const result = await client.execute("把伞改蓝");
+  assert.match(result, /没有变化/);
+  assert.doesNotMatch(result, /已保存/);
+  assert.equal(client.shots.shot.svg, "saved SVG");
+  assert.equal(requests.length, 2);
+});
+
+test("模型服务失败保留画面并传播可见错误，不自动重试", async () => {
+  let calls = 0;
+  const { client } = setup([
+    response({ board: board(), action: "draw", targetId: "a", instruction: "把伞改蓝" }),
+  ], async () => { calls++; return response({ detail: "绘图服务连接中断" }, 502); });
+  await assert.rejects(client.execute("把伞改蓝"), /连接中断/);
+  assert.equal(client.shots.shot.svg, "saved SVG");
+  assert.equal(client.busy, false);
+  assert.equal(client.shots.busy, false);
+  assert.equal(calls, 1);
+});
+
 test("持续语音会话执行最终转写后恢复监听，播报期间不重复执行", async () => {
   let handlers;
   const spoken = [];
