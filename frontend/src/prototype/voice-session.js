@@ -264,6 +264,11 @@ export class VoiceSessionController {
         this.handleFinalTranscript(text);
       },
       onError: (error) => {
+        if (["not-allowed", "service-not-allowed", "audio-capture"].includes(error.message)) {
+          void this.stop({ speak: false });
+          this.onStatusChange("麦克风或语音服务不可用，请检查权限；也可以直接输入同样的指令。");
+          return;
+        }
         this.onStatusChange(error.message || "语音识别失败，正在尝试恢复监听");
       },
       onEnd: () => {

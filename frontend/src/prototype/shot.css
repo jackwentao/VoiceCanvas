@@ -298,7 +298,7 @@ textarea:focus {
   margin:0 8px
 }
 .canvas-stage {
-  flex:1;
+  flex:none;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -419,6 +419,27 @@ textarea:focus {
 body.is-busy .frame {
   box-shadow:0 0 0 2px #98b299,0 12px 42px #34452b0c
 }
+.board-panel { margin:0 0 24px }
+.board-panel select { width:100%; padding:9px; font:inherit; font-size:12px; background:#fffef9; color:inherit; border:1px solid #cfd8cc; border-radius:6px }
+.board-heading { display:flex; gap:12px; justify-content:space-between; align-items:center; margin:16px 0 10px }
+.board-heading h2 { margin:0; font-size:14px; overflow-wrap:anywhere }
+.board-heading span { font-size:10px; color:var(--muted); flex-shrink:0 }
+.shot-list { list-style:none; margin:0 0 12px; padding:0; max-height:300px; overflow:auto }
+.shot-list li { margin:6px 0 }
+.shot-list button { width:100%; display:flex; text-align:left; gap:10px; align-items:center; padding:7px; background:transparent }
+.shot-list button[aria-current="true"] { border-color:#397257; background:#eaf1e5 }
+.shot-thumbnail { width:72px; height:41px; object-fit:contain; background:#e5eadf; flex-shrink:0; border-radius:3px }
+.shot-empty { display:grid; place-items:center; color:#819075; font-size:11px }
+.shot-label { font-size:12px; overflow-wrap:anywhere }
+.shot-label small { display:block; color:var(--muted); font-size:9px; margin-bottom:3px }
+.board-tools { display:flex; flex-wrap:wrap; gap:5px }
+.board-tools button { padding:7px; font-size:10px }
+.voice-help { color:var(--muted); font-size:10px; line-height:1.8 }
+.delete-confirmation { padding:10px; margin-top:10px; background:#fff2e5; border:1px solid #dbc1a4; border-radius:7px }
+.delete-confirmation p { font-size:12px; line-height:1.6; overflow-wrap:anywhere }
+.delete-confirmation button { font-size:11px; padding:7px }
+#voiceMode[aria-pressed="true"] { color:white; background:var(--green) }
+@media(max-width:700px) { .top-actions { flex-wrap:wrap; justify-content:flex-end; gap:4px; max-width:240px } .top-actions button { padding:6px; font-size:10px } .topbar { height:auto; min-height:76px; gap:8px; padding-top:10px; padding-bottom:10px } .shot-list { display:flex; max-height:none; overflow-x:auto; gap:6px } .shot-list li { min-width:150px; max-width:190px; flex-shrink:0 } .shot-list button { flex-direction:column; align-items:flex-start } .shot-thumbnail { width:128px; height:72px } }
 @keyframes pulse {
   50% {
     opacity:.25
@@ -458,14 +479,15 @@ body.is-busy .frame {
 }
 @media(max-width:700px) {
   .topbar {
-    height:68px;
-    padding:0 18px
+    height:auto;
+    min-height:76px;
+    padding:10px 18px
   }
   .brand {
     font-size:16px
   }
   .top-actions {
-    gap:10px
+    gap:4px
   }
   .save-state {
     display:none
