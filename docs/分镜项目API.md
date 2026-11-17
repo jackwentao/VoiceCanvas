@@ -8,7 +8,7 @@
 
 | 请求 | 用途 |
 | --- | --- |
-| `POST /api/storyboards` | `{title?, existingShotId?}`，创建含一个镜头的项目；可复制旧镜头及其完整历史 |
+| `POST /api/storyboards` | `{title?}`，创建含一个空镜头的项目 |
 | `GET /api/storyboards` | 最近更新的 50 个项目，返回 ID、标题和镜头数 |
 | `GET /api/storyboards/{id}` | 顺序、当前镜头、缩略 SVG、画面版本、结构撤销状态和当前画面完整历史 |
 | `POST /api/storyboards/{id}/manage` | `{expectedVersion, action, targetId?, title?, position?, count?, confirmed?}` |
@@ -26,7 +26,7 @@
 
 删除只移除编排引用，保留画面文档，便于撤销恢复；本期没有物理清理或删除项目功能。超过结构历史窗口后，不能保证从界面恢复已删除镜头。管理版本与画面版本分开比较；错误为 404（不存在）、409（过期版本）、422（无效指令/参数）。版本冲突不自动重试模型。
 
-SQLite 仓储在同一事务中提交项目更新和新增画面，CAS 失败不留下新增画面。旧 `shot` URL 迁入项目时复制原文档到新 ID，原 URL 保持独立。原有 `/api/shots` 与 `index.html` 路径继续可用。
+SQLite 仓储在同一事务中提交项目更新和新增画面，CAS 失败不留下新增画面。工作台仅通过 `board` 定位项目，不提供单镜头迁移入口。
 
 ## 依赖边界与测试
 
@@ -39,4 +39,4 @@ python -m pytest tests/test_storyboards.py -q
 python -m pytest -q
 ```
 
-测试使用临时 SQLite 和生成器替身，不需要联网或密钥，覆盖结构生命周期、独立画面历史、复制/迁移、删除恢复、冲突、事务和转写路由。语音与浏览器入口验收见 [语音分镜管理](语音分镜管理.md)。
+测试使用临时 SQLite 和生成器替身，不需要联网或密钥，覆盖结构生命周期、独立画面历史、复制、删除恢复、冲突、事务和转写路由。语音与浏览器入口验收见 [语音分镜管理](语音分镜管理.md)。

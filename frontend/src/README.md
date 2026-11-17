@@ -1,31 +1,23 @@
 # VoiceCanvas 前端源码
 
-手绘首页入口为 `prototype/index.html`，工作台入口为 `prototype/workspace.html`。
-前端只负责展示与交互，项目、命令、澄清、历史、
-用量和偏好均由后端决定与保存。
+首页为 `prototype/index.html`，统一工作台为 `prototype/workspace.html`。工作台直接加载自由 SVG 分镜控制器，不提供旧页面、旧项目分流或单镜头迁移入口。
 
 | 模块 | 边界 |
 | --- | --- |
-| `home.js`、`home-controller.js`、`home.css` | 画廊投影、分类请求、作品预览、创建请求和页面导航；不保存业务数据 |
-| `app.js` | 页面装配、事件绑定、临时选中与面板状态 |
-| `workspace-controller.js` | 请求串行化、快照读取、错误恢复；不运行领域命令 |
-| `backend-client.js` | 固定业务接口和 SSE 传输 |
-| `canvas-renderer.js`、`shape-renderer.js`、`text-layout.js` | 后端数据的画布投影 |
-| `voice-session.js` | 麦克风、转写、播报与监听恢复 |
-| `file-download.js` | 下载后端产物、后端授权的 PNG 展示转换 |
-| `paper-theme.css` | 首页与工作台共用的纸张、墨绿、手写标题视觉令牌；原生 CSS，无新增依赖 |
-| `workspace.css`、`canvas-elements.css` | 画桌界面与作品样式隔离；纸纹、胶带和涂鸦不进入作品导出 |
+| home.js / home-controller.js | 画廊展示、创建分镜与页面导航 |
+| showcase-client.js | 只读画廊请求 |
+| svg-workspace.js | 页面装配、交互、语音指令与保存反馈 |
+| storyboard-client.js | 分镜请求、结构版本、确认和并发控制 |
+| shot-client.js | 画面生成、修改、直接改字与画面版本 |
+| shot-text-editor.js / shot-text-layout.js | 文字测量、预览与排版 |
+| voice-session.js | 麦克风、转写、播报与监听恢复 |
+| paper-theme.css / workspace.css / svg-workspace.css | main 手绘视觉与自由 SVG 内容适配 |
 
-原型早期的 mock-data/state-sync/element-patch/export-service 已移到 `frontend/tests/fixtures`，
-仅供历史回归测试使用，不随前端静态页面提供。新代码不得重新接入本地领域命令或浏览器业务存储。
+业务状态保存在后端；浏览器只保存最近项目定位及尚未应用的文字草稿。模型 SVG 使用 Blob img 预览，不注入页面执行。
 
 ```powershell
-npm --prefix frontend run test:prototype
+npm --prefix frontend test
+npm --prefix frontend run test:workspace-browser
 ```
 
-详见 [工作台接口](../../docs/工作台接口.md) 与 [使用验收](../../docs/工作台使用与验收.md)。
-
-首页和工作台沿用同一套原创手绘视觉。字体使用系统字体栈，未下载字体或引入设计 SDK。
-手写字体只用于界面标题；作品保留原有字体、真实比例和后端指定的颜色。
-空白引导在窄屏预留最小高度，有作品时仍按后端画布比例缩放。
-视觉验收步骤见上述使用验收文档的“首页与画桌视觉连续性”。
+浏览器测试需先启动后端 fixture，完整命令见 [工作台适配](../../docs/main工作台分镜适配.md)。历史 fixtures 只供回归测试，不作为产品入口。

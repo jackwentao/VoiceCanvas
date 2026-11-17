@@ -43,9 +43,9 @@ export class StoryboardClient {
     } finally { this.busy = false; this.onChange(this); }
   }
 
-  create(existingShotId) {
+  create() {
     return this.run(async () => {
-      const board = await this.request("", { title: "未命名分镜", ...(existingShotId ? { existingShotId } : {}) });
+      const board = await this.request("", { title: "未命名分镜" });
       this.pendingDelete = null;
       this.accept(board);
       return board;

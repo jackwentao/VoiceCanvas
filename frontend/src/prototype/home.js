@@ -1,4 +1,4 @@
-import { loadShowcase, resolveBackendUrl } from "./backend-client.js";
+import { loadShowcase, resolveBackendUrl } from "./showcase-client.js";
 import { createHomeController, pageUrl } from "./home-controller.js";
 import { ShotClient } from "./shot-client.js";
 import { StoryboardClient } from "./storyboard-client.js";
@@ -14,7 +14,7 @@ const dialog = $("#artworkDialog");
 const boardApi = new StoryboardClient({ shots: new ShotClient({ baseUrl: resolveBackendUrl("/") }) });
 const controller = createHomeController(
   { showcase: loadShowcase, create: () => boardApi.request("", { title: "未命名分镜" }) }, render,
-  url => { location.href = url; }, location.search, { projectParam: "board" }
+  url => { location.href = url; }, location.search
 );
 
 document.querySelectorAll(".workspace-link").forEach(link => {
@@ -108,10 +108,4 @@ dialog.addEventListener("click", event => { if (event.target === dialog) {
 } });
 $("#retryGallery").addEventListener("click", () => controller.load(controller.state.category));
 
-// 兼容已分享的旧工作台链接；普通首页访问不会创建项目。
-if (new URLSearchParams(location.search).has("projectId")) {
-  location.replace(pageUrl("workspace.html", location.search,
-    new URLSearchParams(location.search).get("projectId")));
-} else {
-  controller.load();
-}
+controller.load();

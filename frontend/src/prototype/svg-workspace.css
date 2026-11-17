@@ -1,6 +1,4 @@
 /* 只适配自由 SVG 内容与新增工具，基础视觉来自 main 的 paper-theme/workspace。 */
-.svg-workspace #memoryButton,.svg-workspace #importButton,.svg-workspace .background-control,
-.svg-workspace #processDetails { display:none }
 .svg-workspace .canvas-surface { inset:0; width:100%; height:100%; background:transparent }
 .svg-workspace .canvas-surface img { width:100%; height:100%; object-fit:contain; display:block }
 .svg-workspace .scene-thumbnail img { display:block; width:100%; height:100%; object-fit:contain }

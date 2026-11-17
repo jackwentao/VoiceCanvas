@@ -42,16 +42,16 @@ test("新画布必须由后端创建；请求期间重复点击只创建一次",
   const controller = createHomeController({ create: () => { calls++; return pending.promise; } }, () => {}, url => destinations.push(url), "?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8018&projectId=old");
   const a = controller.create(); await controller.create();
   assert.equal(calls, 1); assert.equal(destinations.length, 0);
-  pending.resolve({ project: { id: "server-project" } }); await a;
-  assert.deepEqual(destinations, ["./workspace.html?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8018&projectId=server-project"]);
+  pending.resolve({ id: "server-project" }); await a;
+  assert.deepEqual(destinations, ["./workspace.html?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8018&board=server-project"]);
 });
 
 test("创建失败停留首页，允许显式重试", async () => {
   let fail = true; const destinations = [];
-  const controller = createHomeController({ create: async () => { if (fail) throw new Error("offline"); return { project: { id: "saved" } }; } }, () => {}, url => destinations.push(url));
+  const controller = createHomeController({ create: async () => { if (fail) throw new Error("offline"); return { id: "saved" }; } }, () => {}, url => destinations.push(url));
   await controller.create(); assert.equal(destinations.length, 0); assert.ok(controller.state.creationError);
   assert.equal(controller.state.creating, false); fail = false;
-  await controller.create(); assert.deepEqual(destinations, ["./workspace.html?projectId=saved"]);
+  await controller.create(); assert.deepEqual(destinations, ["./workspace.html?board=saved"]);
 });
 
 test("首页导航保留连接设置，返回首页时不携带旧项目定位", () => {
@@ -62,8 +62,7 @@ test("首页导航保留连接设置，返回首页时不携带旧项目定位",
 test("自由SVG创建使用分镜API返回的id，跳转保留board定位与连接参数", async () => {
   const destinations = [];
   const controller = createHomeController({ create: async () => ({ id: "board_server" }) },
-    () => {}, url => destinations.push(url), "?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8013&projectId=old",
-    { projectParam: "board" });
+    () => {}, url => destinations.push(url), "?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8013&projectId=old");
   await controller.create();
   assert.deepEqual(destinations, ["./workspace.html?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8013&board=board_server"]);
   assert.equal(pageUrl("index.html", "?board=old&shot=old&apiBaseUrl=x"), "./index.html?apiBaseUrl=x");

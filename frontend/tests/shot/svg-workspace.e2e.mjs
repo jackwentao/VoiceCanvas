@@ -72,13 +72,18 @@ try {
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
   const frame = await page.locator("#canvasStage").boundingBox(); assert.ok(Math.abs(frame.width / frame.height - 16 / 9) < 0.02);
   if (out) await page.screenshot({ path: `${out}/mobile.png`, fullPage: true });
-  await page.goto(`${ui}/shot.html?apiBaseUrl=${encodeURIComponent(api)}&board=${new URL(savedUrl).searchParams.get("board")}`);
-  await page.waitForURL(/workspace.html.*board=/); await count(4);
   await page.setViewportSize({ width: 1500, height: 1000 });
+  const before = requests.length;
+  await page.goto(`${ui}/index.html?apiBaseUrl=${encodeURIComponent(api)}&projectId=project_demo_voicecanvas`);
+  await page.locator("[data-create]").first().waitFor();
+  assert.equal(new URL(page.url()).pathname, "/index.html");
+  assert.equal(requests.length, before, "首页不应因旧参数创建或迁移项目");
   await page.goto(`${ui}/workspace.html?apiBaseUrl=${encodeURIComponent(api)}&projectId=project_demo_voicecanvas`);
-  await page.waitForFunction(() => document.querySelector("#saveStatus").textContent.includes("已同步"));
-  assert.equal(await page.locator("body").evaluate(e => e.classList.contains("svg-workspace")), false);
-  assert.equal(await page.locator("#importButton").isVisible(), true);
+  await count(4);
+  assert.equal(await page.locator("body").evaluate(e => e.classList.contains("svg-workspace")), true);
+  assert.equal(new URL(page.url()).searchParams.has("projectId"), false);
+  for (const selector of ["#importButton", "#memoryDialog", "#backgroundColorInput"]) assert.equal(await page.locator(selector).count(), 0);
+  assert.equal((await page.request.get(`${ui}/shot.html`)).status(), 404);
   assert.deepEqual(errors, []);
-  console.log("main 工作台适配 E2E 通过：首页API、分镜、改字、语音转写、下载、恢复、窄屏与旧链接。");
+  console.log("工作台 E2E 通过：首页API、分镜、改字、语音、导出、恢复、窄屏；无旧入口分流。");
 } finally { await browser.close(); }

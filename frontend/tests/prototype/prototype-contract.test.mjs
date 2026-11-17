@@ -370,21 +370,19 @@ function testBackendPatchUpdatesProjectTitleAndNarration() {
 async function testPrototypeHtml() {
   const root = new URL("../../src/prototype/", import.meta.url);
   const html = await readFile(new URL("workspace.html", root), "utf-8");
-  const app = await readFile(new URL("app.js", root), "utf-8");
-  const model = await readFile(new URL("workspace-controller.js", root), "utf-8");
+  const app = await readFile(new URL("svg-workspace.js", root), "utf-8");
   const css = await readFile(new URL("workspace.css", root), "utf-8");
   for (const id of ["voiceButton", "voiceInput", "canvasSurface", "sceneList", "undoButton",
-    "redoButton", "clarificationCard", "exportButton", "memoryDialog", "retryButton"]) {
+    "redoButton", "clarificationCard", "exportButton", "textEditor", "retryButton"]) {
     assert.ok(html.includes(`id="${id}"`), `工作台缺少入口 ${id}`);
   }
-  for (const forbidden of ["mock-data", "executeCommand", "LocalFallback", "localStorage",
-    "createProjectBundle", "resolveClarificationOption"]) {
-    assert.ok(!app.includes(forbidden) && !model.includes(forbidden), `页面不得包含本地业务：${forbidden}`);
+  assert.ok(html.includes('src="./svg-workspace.js"'));
+  for (const removed of ["memoryDialog", "memoryButton", "importButton", "backgroundColorInput", "workspace-entry.js"]) {
+    assert.ok(!html.includes(removed), `工作台不应保留旧入口 ${removed}`);
   }
-  assert.ok(app.includes("createWorkspaceController"));
-  assert.ok(app.includes('action:"switch_scene"'));
-  assert.ok(app.includes('action:"set_background"'));
-  assert.ok(html.includes("data-requires-project"));
+  assert.ok(app.includes("new StoryboardClient"));
+  assert.ok(!app.includes('params.get("shot")'));
+  assert.ok(!app.includes('import("./app.js")'));
   assert.ok(css.includes("prefers-reduced-motion"));
   assert.ok(css.includes("max-width:680px"));
 }

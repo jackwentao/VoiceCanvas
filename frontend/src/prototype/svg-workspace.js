@@ -10,7 +10,6 @@ const params = new URLSearchParams(location.search);
 const baseUrl = (window.VOICECANVAS_API_BASE_URL || params.get("apiBaseUrl") || "http://127.0.0.1:8000").replace(/\/+$/, "");
 const storageKey = `voicecanvas:last-board:${baseUrl}`;
 document.body.classList.add("svg-workspace");
-document.querySelectorAll("[data-svg-only]").forEach(node => { node.hidden = false; });
 document.querySelector(".brand").href = pageUrl("index.html", location.search);
 renderWorkspaceIcons();
 $("exportMenu").replaceChildren(...[ ["png", "当前镜头 · PNG"], ["svg", "当前镜头 · SVG"] ].map(([format, text]) => {
@@ -248,8 +247,8 @@ window.addEventListener("pagehide", () => { void voice.stop({ speak: false }); r
 async function connect() {
   await act(async () => {
     let id = params.get("board");
-    if (!id && !params.has("shot")) { try { id = localStorage.getItem(storageKey); } catch { /* URL 可恢复。 */ } }
-    if (id) await boards.load(id); else await boards.create(params.get("shot") || undefined);
+    if (!id) { try { id = localStorage.getItem(storageKey); } catch { /* URL 可恢复。 */ } }
+    if (id) await boards.load(id); else await boards.create();
     await refreshProjects(); return recognition.isSupported() ? "准备好了，说说你的想法吧。" : "当前浏览器不支持语音，可以输入文字继续创作。";
   });
 }

@@ -5,7 +5,7 @@ from collections.abc import Callable
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from voicecanvas.api.shots import ShotChange, present_shot
 from voicecanvas.application.shot_service import ShotConflict, ShotNotFound
@@ -15,8 +15,9 @@ from voicecanvas.domain.storyboard import Storyboard
 
 
 class CreateStoryboard(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     title: str = Field(default="未命名分镜", min_length=1, max_length=100)
-    existing_shot_id: str | None = Field(default=None, alias="existingShotId", max_length=100)
 
 
 class StoryboardChange(ShotChange):
@@ -82,7 +83,7 @@ def create_storyboard_router(factory: Callable[[], StoryboardService]) -> APIRou
     @router.post("", status_code=201)
     def create(request: CreateStoryboard) -> dict:
         return execute(
-            lambda: present(get_service().create(request.title, request.existing_shot_id))
+            lambda: present(get_service().create(request.title))
         )
 
     @router.get("")
