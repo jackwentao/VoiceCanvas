@@ -1,0 +1,27 @@
+{
+  "svgValidations": 4,
+  "patchBatchesReplayedExactly": 2,
+  "retainedEqualsCandidate2": true,
+  "pixelDifference": [
+    {
+      "candidate": "candidate-1",
+      "changedPixels": 2411,
+      "bounds": [
+        558,
+        408,
+        148,
+        154
+      ]
+    },
+    {
+      "candidate": "candidate-2",
+      "changedPixels": 2797,
+      "bounds": [
+        558,
+        408,
+        148,
+        154
+      ]
+    }
+  ]
+}
