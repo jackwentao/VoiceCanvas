@@ -212,6 +212,44 @@ def test_streaming_generation_counts_reasoning_but_does_not_draw_it():
     assert model == "test"
 
 
+@pytest.mark.parametrize("effort", [None, "off", "low"])
+def test_reasoning_effort_is_explicit_and_applies_to_draw_and_edit(effort):
+    calls = []
+
+    def handler(request):
+        payload = json.loads(request.content)
+        calls.append(payload)
+        assert payload.get("reasoning_effort") == effort
+        assert ("reasoning_effort" in payload) == (effort is not None)
+        assert "thinking" not in payload
+        content = SVG if len(calls) == 1 else json.dumps({
+            "edits": [{"old": 'fill="orange"', "new": 'fill="blue"'}]
+        })
+        return httpx.Response(200, json={
+            "choices": [{"message": {"content": content}, "finish_reason": "stop"}]
+        })
+
+    generator = OpenAICompatibleShotGenerator(
+        ShotModelConfig("https://example.test/v1", "test", reasoning_effort=effort),
+        httpx.MockTransport(handler),
+    )
+    drawn = generator.generate("画猫", None)[0]
+    assert 'fill="blue"' in generator.generate("改成蓝色", drawn)[0]
+    assert len(calls) == 2
+
+
+def test_reasoning_factory_defaults_to_fast_and_can_use_provider_default(tmp_path, monkeypatch):
+    monkeypatch.setattr("voicecanvas.infrastructure.settings.load_dotenv", lambda: None)
+    monkeypatch.setenv("VOICECANVAS_SHOT_DB_PATH", str(tmp_path / "shots.sqlite3"))
+    monkeypatch.delenv("VOICECANVAS_SHOT_REASONING_EFFORT", raising=False)
+    assert create_shot_service().generator.config.reasoning_effort == "off"
+    monkeypatch.setenv("VOICECANVAS_SHOT_REASONING_EFFORT", "provider-default")
+    assert create_shot_service().generator.config.reasoning_effort is None
+    monkeypatch.setenv("VOICECANVAS_SHOT_REASONING_EFFORT", "unsupported")
+    with pytest.raises(ValueError, match="思考强度"):
+        create_shot_service()
+
+
 def test_model_local_edit():
     edits = json.dumps({"edits": [{"old": 'fill="orange"', "new": 'fill="white"'}]})
     svg, _, _ = generator_with_response(edits).generate("白猫", validate_svg(SVG))
@@ -337,6 +375,7 @@ def test_optional_local_address_reaches_transport_without_retry(monkeypatch):
 
 
 def test_factory_local_address_is_optional(tmp_path, monkeypatch):
+    monkeypatch.setattr("voicecanvas.infrastructure.settings.load_dotenv", lambda: None)
     monkeypatch.setenv("VOICECANVAS_SHOT_DB_PATH", str(tmp_path / "shots.sqlite3"))
     monkeypatch.delenv("VOICECANVAS_SHOT_LOCAL_ADDRESS", raising=False)
     assert create_shot_service().generator.config.local_address is None

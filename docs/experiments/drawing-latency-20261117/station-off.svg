@@ -1,0 +1,186 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2a4a" />
+      <stop offset="35%" stop-color="#8a4a5a" />
+      <stop offset="60%" stop-color="#d97a4a" />
+      <stop offset="80%" stop-color="#f0b060" />
+      <stop offset="100%" stop-color="#f5d090" />
+    </linearGradient>
+    <linearGradient id="platformGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6a5a5a" />
+      <stop offset="100%" stop-color="#4a3a3a" />
+    </linearGradient>
+    <linearGradient id="trainGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a6a7a" />
+      <stop offset="100%" stop-color="#3a4a5a" />
+    </linearGradient>
+    <linearGradient id="coatGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f5c842" />
+      <stop offset="100%" stop-color="#e0a820" />
+    </linearGradient>
+    <linearGradient id="umbrellaGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e84040" />
+      <stop offset="100%" stop-color="#b02020" />
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.7" cy="0.75" r="0.5">
+      <stop offset="0%" stop-color="#ffe8a0" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#ffe8a0" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+    <filter id="trainBlur" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur stdDeviation="2.5" />
+    </filter>
+  </defs>
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="url(#skyGrad)" />
+
+  
+  <ellipse cx="900" cy="520" rx="300" ry="200" fill="url(#sunGlow)" />
+
+  
+  <g id="distant-buildings" opacity="0.35">
+    <rect x="0" y="380" width="80" height="120" fill="#2a1a2a" />
+    <rect x="90" y="350" width="60" height="150" fill="#2a1a2a" />
+    <rect x="160" y="400" width="100" height="100" fill="#2a1a2a" />
+    <rect x="1050" y="370" width="70" height="130" fill="#2a1a2a" />
+    <rect x="1130" y="340" width="90" height="160" fill="#2a1a2a" />
+    <rect x="1230" y="390" width="50" height="110" fill="#2a1a2a" />
+  </g>
+
+  
+  <rect x="0" y="460" width="1280" height="40" fill="#3a2a2a" />
+  <rect x="0" y="500" width="1280" height="60" fill="#2a1a1a" />
+
+  
+  <g id="train" filter="url(#trainBlur)">
+    <rect x="200" y="330" width="900" height="130" rx="8" fill="url(#trainGrad)" />
+    
+    <g fill="#f0c060" opacity="0.7">
+      <rect x="240" y="355" width="50" height="40" rx="4" />
+      <rect x="310" y="355" width="50" height="40" rx="4" />
+      <rect x="380" y="355" width="50" height="40" rx="4" />
+      <rect x="450" y="355" width="50" height="40" rx="4" />
+      <rect x="520" y="355" width="50" height="40" rx="4" />
+      <rect x="590" y="355" width="50" height="40" rx="4" />
+      <rect x="660" y="355" width="50" height="40" rx="4" />
+      <rect x="730" y="355" width="50" height="40" rx="4" />
+      <rect x="800" y="355" width="50" height="40" rx="4" />
+      <rect x="870" y="355" width="50" height="40" rx="4" />
+      <rect x="940" y="355" width="50" height="40" rx="4" />
+      <rect x="1010" y="355" width="50" height="40" rx="4" />
+    </g>
+    
+    <path d="M200 330 L160 380 L160 460 L200 460 Z" fill="#4a5a6a" />
+    
+    <circle cx="175" cy="400" r="10" fill="#ffe8a0" opacity="0.8" />
+    
+    <rect x="200" y="440" width="900" height="6" fill="#2a3a4a" />
+  </g>
+
+  
+  <rect x="0" y="520" width="1280" height="200" fill="url(#platformGrad)" />
+  
+  <rect x="0" y="520" width="1280" height="6" fill="#8a7a6a" />
+
+  
+  <g opacity="0.15">
+    <line x1="0" y1="560" x2="1280" y2="560" stroke="#aaa" stroke-width="1" />
+    <line x1="0" y1="600" x2="1280" y2="600" stroke="#aaa" stroke-width="1" />
+    <line x1="0" y1="640" x2="1280" y2="640" stroke="#aaa" stroke-width="1" />
+    <line x1="0" y1="680" x2="1280" y2="680" stroke="#aaa" stroke-width="1" />
+  </g>
+
+  
+  <g id="bench">
+    
+    <rect x="480" y="560" width="10" height="60" fill="#4a3020" />
+    <rect x="700" y="560" width="10" height="60" fill="#4a3020" />
+    <rect x="480" y="560" width="10" height="60" fill="#4a3020" />
+    <rect x="700" y="560" width="10" height="60" fill="#4a3020" />
+    
+    <rect x="470" y="545" width="250" height="18" rx="4" fill="#6a4a30" />
+    <rect x="470" y="545" width="250" height="6" rx="3" fill="#8a6a48" />
+    
+    <rect x="470" y="490" width="250" height="12" rx="4" fill="#6a4a30" />
+    <rect x="470" y="490" width="250" height="4" rx="2" fill="#8a6a48" />
+    
+    <rect x="485" y="500" width="8" height="48" fill="#5a3a20" />
+    <rect x="700" y="500" width="8" height="48" fill="#5a3a20" />
+  </g>
+
+  
+  <g id="girl">
+    
+    <path d="M560 545 L555 620 L575 620 L580 545 Z" fill="#3a3a5a" />
+    <path d="M600 545 L595 620 L615 620 L620 545 Z" fill="#3a3a5a" />
+    
+    <ellipse cx="565" cy="625" rx="18" ry="8" fill="#2a2a3a" />
+    <ellipse cx="605" cy="625" rx="18" ry="8" fill="#2a2a3a" />
+    
+    <path d="M545 460 Q540 500 545 545 L625 545 Q630 500 625 460 Q610 440 585 440 Q560 440 545 460 Z" fill="url(#coatGrad)" />
+    
+    <path d="M555 445 Q570 460 585 460 Q600 460 615 445 Q605 435 585 435 Q565 435 555 445 Z" fill="#e0a820" />
+    
+    <path d="M545 470 Q530 500 535 530 Q540 540 550 535 Q555 520 550 490 Z" fill="#e0a820" />
+    <path d="M625 470 Q640 500 635 530 Q630 540 620 535 Q615 520 620 490 Z" fill="#e0a820" />
+    
+    <circle cx="540" cy="535" r="8" fill="#f0c8a0" />
+    <circle cx="630" cy="535" r="8" fill="#f0c8a0" />
+    
+    <ellipse cx="585" cy="415" rx="32" ry="36" fill="#f0c8a0" />
+    
+    <path d="M553 410 Q550 380 570 370 Q585 365 600 370 Q620 380 617 410 Q615 395 600 390 Q585 388 570 390 Q558 395 553 410 Z" fill="#3a2a1a" />
+    <path d="M553 410 Q548 430 555 445 Q560 435 558 420 Z" fill="#3a2a1a" />
+    <path d="M617 410 Q622 430 615 445 Q610 435 612 420 Z" fill="#3a2a1a" />
+    
+    <ellipse cx="573" cy="415" rx="4" ry="4.5" fill="#2a1a1a" />
+    <ellipse cx="597" cy="415" rx="4" ry="4.5" fill="#2a1a1a" />
+    
+    <circle cx="574" cy="413" r="1.5" fill="#fff" />
+    <circle cx="598" cy="413" r="1.5" fill="#fff" />
+    
+    <ellipse cx="565" cy="425" rx="6" ry="3" fill="#e8a080" opacity="0.5" />
+    <ellipse cx="605" cy="425" rx="6" ry="3" fill="#e8a080" opacity="0.5" />
+    
+    <path d="M580 428 Q585 432 590 428" stroke="#c06050" stroke-width="1.5" fill="none" stroke-linecap="round" />
+    
+    <path d="M555 450 Q570 460 585 458 Q600 460 615 450 Q610 465 585 468 Q560 465 555 450 Z" fill="#d05050" />
+  </g>
+
+  
+  <g id="umbrella">
+    
+    <line x1="660" y1="540" x2="660" y2="420" stroke="#5a3a20" stroke-width="6" stroke-linecap="round" />
+    
+    <path d="M580 420 Q620 340 660 340 Q700 340 740 420 Q700 400 660 400 Q620 400 580 420 Z" fill="url(#umbrellaGrad)" />
+    
+    <path d="M600 415 Q630 360 660 355 Q690 360 720 415 Q690 395 660 395 Q630 395 600 415 Z" fill="#f06060" opacity="0.3" />
+    
+    <circle cx="660" cy="338" r="4" fill="#b02020" />
+    
+    <line x1="660" y1="400" x2="600" y2="418" stroke="#8a1a1a" stroke-width="2" opacity="0.5" />
+    <line x1="660" y1="400" x2="720" y2="418" stroke="#8a1a1a" stroke-width="2" opacity="0.5" />
+    <line x1="660" y1="400" x2="660" y2="340" stroke="#8a1a1a" stroke-width="2" opacity="0.5" />
+  </g>
+
+  
+  <g id="platform-lights">
+    <rect x="350" y="300" width="6" height="220" fill="#4a3a3a" />
+    <ellipse cx="353" cy="300" rx="20" ry="12" fill="#ffe8a0" opacity="0.6" />
+    <ellipse cx="353" cy="300" rx="10" ry="6" fill="#fff8d0" opacity="0.8" />
+    <rect x="920" y="300" width="6" height="220" fill="#4a3a3a" />
+    <ellipse cx="923" cy="300" rx="20" ry="12" fill="#ffe8a0" opacity="0.6" />
+    <ellipse cx="923" cy="300" rx="10" ry="6" fill="#fff8d0" opacity="0.8" />
+  </g>
+
+  
+  <ellipse cx="560" cy="630" rx="80" ry="12" fill="#2a1a1a" opacity="0.3" />
+  <ellipse cx="660" cy="540" rx="40" ry="8" fill="#2a1a1a" opacity="0.2" />
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="#ffaa40" opacity="0.06" />
+</svg>
