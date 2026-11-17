@@ -1,0 +1,136 @@
+{
+  "textChecks": [
+    {
+      "text": "我本来想等天亮再告诉你，可是这件事，我不想再一个人扛着了。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "那就一起想办法。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "末班车",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "公交车迟迟没有来。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "镜头07｜双人中景",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "滴答",
+      "presentIgnoringWhitespace": true
+    }
+  ],
+  "allExpectedPresent": true,
+  "textOutsideCanvas": [],
+  "measurements": [
+    {
+      "id": "",
+      "text": "末班车",
+      "fontSize": "28px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 954.5,
+        "y": 198,
+        "right": 1047.5,
+        "bottom": 235
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "我本来想等天亮再告诉你，",
+      "fontSize": "21px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 95,
+        "y": 94,
+        "right": 348,
+        "bottom": 121
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "可是这件事，我不想再一个人",
+      "fontSize": "21px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 96,
+        "y": 126,
+        "right": 370,
+        "bottom": 153
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "扛着了。",
+      "fontSize": "21px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 96,
+        "y": 158,
+        "right": 180,
+        "bottom": 185
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "那就一起想办法。",
+      "fontSize": "21px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 693,
+        "y": 92,
+        "right": 861,
+        "bottom": 119
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "镜头07｜双人中景",
+      "fontSize": "16px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 33,
+        "y": 24,
+        "right": 164.765625,
+        "bottom": 45
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "滴答",
+      "fontSize": "16px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 559,
+        "y": 631,
+        "right": 595,
+        "bottom": 652
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "公交车迟迟没有来。",
+      "fontSize": "19px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 554.5,
+        "y": 674,
+        "right": 725.5,
+        "bottom": 699
+      },
+      "outsideCanvas": false
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# 留档保留原始字节，避免换行转换破坏请求、补丁及校验值。
+* -text
+# Python 在 Windows 写出的请求保留 CRLF，行尾 CR 属于换行。
+*.json whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+# 模型输出的 SVG 空白行和源码响应按原样保存。
+*.svg -whitespace
+*-response.txt -whitespace

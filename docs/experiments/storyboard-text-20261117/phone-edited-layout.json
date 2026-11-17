@@ -1,0 +1,136 @@
+{
+  "textChecks": [
+    {
+      "text": "妈妈",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "21:12",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "到家了吗？",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "我在楼下了，给你带了热汤。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "她把那句“我没事”删掉，重新打了一行字。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "镜头05｜手机特写",
+      "presentIgnoringWhitespace": true
+    }
+  ],
+  "allExpectedPresent": true,
+  "textOutsideCanvas": [],
+  "measurements": [
+    {
+      "id": "",
+      "text": "21:12",
+      "fontSize": "12.5px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 503.261130792887,
+        "y": 135.16554488602299,
+        "right": 542.3384697722025,
+        "bottom": 155.60495843903294
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "妈妈",
+      "fontSize": "17px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 592.1279236861898,
+        "y": 165.48961766293542,
+        "right": 632.5258030034732,
+        "bottom": 191.9566680484401
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "21:12",
+      "fontSize": "11px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 601.727360889821,
+        "y": 211.5094923559156,
+        "right": 634.3243317417791,
+        "bottom": 230.175634276095
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "到家了吗？",
+      "fontSize": "16px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 532.2685754981038,
+        "y": 251.3442245362118,
+        "right": 614.2315238409177,
+        "bottom": 281.9372411930914
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "我在楼下了，",
+      "fontSize": "15.5px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 588.5899012652529,
+        "y": 302.16574417682295,
+        "right": 684.3266263876401,
+        "bottom": 333.47238548973326
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "给你带了热汤。",
+      "fontSize": "15.5px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 583.5787941449458,
+        "y": 323.0572721015422,
+        "right": 694.6999846177737,
+        "bottom": 356.25288823723224
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "她把那句“我没事”删掉，重新打了一行字。",
+      "fontSize": "22px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 414,
+        "y": 667,
+        "right": 865,
+        "bottom": 696
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "镜头05｜手机特写",
+      "fontSize": "15px",
+      "fontFamily": "\"PingFang SC\", \"Hiragino Sans GB\", \"Microsoft YaHei\", \"Noto Sans SC\", sans-serif",
+      "bounds": {
+        "x": 43,
+        "y": 36,
+        "right": 181,
+        "bottom": 56
+      },
+      "outsideCanvas": false
+    }
+  ]
+}

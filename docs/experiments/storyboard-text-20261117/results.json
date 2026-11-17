@@ -1,0 +1,192 @@
+{
+  "status": "completed",
+  "tasks": {
+    "street": {
+      "status": "completed",
+      "seconds": 128.18,
+      "contentChars": 11457,
+      "reasoningChars": 26613,
+      "finish": "stop",
+      "returnedModel": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "prompt_tokens": 1082,
+        "completion_tokens": 19503,
+        "total_tokens": 20585,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 14718,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        }
+      },
+      "textSummary": {
+        "allExpectedPresent": true,
+        "outsideCanvas": 0,
+        "textObjects": 4
+      }
+    },
+    "phone": {
+      "status": "completed",
+      "seconds": 136.66,
+      "contentChars": 13440,
+      "reasoningChars": 53484,
+      "finish": "stop",
+      "returnedModel": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "prompt_tokens": 1081,
+        "completion_tokens": 21163,
+        "total_tokens": 22244,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 15906,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        }
+      },
+      "textSummary": {
+        "allExpectedPresent": true,
+        "outsideCanvas": 0,
+        "textObjects": 7
+      }
+    },
+    "dialogue": {
+      "status": "completed",
+      "seconds": 143.41,
+      "contentChars": 14010,
+      "reasoningChars": 32276,
+      "finish": "stop",
+      "returnedModel": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "prompt_tokens": 1096,
+        "completion_tokens": 23138,
+        "total_tokens": 24234,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 17616,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        }
+      },
+      "textSummary": {
+        "allExpectedPresent": true,
+        "outsideCanvas": 0,
+        "textObjects": 8
+      }
+    },
+    "street-edited": {
+      "status": "completed",
+      "seconds": 26.74,
+      "contentChars": 1020,
+      "reasoningChars": 6435,
+      "finish": "stop",
+      "returnedModel": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "prompt_tokens": 5718,
+        "completion_tokens": 3755,
+        "total_tokens": 9473,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 3356,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        }
+      },
+      "textSummary": {
+        "allExpectedPresent": true,
+        "outsideCanvas": 0,
+        "textObjects": 5
+      }
+    },
+    "phone-edited": {
+      "status": "completed",
+      "seconds": 25.35,
+      "contentChars": 1314,
+      "reasoningChars": 10677,
+      "finish": "stop",
+      "returnedModel": "deepseek/deepseek-v4.1-flash",
+      "usage": {
+        "prompt_tokens": 6307,
+        "completion_tokens": 3580,
+        "total_tokens": 9887,
+        "prompt_tokens_details": {
+          "audio_tokens": 0,
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        },
+        "completion_tokens_details": {
+          "audio_tokens": 0,
+          "reasoning_tokens": 3101,
+          "accepted_prediction_tokens": 0,
+          "rejected_prediction_tokens": 0,
+          "text_tokens": 0,
+          "image_tokens": 0,
+          "video_tokens": 0
+        }
+      },
+      "textSummary": {
+        "allExpectedPresent": true,
+        "outsideCanvas": 0,
+        "textObjects": 8
+      }
+    }
+  },
+  "startedAt": "2026-11-17T05:42:55.238Z",
+  "endedAt": "2026-11-17T05:48:12.080Z"
+}

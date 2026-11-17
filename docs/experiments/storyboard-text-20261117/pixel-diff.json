@@ -1,0 +1,22 @@
+[
+  {
+    "name": "street",
+    "changedPixels": 44019,
+    "bounds": [
+      747,
+      57,
+      502,
+      235
+    ]
+  },
+  {
+    "name": "phone",
+    "changedPixels": 13353,
+    "bounds": [
+      525,
+      139,
+      228,
+      236
+    ]
+  }
+]

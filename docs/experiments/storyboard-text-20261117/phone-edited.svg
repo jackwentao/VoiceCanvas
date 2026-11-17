@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0.3" y2="1">
+      <stop offset="0" stop-color="#05080d" />
+      <stop offset="0.45" stop-color="#0d1721" />
+      <stop offset="1" stop-color="#060a10" />
+    </linearGradient>
+    <linearGradient id="phoneBody" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#3d4d5c" />
+      <stop offset="0.35" stop-color="#1b242e" />
+      <stop offset="1" stop-color="#0a1016" />
+    </linearGradient>
+    <linearGradient id="screenBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17222d" />
+      <stop offset="0.55" stop-color="#101922" />
+      <stop offset="1" stop-color="#0a1017" />
+    </linearGradient>
+    <linearGradient id="sentBubble" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#399877" />
+      <stop offset="1" stop-color="#256b53" />
+    </linearGradient>
+    <linearGradient id="skin" x1="0.15" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="#c38b62" />
+      <stop offset="0.5" stop-color="#a26e4a" />
+      <stop offset="1" stop-color="#67422d" />
+    </linearGradient>
+    <linearGradient id="skinThumb" x1="1" y1="0.1" x2="0" y2="0.9">
+      <stop offset="0" stop-color="#8b5b3d" />
+      <stop offset="0.45" stop-color="#b47e56" />
+      <stop offset="0.85" stop-color="#d3a67f" />
+      <stop offset="1" stop-color="#e3c1a2" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#a6d0ea" stop-opacity="0.30" />
+      <stop offset="0.55" stop-color="#7ba8c6" stop-opacity="0.11" />
+      <stop offset="1" stop-color="#7ba8c6" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="scrimGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#03060a" stop-opacity="0" />
+      <stop offset="0.45" stop-color="#03060a" stop-opacity="0.62" />
+      <stop offset="1" stop-color="#03060a" stop-opacity="0.88" />
+    </linearGradient>
+    <filter id="blurBig" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="32" />
+    </filter>
+    <filter id="blurMed" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="14" />
+    </filter>
+    <filter id="blurSmall" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="5" />
+    </filter>
+    <clipPath id="screenClip">
+      <rect x="518" y="100" width="244" height="528" rx="28" />
+    </clipPath>
+  </defs>
+
+  <g font-family="'PingFang SC','Hiragino Sans GB','Microsoft YaHei','Noto Sans SC',sans-serif">
+
+    
+    <rect x="0" y="0" width="1280" height="720" fill="url(#bgGrad)" />
+
+    
+    <g opacity="0.85" filter="url(#blurSmall)">
+      <rect x="-20" y="190" width="150" height="430" fill="#070b11" />
+      <rect x="120" y="270" width="90" height="350" fill="#080d13" />
+      <rect x="1090" y="150" width="210" height="470" fill="#070b11" />
+      <rect x="1010" y="250" width="90" height="370" fill="#080d13" />
+      <g fill="#ffc98a">
+        <rect x="30" y="240" width="9" height="12" opacity="0.20" />
+        <rect x="60" y="300" width="9" height="12" opacity="0.14" />
+        <rect x="144" y="330" width="8" height="11" opacity="0.16" />
+        <rect x="1140" y="210" width="9" height="12" opacity="0.20" />
+        <rect x="1188" y="290" width="9" height="12" opacity="0.13" />
+        <rect x="1050" y="320" width="8" height="11" opacity="0.15" />
+      </g>
+    </g>
+
+    
+    <g>
+      <circle cx="158" cy="158" r="72" fill="#ff9d45" opacity="0.34" filter="url(#blurBig)" />
+      <circle cx="256" cy="272" r="38" fill="#ffb066" opacity="0.26" filter="url(#blurMed)" />
+      <circle cx="92" cy="332" r="26" fill="#ffc98a" opacity="0.22" filter="url(#blurMed)" />
+      <circle cx="1012" cy="132" r="82" fill="#ffa458" opacity="0.30" filter="url(#blurBig)" />
+      <circle cx="1132" cy="302" r="46" fill="#ffbe78" opacity="0.24" filter="url(#blurMed)" />
+      <circle cx="928" cy="82" r="30" fill="#ffd0a0" opacity="0.18" filter="url(#blurMed)" />
+      <circle cx="1216" cy="92" r="24" fill="#ffb066" opacity="0.20" filter="url(#blurMed)" />
+      <circle cx="430" cy="86" r="42" fill="#6fa8c8" opacity="0.12" filter="url(#blurBig)" />
+      <ellipse cx="210" cy="650" rx="270" ry="110" fill="#ff9d45" opacity="0.09" filter="url(#blurBig)" />
+      <ellipse cx="1080" cy="660" rx="230" ry="90" fill="#ff9d45" opacity="0.07" filter="url(#blurBig)" />
+    </g>
+
+    
+    <g filter="url(#blurMed)" opacity="0.55">
+      <ellipse cx="320" cy="692" rx="200" ry="24" fill="#ffa458" opacity="0.16" />
+      <ellipse cx="960" cy="704" rx="180" ry="20" fill="#ffb066" opacity="0.13" />
+      <ellipse cx="640" cy="716" rx="300" ry="16" fill="#7ba8c6" opacity="0.07" />
+    </g>
+
+    
+    <g stroke="#a9c4d8" stroke-width="1.7" stroke-linecap="round" opacity="0.22">
+      <line x1="80" y1="60" x2="64" y2="152" />
+      <line x1="152" y1="18" x2="136" y2="110" />
+      <line x1="242" y1="82" x2="226" y2="174" />
+      <line x1="332" y1="40" x2="316" y2="132" />
+      <line x1="422" y1="102" x2="406" y2="194" />
+      <line x1="522" y1="28" x2="506" y2="120" />
+      <line x1="612" y1="72" x2="596" y2="164" />
+      <line x1="702" y1="20" x2="686" y2="112" />
+      <line x1="802" y1="92" x2="786" y2="184" />
+      <line x1="902" y1="40" x2="886" y2="132" />
+      <line x1="1002" y1="82" x2="986" y2="174" />
+      <line x1="1102" y1="28" x2="1086" y2="120" />
+      <line x1="1202" y1="92" x2="1186" y2="184" />
+      <line x1="62" y1="222" x2="46" y2="314" />
+      <line x1="182" y1="262" x2="166" y2="354" />
+      <line x1="302" y1="202" x2="286" y2="294" />
+      <line x1="982" y1="242" x2="966" y2="334" />
+      <line x1="1092" y1="202" x2="1076" y2="294" />
+      <line x1="1212" y1="262" x2="1196" y2="354" />
+      <line x1="122" y1="382" x2="106" y2="474" />
+      <line x1="1052" y1="402" x2="1036" y2="494" />
+      <line x1="22" y1="502" x2="6" y2="594" />
+      <line x1="1232" y1="482" x2="1216" y2="574" />
+    </g>
+    <g stroke="#c9dceb" stroke-width="1.4" stroke-linecap="round" opacity="0.10" filter="url(#blurSmall)">
+      <line x1="380" y1="120" x2="356" y2="260" />
+      <line x1="880" y1="150" x2="856" y2="290" />
+      <line x1="196" y1="440" x2="172" y2="580" />
+      <line x1="1148" y1="430" x2="1124" y2="570" />
+    </g>
+
+    
+    <ellipse cx="646" cy="372" rx="290" ry="310" fill="url(#glow)" />
+
+    
+    <g transform="rotate(-7 640 400)">
+
+      
+      <g id="hand-back">
+        <path d="M 726 700 C 726 660 742 620 772 600 C 800 582 838 584 862 606 C 886 628 898 664 900 700 C 902 730 898 744 886 750 L 738 750 C 730 738 726 718 726 700 Z" fill="url(#skin)" />
+        <path d="M 862 606 C 886 628 898 664 900 700" fill="none" stroke="#ffb066" stroke-width="4" opacity="0.30" filter="url(#blurSmall)" />
+        <g id="fingertips">
+          <g transform="rotate(12 500 512)">
+            <rect x="466" y="494" width="58" height="36" rx="18" fill="url(#skin)" />
+            <ellipse cx="492" cy="510" rx="11" ry="7" fill="#dcae87" opacity="0.30" />
+          </g>
+          <g transform="rotate(10 500 556)">
+            <rect x="462" y="538" width="62" height="36" rx="18" fill="url(#skin)" />
+            <ellipse cx="490" cy="554" rx="11" ry="7" fill="#dcae87" opacity="0.26" />
+          </g>
+          <g transform="rotate(8 500 598)">
+            <rect x="468" y="582" width="56" height="34" rx="17" fill="url(#skin)" />
+            <ellipse cx="492" cy="597" rx="10" ry="6" fill="#dcae87" opacity="0.22" />
+          </g>
+        </g>
+      </g>
+
+      
+      <g id="phone">
+        <rect x="506" y="88" width="268" height="552" rx="36" fill="url(#phoneBody)" stroke="#46586a" stroke-width="2.5" />
+        <rect x="770" y="246" width="6" height="46" rx="3" fill="#2b3742" />
+        <line x1="514" y1="150" x2="514" y2="600" stroke="#7b8fa0" stroke-width="2" opacity="0.28" />
+        <rect x="518" y="100" width="244" height="528" rx="28" fill="url(#screenBg)" stroke="#050a0e" stroke-width="3" />
+
+        <g clip-path="url(#screenClip)">
+          
+          <path d="M 518 100 L 690 100 L 518 420 Z" fill="#ffffff" opacity="0.035" />
+          <path d="M 762 340 L 762 470 L 600 628 L 518 628 Z" fill="#9ec8e2" opacity="0.03" />
+
+          
+          <text x="536" y="138" font-size="12.5" fill="#9fb0c0" font-weight="600" letter-spacing="0.6">21:12</text>
+          <g fill="#9fb0c0">
+            <rect x="700" y="131" width="3" height="5" rx="1" />
+            <rect x="705.5" y="128" width="3" height="8" rx="1" />
+            <rect x="711" y="125" width="3" height="11" rx="1" />
+          </g>
+          <rect x="726" y="126" width="22" height="10" rx="3" fill="none" stroke="#9fb0c0" stroke-width="1.4" />
+          <rect x="728.5" y="128.5" width="13" height="5" rx="1.5" fill="#9fb0c0" />
+          <rect x="749.5" y="129" width="2" height="4" rx="1" fill="#9fb0c0" />
+          <circle cx="640" cy="116" r="5" fill="#05090d" />
+          <line x1="518" y1="150" x2="762" y2="150" stroke="#1d2732" stroke-width="1" />
+
+          
+          <path d="M 544 166 L 534 176 L 544 186" fill="none" stroke="#c8d4e0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          <text x="640" y="184" text-anchor="middle" font-size="17" fill="#eef4fa" letter-spacing="1.5">妈妈</text>
+          <g fill="#8fa0b0">
+            <circle cx="744" cy="171" r="2" />
+            <circle cx="744" cy="178" r="2" />
+            <circle cx="744" cy="185" r="2" />
+          </g>
+          <line x1="518" y1="200" x2="762" y2="200" stroke="#1d2732" stroke-width="1" />
+
+          
+          <text x="640" y="224" text-anchor="middle" font-size="11" fill="#5d6d7c" letter-spacing="0.5">21:12</text>
+
+          
+          <g id="msg-in">
+            <path d="M 532 244 L 520 254 L 534 254 Z" fill="#25303c" />
+            <rect x="528" y="238" width="124" height="44" rx="14" fill="#25303c" />
+            <text x="590" y="266" text-anchor="middle" font-size="16" fill="#e3ebf3">到家了吗？</text>
+          </g>
+
+          
+          <g id="msg-out">
+            <path d="M 746 318 L 762 328 L 744 328 Z" fill="#2c7f63" />
+            <rect x="544" y="300" width="206" height="64" rx="14" fill="url(#sentBubble)" />
+            <text x="647" y="324" text-anchor="middle" font-size="15.5" fill="#eafaf1">我在楼下了，</text>
+            <text x="647" y="346" text-anchor="middle" font-size="15.5" fill="#eafaf1">给你带了热汤。</text>
+          </g>
+
+          
+          <g id="typing">
+            <path d="M 532 380 L 520 390 L 534 390 Z" fill="#25303c" />
+            <rect x="528" y="368" width="78" height="40" rx="14" fill="#25303c" />
+            <circle cx="552" cy="388" r="4" fill="#8093a3" />
+            <circle cx="568" cy="388" r="4" fill="#8093a3" opacity="0.7" />
+            <circle cx="584" cy="388" r="4" fill="#8093a3" opacity="0.45" />
+          </g>
+
+          
+          <rect x="530" y="558" width="216" height="42" rx="21" fill="#18222c" stroke="#25313d" stroke-width="1.2" />
+          <rect x="548" y="572" width="2" height="16" rx="1" fill="#6fd3a8" />
+          <circle cx="726" cy="579" r="14" fill="#2c7f63" />
+          <path d="M 726 585 L 726 573 M 721 578 L 726 573 L 731 578" fill="none" stroke="#eafaf1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </g>
+      </g>
+
+      
+      <g id="thumb">
+        <path d="M 800 626 C 786 574 766 500 754 452 C 748 432 752 416 764 414 C 776 412 784 426 788 448 C 796 492 812 548 828 592 C 838 612 820 634 800 626 Z" fill="#000000" opacity="0.30" transform="translate(10,10)" filter="url(#blurSmall)" clip-path="url(#screenClip)" />
+        <path d="M 800 626 C 786 574 766 500 754 452 C 748 432 752 416 764 414 C 776 412 784 426 788 448 C 796 492 812 548 828 592 C 838 612 820 634 800 626 Z" fill="url(#skinThumb)" />
+        <path d="M 800 626 C 786 574 766 500 754 452 C 748 432 752 416 764 414" fill="none" stroke="#e9cdb2" stroke-width="3" opacity="0.35" stroke-linecap="round" />
+        <path d="M 788 448 C 796 492 812 548 828 592 C 838 612 820 634 800 626" fill="none" stroke="#4d2f1e" stroke-width="3" opacity="0.35" />
+        <ellipse cx="768" cy="441" rx="9" ry="6.5" fill="#eec9a9" opacity="0.40" transform="rotate(-22 768 441)" />
+      </g>
+    </g>
+
+    
+    <g filter="url(#blurSmall)" opacity="0.45">
+      <circle cx="196" cy="118" r="5" fill="#cfe3f2" />
+      <circle cx="1080" cy="470" r="6" fill="#cfe3f2" opacity="0.7" />
+      <circle cx="300" cy="560" r="4" fill="#cfe3f2" opacity="0.6" />
+      <circle cx="1180" cy="180" r="4.5" fill="#cfe3f2" opacity="0.5" />
+    </g>
+
+    
+    <rect x="0" y="596" width="1280" height="124" fill="url(#scrimGrad)" />
+    <text x="640" y="690" text-anchor="middle" font-size="22" fill="#f0f5fa" letter-spacing="0.5">她把那句“我没事”删掉，重新打了一行字。</text>
+
+    
+    <g id="shot-label">
+      <text x="44" y="52" font-size="15" fill="#9fb2c4" letter-spacing="1.6">镜头05｜手机特写</text>
+      <line x1="44" y1="66" x2="152" y2="66" stroke="#7d94a8" stroke-width="1.5" opacity="0.55" />
+    </g>
+  </g>
+</svg>

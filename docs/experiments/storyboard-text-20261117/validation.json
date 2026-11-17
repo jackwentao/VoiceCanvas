@@ -1,0 +1,56 @@
+[
+  {
+    "name": "street",
+    "adapterAndServiceReplay": true,
+    "sqliteReload": true,
+    "initialExpectedTextChecks": 4,
+    "editReplay": true,
+    "undoAndRedo": true,
+    "editedExpectedTextChecks": 4,
+    "oldTextRemoved": [
+      "别急，我陪你等雨停。"
+    ],
+    "unchangedGroupIds": [
+      "storefront",
+      "girl",
+      "friend",
+      "subtitle"
+    ],
+    "changedOrRemovedGroupIds": [
+      "dialogue"
+    ],
+    "addedGroupIds": []
+  },
+  {
+    "name": "phone",
+    "adapterAndServiceReplay": true,
+    "sqliteReload": true,
+    "initialExpectedTextChecks": 6,
+    "editReplay": true,
+    "undoAndRedo": true,
+    "editedExpectedTextChecks": 6,
+    "oldTextRemoved": [
+      "21:08",
+      "快到了，别担心。"
+    ],
+    "unchangedGroupIds": [
+      "hand-back",
+      "fingertips",
+      "msg-in",
+      "typing",
+      "thumb",
+      "shot-label"
+    ],
+    "changedOrRemovedGroupIds": [
+      "phone",
+      "msg-out"
+    ],
+    "addedGroupIds": []
+  },
+  {
+    "name": "dialogue",
+    "adapterAndServiceReplay": true,
+    "sqliteReload": true,
+    "initialExpectedTextChecks": 6
+  }
+]

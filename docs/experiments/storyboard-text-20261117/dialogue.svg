@@ -1,0 +1,259 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#060a12" />
+      <stop offset="0.5" stop-color="#0d1726" />
+      <stop offset="1" stop-color="#1d2d43" />
+    </linearGradient>
+    <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c2839" />
+      <stop offset="1" stop-color="#080d15" />
+    </linearGradient>
+    <radialGradient id="lampGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ffe2b4" stop-opacity="0.9" />
+      <stop offset="0.35" stop-color="#ffc479" stop-opacity="0.3" />
+      <stop offset="1" stop-color="#ffb15c" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="lightCone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd08e" stop-opacity="0.20" />
+      <stop offset="1" stop-color="#ffd08e" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="bubbleW" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" />
+      <stop offset="1" stop-color="#e2eaf3" />
+    </linearGradient>
+    <linearGradient id="bubbleM" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f8fbfe" />
+      <stop offset="1" stop-color="#dbe5ef" />
+    </linearGradient>
+  </defs>
+
+  
+  <rect x="0" y="0" width="1280" height="560" fill="url(#skyGrad)" />
+  <ellipse cx="660" cy="530" rx="620" ry="180" fill="#22405f" opacity="0.22" />
+
+  
+  <g id="city-backdrop">
+    <rect x="-10" y="292" width="124" height="270" fill="#0c1523" />
+    <rect x="106" y="228" width="92" height="334" fill="#0a121e" />
+    <rect x="192" y="316" width="76" height="246" fill="#0c1523" />
+    <rect x="470" y="286" width="90" height="276" fill="#0a121e" />
+    <rect x="596" y="334" width="74" height="228" fill="#0b1320" />
+    <rect x="700" y="296" width="66" height="266" fill="#0a121e" />
+    <rect x="880" y="264" width="104" height="298" fill="#0b1320" />
+    <rect x="1050" y="316" width="96" height="246" fill="#0a121e" />
+    <rect x="1148" y="268" width="142" height="294" fill="#0b1320" />
+  </g>
+
+  <g id="city-windows" fill="#1a2740">
+    <rect x="14" y="318" width="13" height="19" />
+    <rect x="40" y="318" width="13" height="19" />
+    <rect x="66" y="318" width="13" height="19" />
+    <rect x="14" y="354" width="13" height="19" />
+    <rect x="66" y="354" width="13" height="19" />
+    <rect x="40" y="390" width="13" height="19" />
+    <rect x="120" y="252" width="13" height="19" />
+    <rect x="146" y="252" width="13" height="19" />
+    <rect x="172" y="252" width="13" height="19" />
+    <rect x="120" y="288" width="13" height="19" />
+    <rect x="172" y="288" width="13" height="19" />
+    <rect x="146" y="324" width="13" height="19" />
+    <rect x="206" y="340" width="12" height="17" />
+    <rect x="232" y="340" width="12" height="17" />
+    <rect x="206" y="376" width="12" height="17" />
+    <rect x="484" y="306" width="13" height="19" />
+    <rect x="516" y="306" width="13" height="19" />
+    <rect x="484" y="342" width="13" height="19" />
+    <rect x="610" y="352" width="12" height="17" />
+    <rect x="640" y="352" width="12" height="17" />
+    <rect x="714" y="314" width="12" height="17" />
+    <rect x="740" y="314" width="12" height="17" />
+    <rect x="714" y="350" width="12" height="17" />
+    <rect x="896" y="286" width="14" height="20" />
+    <rect x="926" y="286" width="14" height="20" />
+    <rect x="956" y="286" width="14" height="20" />
+    <rect x="896" y="322" width="14" height="20" />
+    <rect x="956" y="322" width="14" height="20" />
+    <rect x="1064" y="336" width="13" height="18" />
+    <rect x="1092" y="336" width="13" height="18" />
+    <rect x="1064" y="372" width="13" height="18" />
+    <rect x="1166" y="290" width="15" height="21" />
+    <rect x="1198" y="290" width="15" height="21" />
+    <rect x="1230" y="290" width="15" height="21" />
+    <rect x="1166" y="330" width="15" height="21" />
+    <rect x="1230" y="330" width="15" height="21" />
+  </g>
+
+  <g id="city-windows-warm" fill="#d9b177" opacity="0.55">
+    <rect x="146" y="288" width="13" height="19" />
+    <rect x="956" y="322" width="14" height="20" />
+    <rect x="1198" y="330" width="15" height="21" />
+    <rect x="66" y="390" width="13" height="19" />
+  </g>
+
+  
+  <rect x="0" y="545" width="1280" height="175" fill="url(#groundGrad)" />
+  <rect x="0" y="543" width="1280" height="6" fill="#22314a" />
+  <g id="pavement-lines" stroke="#233147" stroke-width="1.5" opacity="0.55">
+    <path d="M0,600 L1280,596" />
+    <path d="M0,660 L1280,650" />
+    <path d="M180,545 L120,720" />
+    <path d="M470,545 L440,720" />
+    <path d="M760,545 L780,720" />
+    <path d="M1040,545 L1090,720" />
+  </g>
+  <ellipse cx="1110" cy="612" rx="190" ry="52" fill="#ffb765" opacity="0.10" />
+
+  
+  <g id="street-lamp">
+    <rect x="1236" y="128" width="10" height="480" rx="4" fill="#1a2534" />
+    <path d="M1241,132 L1168,132" stroke="#1a2534" stroke-width="9" stroke-linecap="round" fill="none" />
+    <ellipse cx="1160" cy="133" rx="21" ry="9" fill="#28374a" />
+    <ellipse cx="1160" cy="136" rx="14" ry="5" fill="#ffe0ab" />
+  </g>
+  <circle cx="1160" cy="140" r="140" fill="url(#lampGlow)" />
+  <polygon points="1155,144 900,700 1310,700" fill="url(#lightCone)" />
+
+  
+  <g id="bus-stop-sign">
+    <rect x="996" y="252" width="10" height="350" fill="#1e2a3a" />
+    <rect x="920" y="178" width="162" height="76" rx="8" fill="#16324a" stroke="#33586f" stroke-width="2" />
+    <rect x="920" y="240" width="162" height="8" rx="3" fill="#0e2334" />
+    <text x="1001" y="228" text-anchor="middle" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="28" letter-spacing="3" fill="#cfe3f2">末班车</text>
+  </g>
+
+  
+  <g id="bench">
+    <rect x="212" y="392" width="10" height="74" fill="#232d3b" />
+    <rect x="506" y="392" width="10" height="74" fill="#232d3b" />
+    <rect x="188" y="392" width="352" height="15" rx="6" fill="#3b2e23" />
+    <rect x="188" y="416" width="352" height="15" rx="6" fill="#3b2e23" />
+    <rect x="184" y="464" width="360" height="17" rx="5" fill="#4a3a2b" />
+    <rect x="184" y="478" width="360" height="7" rx="3" fill="#2a1f18" />
+    <rect x="212" y="487" width="12" height="76" rx="4" fill="#232d3b" />
+    <rect x="504" y="487" width="12" height="76" rx="4" fill="#232d3b" />
+    <rect x="300" y="487" width="10" height="70" rx="3" fill="#1d2531" />
+    <rect x="188" y="392" width="352" height="3" rx="1.5" fill="#6d8aa6" opacity="0.45" />
+    <rect x="184" y="464" width="360" height="3" rx="1.5" fill="#8aa6bd" opacity="0.35" />
+  </g>
+  <ellipse cx="360" cy="566" rx="170" ry="12" fill="#050910" opacity="0.55" />
+
+  
+  <g id="woman-seated">
+    
+    <path d="M316,452 L420,456" stroke="#232c39" stroke-width="34" stroke-linecap="round" fill="none" />
+    <path d="M420,456 L430,546" stroke="#232c39" stroke-width="26" stroke-linecap="round" fill="none" />
+    <ellipse cx="438" cy="552" rx="19" ry="9" fill="#141b25" />
+    
+    <path d="M304,460 L410,464" stroke="#2b3646" stroke-width="36" stroke-linecap="round" fill="none" />
+    <path d="M410,464 L418,552" stroke="#2b3646" stroke-width="28" stroke-linecap="round" fill="none" />
+    <ellipse cx="426" cy="558" rx="21" ry="10" fill="#141b25" />
+
+    
+    <ellipse cx="322" cy="310" rx="31" ry="34" fill="#171c26" />
+
+    
+    <rect x="314" y="342" width="22" height="34" rx="10" fill="#c79a78" />
+
+    
+    <path d="M292,384 C284,416 286,446 296,470 L358,472 C368,446 366,412 356,386 C336,374 312,374 292,384 Z" fill="#5f748a" />
+    <path d="M292,384 C284,416 286,446 296,470 L316,471 C306,444 306,414 314,388 Z" fill="#4a5e74" />
+    <path d="M306,378 C314,392 336,392 346,378" stroke="#46596d" stroke-width="3" fill="none" stroke-linecap="round" />
+
+    
+    <path d="M352,392 C358,420 362,436 372,444" stroke="#54697f" stroke-width="18" fill="none" stroke-linecap="round" />
+    <path d="M372,444 L382,449" stroke="#54697f" stroke-width="16" fill="none" stroke-linecap="round" />
+    <ellipse cx="386" cy="451" rx="10" ry="8" fill="#c79a78" />
+
+    
+    <ellipse cx="324" cy="320" rx="26" ry="28" fill="#d8ab88" />
+
+    
+    <ellipse cx="326" cy="317" rx="3.4" ry="4.4" fill="#2a2a30" />
+    <ellipse cx="341" cy="316" rx="2.8" ry="3.8" fill="#2a2a30" />
+    <path d="M321,307 Q327,304 333,307" stroke="#3a2a22" stroke-width="2.2" fill="none" stroke-linecap="round" />
+    <path d="M337,306 Q342,303 347,306" stroke="#3a2a22" stroke-width="2" fill="none" stroke-linecap="round" />
+    <path d="M339,323 Q341,329 336,331" stroke="#b98a68" stroke-width="2" fill="none" stroke-linecap="round" />
+    <path d="M327,340 Q333,336 339,339" stroke="#a8655a" stroke-width="2.4" fill="none" stroke-linecap="round" />
+
+    
+    <path d="M293,314 C291,286 306,274 324,274 C344,274 356,288 355,314 C350,296 338,288 322,290 C306,292 297,300 293,314 Z" fill="#171c26" />
+    <path d="M292,304 C286,332 288,358 296,376 L308,372 C300,352 299,326 302,306 Z" fill="#171c26" />
+
+    
+    <path d="M294,392 C300,420 306,438 322,446" stroke="#5f748a" stroke-width="19" fill="none" stroke-linecap="round" />
+    <path d="M322,446 L384,452" stroke="#5f748a" stroke-width="17" fill="none" stroke-linecap="round" />
+    <ellipse cx="390" cy="454" rx="11" ry="8" fill="#d8ab88" />
+
+    
+    <path d="M293,388 C286,418 288,446 297,468" stroke="#9dbcd6" stroke-width="2" fill="none" opacity="0.35" />
+    <path d="M293,312 C292,292 304,278 320,276" stroke="#a9c6dd" stroke-width="2" fill="none" opacity="0.3" />
+  </g>
+  <ellipse cx="428" cy="564" rx="42" ry="8" fill="#050910" opacity="0.5" />
+
+  
+  <g id="man-standing">
+    
+    <path d="M774,472 L768,592" stroke="#1e2836" stroke-width="27" stroke-linecap="round" fill="none" />
+    <path d="M808,472 L820,592" stroke="#1e2836" stroke-width="27" stroke-linecap="round" fill="none" />
+    <ellipse cx="764" cy="598" rx="25" ry="11" fill="#141a23" />
+    <ellipse cx="824" cy="598" rx="25" ry="11" fill="#141a23" />
+
+    
+    <path d="M758,362 C746,400 745,440 756,474 L828,474 C838,442 836,398 824,360 C802,348 778,348 758,362 Z" fill="#33414f" />
+    <path d="M758,362 C746,400 745,440 756,474 L774,475 C764,440 764,402 774,366 Z" fill="#28343f" />
+    <path d="M790,384 L790,472" stroke="#26323e" stroke-width="4" />
+    <path d="M768,366 L790,394 L812,366 L806,358 L790,378 L774,358 Z" fill="#26323e" />
+
+    
+    <path d="M760,368 C748,398 746,428 756,452" stroke="#33414f" stroke-width="20" fill="none" stroke-linecap="round" />
+    <ellipse cx="758" cy="458" rx="10" ry="11" fill="#c9916c" />
+    <path d="M820,368 C832,398 834,428 824,452" stroke="#33414f" stroke-width="20" fill="none" stroke-linecap="round" />
+    <ellipse cx="822" cy="458" rx="10" ry="11" fill="#c9916c" />
+
+    
+    <rect x="778" y="314" width="22" height="36" rx="10" fill="#b8835c" />
+    <ellipse cx="784" cy="290" rx="26" ry="30" fill="#c9916c" />
+
+    
+    <ellipse cx="777" cy="292" rx="3.2" ry="3.8" fill="#2a2420" />
+    <ellipse cx="791" cy="292" rx="3.2" ry="3.8" fill="#2a2420" />
+    <path d="M771,283 Q777,280 783,283" stroke="#26201b" stroke-width="2.2" fill="none" stroke-linecap="round" />
+    <path d="M786,283 Q792,280 797,283" stroke="#26201b" stroke-width="2.2" fill="none" stroke-linecap="round" />
+    <path d="M776,302 Q778,307 774,308" stroke="#a5744f" stroke-width="2" fill="none" stroke-linecap="round" />
+    <path d="M777,314 Q782,317 787,314" stroke="#8f5a45" stroke-width="2.4" fill="none" stroke-linecap="round" />
+
+    
+    <path d="M756,292 C754,266 768,254 786,254 C806,254 818,268 816,294 C810,276 798,268 784,270 C770,272 760,280 756,292 Z" fill="#131820" />
+    <path d="M756,292 C752,308 754,320 758,330 L766,326 C762,314 760,302 761,290 Z" fill="#131820" />
+
+    
+    <path d="M824,364 C836,402 838,440 828,472" stroke="#ffd9a2" stroke-width="2" fill="none" opacity="0.4" />
+    <path d="M810,268 C820,278 822,290 820,302" stroke="#ffd9a2" stroke-width="2" fill="none" opacity="0.35" />
+  </g>
+  <ellipse cx="795" cy="606" rx="72" ry="12" fill="#050910" opacity="0.5" />
+
+  
+  <g id="bubble-woman">
+    <path d="M282,212 L318,284 L350,212 Z" fill="#e6edf5" />
+    <rect x="68" y="76" width="356" height="142" rx="26" fill="url(#bubbleW)" stroke="#a9bccf" stroke-width="1.5" />
+    <text x="96" y="116" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="21" fill="#1a2735">我本来想等天亮再告诉你，</text>
+    <text x="96" y="148" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="21" fill="#1a2735">可是这件事，我不想再一个人</text>
+    <text x="96" y="180" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="21" fill="#1a2735">扛着了。</text>
+  </g>
+
+  
+  <g id="bubble-man">
+    <path d="M846,134 L806,262 L892,140 Z" fill="#e6edf5" />
+    <rect x="656" y="74" width="242" height="62" rx="26" fill="url(#bubbleM)" stroke="#a9bccf" stroke-width="1.5" />
+    <text x="777" y="114" text-anchor="middle" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="21" fill="#1a2735">那就一起想办法。</text>
+  </g>
+
+  
+  <g id="hud">
+    <rect x="20" y="20" width="226" height="30" rx="6" fill="#0a1220" opacity="0.6" stroke="#2d4058" stroke-width="1" />
+    <text x="34" y="41" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="16" fill="#9db4ca">镜头07｜双人中景</text>
+    <text x="560" y="648" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="16" font-style="italic" fill="#7f95ab">滴答</text>
+    <text x="640" y="694" text-anchor="middle" font-family="'Noto Sans SC','PingFang SC','Microsoft YaHei',sans-serif" font-size="19" fill="#b9c9da">公交车迟迟没有来。</text>
+  </g>
+</svg>

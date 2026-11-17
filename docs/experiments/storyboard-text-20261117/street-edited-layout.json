@@ -1,0 +1,89 @@
+{
+  "textChecks": [
+    {
+      "text": "便利店",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "别急，我陪你等雨停，等不到车，我们就一起走回去。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "雨还没停，有人却不再着急。",
+      "presentIgnoringWhitespace": true
+    },
+    {
+      "text": "镜头03｜中景",
+      "presentIgnoringWhitespace": true
+    }
+  ],
+  "allExpectedPresent": true,
+  "textOutsideCanvas": [],
+  "measurements": [
+    {
+      "id": "",
+      "text": "便利店",
+      "fontSize": "62px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 251,
+        "y": 141,
+        "right": 437,
+        "bottom": 223
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "别急，我陪你等雨停，",
+      "fontSize": "32px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 838,
+        "y": 80,
+        "right": 1158,
+        "bottom": 122
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "等不到车，我们就一起走回去。",
+      "fontSize": "32px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 774,
+        "y": 132,
+        "right": 1222,
+        "bottom": 174
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "镜头03｜中景",
+      "fontSize": "21px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 39,
+        "y": 32,
+        "right": 183.640625,
+        "bottom": 59
+      },
+      "outsideCanvas": false
+    },
+    {
+      "id": "",
+      "text": "雨还没停，有人却不再着急。",
+      "fontSize": "32px",
+      "fontFamily": "\"Noto Sans SC\", \"PingFang SC\", \"Microsoft YaHei\", sans-serif",
+      "bounds": {
+        "x": 432,
+        "y": 648,
+        "right": 848,
+        "bottom": 690
+      },
+      "outsideCanvas": false
+    }
+  ]
+}
