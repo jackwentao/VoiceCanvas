@@ -1,0 +1,74 @@
+[
+  {
+    "name": "rain-baseline",
+    "status": "completed",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "usage": {
+      "prompt_tokens": 291,
+      "completion_tokens": 20144,
+      "total_tokens": 20435,
+      "reasoning_tokens": 14331
+    },
+    "svg_chars": 14147,
+    "seconds": 126.91
+  },
+  {
+    "name": "rain-subject-first",
+    "status": "failed",
+    "error_type": "ShotModelError",
+    "error": "输出预算不足，SVG 未完成，请增加后端 max_tokens 后重试",
+    "seconds": 200.64
+  },
+  {
+    "name": "rain-compact",
+    "status": "completed",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "usage": {
+      "prompt_tokens": 382,
+      "completion_tokens": 27980,
+      "total_tokens": 28362,
+      "reasoning_tokens": 22449
+    },
+    "svg_chars": 13630,
+    "seconds": 177.01
+  },
+  {
+    "name": "bench-baseline",
+    "status": "completed",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "usage": {
+      "prompt_tokens": 287,
+      "completion_tokens": 32295,
+      "total_tokens": 32582,
+      "reasoning_tokens": 26432
+    },
+    "svg_chars": 13592,
+    "seconds": 200.34
+  },
+  {
+    "name": "bench-subject-first",
+    "status": "completed",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "usage": {
+      "prompt_tokens": 537,
+      "completion_tokens": 24222,
+      "total_tokens": 24759,
+      "reasoning_tokens": 17421
+    },
+    "svg_chars": 16297,
+    "seconds": 155.02
+  },
+  {
+    "name": "bench-compact",
+    "status": "completed",
+    "model": "deepseek/deepseek-v4.1-flash",
+    "usage": {
+      "prompt_tokens": 378,
+      "completion_tokens": 22102,
+      "total_tokens": 22480,
+      "reasoning_tokens": 17739
+    },
+    "svg_chars": 10390,
+    "seconds": 163.62
+  }
+]
