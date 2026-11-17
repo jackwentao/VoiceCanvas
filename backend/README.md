@@ -239,6 +239,10 @@ uv run --no-editable mypy src
 
 ## 工作台固定接口
 
+手绘首页使用只读 `GET /api/showcase` 与 `GET /api/showcase/{artwork_id}/artwork`。
+分类和六幅原创 SVG 由 `ShowcaseCatalog` 及包内资源维护，不依赖前端目录或外部服务。
+接口及测试见 [首页画廊接口](../docs/首页画廊接口.md)。
+
 页面使用固定的工作台查询和动作接口，不需要构造领域命令。所有动作均由后端
 创建命令，经过既有校验器与执行器，再保存项目、撤销重做历史、待澄清任务和用量。
 SQLite 默认保存 `projects` 与 `workspace_runtime`；用户偏好继续由后端记忆仓储保存。

@@ -369,7 +369,7 @@ function testBackendPatchUpdatesProjectTitleAndNarration() {
 
 async function testPrototypeHtml() {
   const root = new URL("../../src/prototype/", import.meta.url);
-  const html = await readFile(new URL("index.html", root), "utf-8");
+  const html = await readFile(new URL("workspace.html", root), "utf-8");
   const app = await readFile(new URL("app.js", root), "utf-8");
   const model = await readFile(new URL("workspace-controller.js", root), "utf-8");
   const css = await readFile(new URL("workspace.css", root), "utf-8");

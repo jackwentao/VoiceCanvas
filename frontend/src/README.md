@@ -1,10 +1,12 @@
 # VoiceCanvas 前端源码
 
-工作台入口为 `prototype/index.html`。前端只负责展示与交互，项目、命令、澄清、历史、
+手绘首页入口为 `prototype/index.html`，工作台入口为 `prototype/workspace.html`。
+前端只负责展示与交互，项目、命令、澄清、历史、
 用量和偏好均由后端决定与保存。
 
 | 模块 | 边界 |
 | --- | --- |
+| `home.js`、`home-controller.js`、`home.css` | 画廊投影、分类请求、作品预览、创建请求和页面导航；不保存业务数据 |
 | `app.js` | 页面装配、事件绑定、临时选中与面板状态 |
 | `workspace-controller.js` | 请求串行化、快照读取、错误恢复；不运行领域命令 |
 | `backend-client.js` | 固定业务接口和 SSE 传输 |

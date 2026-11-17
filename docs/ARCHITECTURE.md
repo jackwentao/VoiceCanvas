@@ -4,6 +4,10 @@
 
 ## 前端架构
 
+`index.html` 为手绘首页：`home-controller.js` 请求后端画廊，`home.js` 只投影作品、
+预览和导航；首页创建画布通过既有项目 API 完成。`workspace.html` 为下列创作工作台。
+作品目录与原创 SVG 位于后端 `resources/showcase/`，接口见 [首页画廊接口](首页画廊接口.md)。
+
 ```mermaid
 flowchart TD
     User[语音或文字输入] --> App[app.js 页面与交互]
