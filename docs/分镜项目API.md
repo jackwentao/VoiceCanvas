@@ -12,13 +12,12 @@
 | `GET /api/storyboards` | 最近更新的 50 个项目，返回 ID、标题和镜头数 |
 | `GET /api/storyboards/{id}` | 顺序、当前镜头、缩略 SVG、画面版本、结构撤销状态和当前画面完整历史 |
 | `POST /api/storyboards/{id}/manage` | `{expectedVersion, action, targetId?, title?, position?, count?, confirmed?}` |
-| `POST /api/storyboards/{id}/command` | `{expectedVersion, transcript}`，路由一条完整中文编排指令或画面描述 |
+| `POST /api/storyboards/{id}/agent/runs` | `{expectedVersion, request}`，提交自主工具调用任务 |
+| `GET /api/storyboards/{id}/agent/run` | 最新持久化任务与实时项目 |
 
 管理 action 为 `add / switch / rename / rename_project / move / duplicate / delete / undo / redo`。位置从 1 开始；省略目标时使用当前镜头。每个项目 1–40 镜头，每次新增 1–12 个。新增后选中第一个新增镜头；复制后选中副本。复制只复制当前画面并建立副本独立的初始版本。镜头名称属于项目元数据，不改写原画面标题。
 
-`command` 对完整匹配的管理语句执行确定性路由；不支持的管理复合句返回 422，请用户分开表达。画面描述返回 `action: draw`、`targetId` 和 `instruction`，由客户端调用原有 `/api/shots/{id}/generate`。例如“新建一个镜头，画便利店门口”先新增，再返回绘图任务；绘图失败仍保留新空镜头。它不是任意自然语言 Agent 编排器。
-
-“删除第二个镜头”仅返回 `request_delete`，不删除。客户端需绑定待确认的项目 ID、镜头 ID 和版本；确认后以 `confirmed: true` 提交 manage 请求。服务端拒绝未确认删除与删除最后一个镜头。`confirm / cancel / list / new_project / export_png / export_svg / undo_shot / redo_shot` 返回客户端执行意图，不在此接口操作画面或本地下载。
+自然语言由 Agent 按当前真实状态选择工具和执行顺序，不再通过固定句式路由。删除确认绑定稳定 ID 与版本，整组导出由浏览器实际下载。工具、预算、重启恢复和接口详见 [分镜 Agent](分镜Agent.md)。旧 `/command` 已移除。
 
 ## 持久化与并发
 
@@ -30,7 +29,7 @@ SQLite 仓储在同一事务中提交项目更新和新增画面，CAS 失败不
 
 ## 依赖边界与测试
 
-复用已声明的 FastAPI/Pydantic、SQLite 和 Python 标准库，不新增包或服务。项目原创部分是分镜元数据、独立历史编排、命令路由、确认和版本协议；画面内容仍由外部模型生成。仓储通过 `StoryboardRepository` 端口隔离，领域与应用层不依赖 FastAPI、SQLite 或外部 SDK。
+复用已声明的 FastAPI/Pydantic、SQLite 和 Python 标准库，不新增包或服务。项目原创部分是分镜元数据、独立历史编排、Agent 工具协议、确认和版本协议；画面内容仍由外部模型生成。仓储通过 `StoryboardRepository` 端口隔离，领域与应用层不依赖 FastAPI、SQLite 或外部 SDK。
 
 在 `backend` 执行：
 
@@ -39,4 +38,4 @@ python -m pytest tests/test_storyboards.py -q
 python -m pytest -q
 ```
 
-测试使用临时 SQLite 和生成器替身，不需要联网或密钥，覆盖结构生命周期、独立画面历史、复制、删除恢复、冲突、事务和转写路由。语音与浏览器入口验收见 [语音分镜管理](语音分镜管理.md)。
+测试使用临时 SQLite 和生成器替身，不需要联网或密钥，覆盖结构生命周期、独立画面历史、复制、删除恢复、冲突、事务；自主工具调用另见 test_storyboard_agent.py。语音与浏览器入口验收见 [语音分镜管理](语音分镜管理.md)。

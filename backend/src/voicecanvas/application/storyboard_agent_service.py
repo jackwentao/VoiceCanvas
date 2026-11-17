@@ -18,7 +18,8 @@ from voicecanvas.domain.storyboard_agent import (
 from voicecanvas.domain.svg_text import list_text_blocks
 
 SYSTEM = """你是 VoiceCanvas 的创作 Agent。根据用户目标自主选择工具和执行顺序，
-把需求变成可继续编辑的真实分镜。工具没有预设工作流；简单改名可直接管理，已有镜头可直接修改，
+把需求变成可继续编辑的真实分镜。初始消息已经提供真实分镜状态，不必先重复读取；
+只有需要更新状态时再查询。工具没有预设工作流；简单改名可直接管理，已有镜头可直接修改，
 完整故事需要你判断镜头数、拆分关键动作、时长分配、角色设定、生成顺序和是否补画。
 用户明确的镜头数量、顺序、关键动作、文案和总时长必须保留；没有给出细节时做合理创作决定，
 不要因为不影响执行的细节反复问用户。不要把多个镜头画进同一 SVG 来冒充独立分镜。
@@ -128,36 +129,36 @@ class StoryboardAgentService:
             self.repository.save_run(run)
 
     def _execute(self, run: StoryboardAgentRun, previous: StoryboardAgentRun | None) -> None:
-        messages = [
-            {"role": "system", "content": SYSTEM},
-            {
-                "role": "user",
-                "content": json.dumps(
-                    {
-                        "request": run.request,
-                        "storyboard": self.snapshot(run.board_id),
-                        "previous": {
-                            "request": previous.request,
-                            "summary": previous.summary,
-                            "pendingDelete": previous.pending_delete,
-                            "steps": [
-                                {
-                                    "tool": s.call.name,
-                                    "arguments": s.call.arguments,
-                                    "status": s.status,
-                                }
-                                for s in previous.steps[-12:]
-                            ],
-                        }
-                        if previous
-                        else None,
-                    },
-                    ensure_ascii=False,
-                ),
-            },
-        ]
         counts: dict[str, int] = {}
         try:
+            messages = [
+                {"role": "system", "content": SYSTEM},
+                {
+                    "role": "user",
+                    "content": json.dumps(
+                        {
+                            "request": run.request,
+                            "storyboard": self.snapshot(run.board_id),
+                            "previous": {
+                                "request": previous.request,
+                                "summary": previous.summary,
+                                "pendingDelete": previous.pending_delete,
+                                "steps": [
+                                    {
+                                        "tool": s.call.name,
+                                        "arguments": s.call.arguments,
+                                        "status": s.status,
+                                    }
+                                    for s in previous.steps[-12:]
+                                ],
+                            }
+                            if previous
+                            else None,
+                        },
+                        ensure_ascii=False,
+                    ),
+                },
+            ]
             for _ in range(16):
                 if len(run.steps) >= 40:
                     break
@@ -167,6 +168,8 @@ class StoryboardAgentService:
                 if not decision.calls:
                     run.status = "needs_input"
                     run.summary = decision.content or "请补充你希望完成的任务。"
+                    break
+                if len(run.steps) + len(decision.calls) > 40:
                     break
                 messages.append(
                     {
@@ -222,9 +225,11 @@ class StoryboardAgentService:
                 else ("任务执行中断，已保存的镜头保留；请刷新后继续。")
             )
         finally:
-            self._save(run)
-            with self._lock:
-                self._active.discard(run.id)
+            try:
+                self._save(run)
+            finally:
+                with self._lock:
+                    self._active.discard(run.id)
 
     def _step(self, run, step, previous, counts, repeated=None) -> dict:
         try:
@@ -256,7 +261,11 @@ class StoryboardAgentService:
         if name == "set_context":
             self.boards.describe(board.id, board.version, context=args["context"])
         elif name == "create_shots":
-            self.boards.describe(board.id, board.version, entries=args["shots"])
+            changed = self.boards.describe(board.id, board.version, entries=args["shots"])
+            original = {s.id: s for s in board.state.shots}
+            run.output_shot_ids.extend(
+                s.id for s in changed.state.shots if s.id not in original or s != original[s.id]
+            )
         elif name == "describe_shot":
             entry = {k: v for k, v in args.items() if k != "shotId"}
             self.boards.describe(board.id, board.version, entries=[entry], target_id=target_id)
@@ -298,9 +307,12 @@ class StoryboardAgentService:
                 changed = self.shots.generate(target_id, shot.version, instruction)
             except ShotModelError as error:
                 raise ValueError(str(error)) from error
+            with self._lock:
+                if target_id not in run.output_shot_ids:
+                    run.output_shot_ids.append(target_id)
             return {
                 "shotId": target_id,
-                "status": "generated",
+                "status": "unchanged" if shot.svg and changed.svg == shot.svg else "generated",
                 "version": changed.version,
                 "visualReview": "requires_user",
                 "reason": args["reason"],
@@ -327,6 +339,7 @@ class StoryboardAgentService:
                     "message": f"删除镜头“{member.title}”？请用户确认删除或取消。",
                 }
             self.boards.change(board.id, board.version, "delete", target_id, confirmed=True)
+            run.output_shot_ids = [sid for sid in run.output_shot_ids if sid != target_id]
         elif name == "export_shots":
             ids = args["shotIds"]
             if len(set(ids)) != len(ids) or not set(ids) <= {s.id for s in board.state.shots}:
@@ -337,6 +350,8 @@ class StoryboardAgentService:
             return {"status": "awaiting_browser_download", "shotIds": ids}
         elif name == "finish_task":
             ids = args["shotIds"]
+            if not args["unresolved"] and not set(run.output_shot_ids) <= set(ids):
+                raise ValueError("本轮创建或绘制的镜头有遗漏，不能以空交付或部分交付宣称完成")
             if len(ids) != len(set(ids)) or len(ids) != args["expectedCount"]:
                 raise ValueError("交付镜头数量不符，请继续完成需求后再结束")
             members = {s.id: s for s in board.state.shots}

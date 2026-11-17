@@ -1,0 +1,292 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <radialGradient id="warmGlow" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" stop-color="#ffe8b8" stop-opacity="0.55" />
+      <stop offset="55%" stop-color="#f5c97a" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="#8a5a2b" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff4cf" stop-opacity="0.95" />
+      <stop offset="45%" stop-color="#ffd98a" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#ffb84d" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6b4a33" />
+      <stop offset="100%" stop-color="#4a3122" />
+    </linearGradient>
+    <linearGradient id="counterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a9743f" />
+      <stop offset="100%" stop-color="#7a4f28" />
+    </linearGradient>
+    <linearGradient id="raincoatGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffd93d" />
+      <stop offset="100%" stop-color="#f0a800" />
+    </linearGradient>
+    <linearGradient id="apronGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2f5d3a" />
+      <stop offset="100%" stop-color="#1e3f27" />
+    </linearGradient>
+    <linearGradient id="shirtGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fdfaf3" />
+      <stop offset="100%" stop-color="#e8e0d0" />
+    </linearGradient>
+    <linearGradient id="cupGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e6ddd0" />
+    </linearGradient>
+    <linearGradient id="steamGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+    <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+    <filter id="softBlurSmall" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" />
+    </filter>
+  </defs>
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="url(#wallGrad)" />
+  <rect x="0" y="0" width="1280" height="720" fill="url(#warmGlow)" />
+
+  
+  <g stroke="#5a3d29" stroke-width="2" opacity="0.35">
+    <line x1="120" y1="0" x2="120" y2="430" />
+    <line x1="260" y1="0" x2="260" y2="430" />
+    <line x1="400" y1="0" x2="400" y2="430" />
+    <line x1="880" y1="0" x2="880" y2="430" />
+    <line x1="1020" y1="0" x2="1020" y2="430" />
+    <line x1="1160" y1="0" x2="1160" y2="430" />
+  </g>
+
+  
+  <g id="hanging-lamps">
+    
+    <g>
+      <line x1="330" y1="0" x2="330" y2="120" stroke="#3a2a1a" stroke-width="3" />
+      <ellipse cx="330" cy="120" rx="52" ry="14" fill="#3a2a1a" />
+      <path d="M 290 120 Q 330 190 370 120 Z" fill="#c98a3a" />
+      <ellipse cx="330" cy="178" rx="14" ry="8" fill="#fff2c4" />
+      <circle cx="330" cy="178" r="70" fill="url(#lampGlow)" opacity="0.7" />
+    </g>
+    
+    <g>
+      <line x1="960" y1="0" x2="960" y2="90" stroke="#3a2a1a" stroke-width="3" />
+      <ellipse cx="960" cy="90" rx="46" ry="12" fill="#3a2a1a" />
+      <path d="M 924 90 Q 960 152 996 90 Z" fill="#c98a3a" />
+      <ellipse cx="960" cy="142" rx="12" ry="7" fill="#fff2c4" />
+      <circle cx="960" cy="142" r="60" fill="url(#lampGlow)" opacity="0.65" />
+    </g>
+  </g>
+
+  
+  <g id="coffee-machine" opacity="0.9">
+    <rect x="560" y="200" width="170" height="200" rx="10" fill="#8a8f96" />
+    <rect x="572" y="212" width="146" height="70" rx="6" fill="#5d636b" />
+    <rect x="590" y="228" width="40" height="40" rx="4" fill="#3d4249" />
+    <circle cx="680" cy="248" r="16" fill="#3d4249" />
+    <rect x="600" y="300" width="90" height="14" rx="4" fill="#3d4249" />
+    <rect x="620" y="330" width="50" height="40" rx="4" fill="#4a5058" />
+    <rect x="630" y="370" width="30" height="20" rx="3" fill="#2e3238" />
+    <rect x="560" y="390" width="170" height="10" rx="3" fill="#6b7078" />
+  </g>
+
+  
+  <g id="menu-board" opacity="0.75">
+    <rect x="790" y="190" width="150" height="120" rx="6" fill="#3a2a1a" />
+    <rect x="800" y="200" width="130" height="100" rx="4" fill="#2a1e12" />
+    <g stroke="#d9b98a" stroke-width="2" opacity="0.6">
+      <line x1="815" y1="220" x2="915" y2="220" />
+      <line x1="815" y1="240" x2="895" y2="240" />
+      <line x1="815" y1="260" x2="905" y2="260" />
+      <line x1="815" y1="280" x2="880" y2="280" />
+    </g>
+  </g>
+
+  
+  <g id="bar-counter">
+    <rect x="0" y="430" width="1280" height="290" fill="url(#counterGrad)" />
+    <rect x="0" y="430" width="1280" height="18" fill="#c08a4e" />
+    <rect x="0" y="448" width="1280" height="6" fill="#8a5a2b" opacity="0.5" />
+    
+    <g stroke="#6b4423" stroke-width="1.5" opacity="0.25">
+      <path d="M 0 490 Q 200 485 400 492 T 800 488 T 1280 495" />
+      <path d="M 0 540 Q 250 535 500 542 T 1000 538 T 1280 545" />
+      <path d="M 0 600 Q 180 595 360 602 T 720 598 T 1280 605" />
+    </g>
+  </g>
+
+  
+  <g id="counter-items" opacity="0.85">
+    <rect x="150" y="400" width="60" height="30" rx="4" fill="#d9c9a8" />
+    <rect x="160" y="390" width="40" height="12" rx="3" fill="#b8a888" />
+    <circle cx="1050" cy="415" r="18" fill="#d9c9a8" />
+    <circle cx="1050" cy="415" r="12" fill="#b8a888" />
+  </g>
+
+  
+  <g id="barista">
+    
+    <path d="M 250 720 L 250 480 Q 250 400 330 380 L 400 375 Q 470 380 480 460 L 490 720 Z" fill="url(#shirtGrad)" />
+    
+    <path d="M 330 380 L 360 420 L 390 378" fill="#f0e8d8" stroke="#d8cebc" stroke-width="2" />
+    
+    <path d="M 290 720 L 290 470 Q 290 420 350 410 L 400 408 Q 450 415 455 470 L 460 720 Z" fill="url(#apronGrad)" />
+    
+    <g id="apron-cup-icon" transform="translate(355, 470)">
+      <rect x="-14" y="-10" width="28" height="22" rx="4" fill="#f5e6c8" />
+      <path d="M 14 -4 Q 24 -4 24 4 Q 24 12 14 12" fill="none" stroke="#f5e6c8" stroke-width="3" />
+      <path d="M -8 -14 Q -4 -20 0 -14 Q 4 -20 8 -14" fill="none" stroke="#f5e6c8" stroke-width="2" opacity="0.7" />
+    </g>
+    
+    <path d="M 310 410 Q 320 360 340 350" fill="none" stroke="#1e3f27" stroke-width="8" stroke-linecap="round" />
+    <path d="M 430 410 Q 420 360 400 350" fill="none" stroke="#1e3f27" stroke-width="8" stroke-linecap="round" />
+    
+    <rect x="350" y="330" width="40" height="50" rx="10" fill="#e8c4a0" />
+    
+    <ellipse cx="370" cy="290" rx="62" ry="70" fill="#f0d0b0" />
+    
+    <path d="M 308 280 Q 300 210 370 200 Q 440 210 432 280 Q 430 250 410 235 Q 390 225 370 228 Q 350 225 330 235 Q 310 250 308 280 Z" fill="#6b4226" />
+    <path d="M 308 280 Q 305 260 315 245 Q 320 255 318 275 Z" fill="#5a3520" />
+    <path d="M 432 280 Q 435 260 425 245 Q 420 255 422 275 Z" fill="#5a3520" />
+    
+    <ellipse cx="310" cy="295" rx="10" ry="16" fill="#e8c4a0" />
+    <ellipse cx="430" cy="295" rx="10" ry="16" fill="#e8c4a0" />
+    
+    <ellipse cx="348" cy="290" rx="7" ry="8" fill="#3a2a1a" />
+    <ellipse cx="392" cy="290" rx="7" ry="8" fill="#3a2a1a" />
+    <circle cx="350" cy="288" r="2.5" fill="#ffffff" />
+    <circle cx="394" cy="288" r="2.5" fill="#ffffff" />
+    
+    <path d="M 336 272 Q 348 266 360 272" fill="none" stroke="#5a3520" stroke-width="3" stroke-linecap="round" />
+    <path d="M 380 272 Q 392 266 404 272" fill="none" stroke="#5a3520" stroke-width="3" stroke-linecap="round" />
+    
+    <path d="M 368 300 Q 372 310 366 314" fill="none" stroke="#d4a882" stroke-width="2.5" stroke-linecap="round" />
+    
+    <path d="M 350 328 Q 370 342 390 328" fill="none" stroke="#b07050" stroke-width="3" stroke-linecap="round" />
+    
+    <ellipse cx="332" cy="312" rx="12" ry="7" fill="#f0a080" opacity="0.35" />
+    <ellipse cx="408" cy="312" rx="12" ry="7" fill="#f0a080" opacity="0.35" />
+    
+    <path d="M 290 470 Q 270 520 300 560 Q 320 580 360 570" fill="none" stroke="url(#shirtGrad)" stroke-width="42" stroke-linecap="round" />
+    
+    <ellipse cx="338" cy="562" rx="22" ry="10" fill="#e8e0d0" transform="rotate(-15 338 562)" />
+    
+    <path d="M 450 470 Q 470 520 440 560 Q 420 580 390 570" fill="none" stroke="url(#shirtGrad)" stroke-width="42" stroke-linecap="round" />
+    <ellipse cx="402" cy="562" rx="22" ry="10" fill="#e8e0d0" transform="rotate(15 402 562)" />
+    
+    <g id="barista-hands">
+      <ellipse cx="345" cy="555" rx="24" ry="18" fill="#f0d0b0" transform="rotate(-20 345 555)" />
+      <ellipse cx="395" cy="555" rx="24" ry="18" fill="#f0d0b0" transform="rotate(20 395 555)" />
+      
+      <path d="M 330 545 Q 325 535 332 530" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+      <path d="M 340 540 Q 338 528 345 525" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+      <path d="M 410 545 Q 415 535 408 530" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+      <path d="M 400 540 Q 402 528 395 525" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+    </g>
+  </g>
+
+  
+  <g id="coffee-cup">
+    
+    <ellipse cx="370" cy="548" rx="52" ry="14" fill="#e6ddd0" />
+    <ellipse cx="370" cy="545" rx="48" ry="11" fill="#f5f0e8" />
+    
+    <path d="M 340 500 Q 338 540 350 545 L 390 545 Q 402 540 400 500 Z" fill="url(#cupGrad)" />
+    
+    <ellipse cx="370" cy="500" rx="30" ry="9" fill="#ffffff" />
+    <ellipse cx="370" cy="500" rx="24" ry="6" fill="#6b3a1a" />
+    
+    <path d="M 400 510 Q 425 510 425 528 Q 425 542 400 540" fill="none" stroke="#e6ddd0" stroke-width="7" stroke-linecap="round" />
+    
+    <g id="steam" opacity="0.7">
+      <path d="M 358 490 Q 350 470 360 450 Q 370 430 358 410" fill="none" stroke="url(#steamGrad)" stroke-width="5" stroke-linecap="round" filter="url(#softBlurSmall)" />
+      <path d="M 372 488 Q 380 465 370 445 Q 360 425 372 405" fill="none" stroke="url(#steamGrad)" stroke-width="4" stroke-linecap="round" filter="url(#softBlurSmall)" />
+      <path d="M 384 490 Q 390 472 382 455 Q 374 438 384 420" fill="none" stroke="url(#steamGrad)" stroke-width="3.5" stroke-linecap="round" filter="url(#softBlurSmall)" />
+    </g>
+  </g>
+
+  
+  <g id="girl-customer">
+    
+    <path d="M 720 720 L 720 500 Q 720 420 800 400 L 880 395 Q 960 400 970 480 L 980 720 Z" fill="url(#raincoatGrad)" />
+    
+    <line x1="845" y1="400" x2="845" y2="720" stroke="#c98a00" stroke-width="3" />
+    <g fill="#c98a00">
+      <rect x="840" y="440" width="10" height="6" rx="2" />
+      <rect x="840" y="480" width="10" height="6" rx="2" />
+      <rect x="840" y="520" width="10" height="6" rx="2" />
+      <rect x="840" y="560" width="10" height="6" rx="2" />
+    </g>
+    
+    <path d="M 810 400 L 845 440 L 880 398" fill="#f5f0e8" stroke="#e0d8c8" stroke-width="2" />
+    
+    <path d="M 790 400 Q 760 380 770 340 Q 790 320 820 340 Q 830 370 810 400 Z" fill="#f0a800" opacity="0.8" />
+    
+    <rect x="825" y="345" width="40" height="50" rx="10" fill="#f0d0b0" />
+    
+    <ellipse cx="845" cy="305" rx="60" ry="68" fill="#f5d8b8" />
+    
+    <path d="M 785 300 Q 778 225 845 215 Q 912 225 905 300 Q 902 270 885 252 Q 865 240 845 242 Q 825 240 805 252 Q 788 270 785 300 Z" fill="#1a1a1a" />
+    
+    <path d="M 785 300 Q 780 320 790 330 Q 798 318 795 300 Z" fill="#1a1a1a" />
+    <path d="M 905 300 Q 910 320 900 330 Q 892 318 895 300 Z" fill="#1a1a1a" />
+    
+    <path d="M 800 260 Q 820 245 845 248 Q 870 245 890 260 Q 875 275 845 272 Q 815 275 800 260 Z" fill="#1a1a1a" />
+    
+    <ellipse cx="787" cy="310" rx="9" ry="15" fill="#f0d0b0" />
+    <ellipse cx="903" cy="310" rx="9" ry="15" fill="#f0d0b0" />
+    
+    <ellipse cx="822" cy="305" rx="8" ry="9" fill="#2a1a0a" />
+    <ellipse cx="868" cy="305" rx="8" ry="9" fill="#2a1a0a" />
+    <circle cx="824" cy="302" r="3" fill="#ffffff" />
+    <circle cx="870" cy="302" r="3" fill="#ffffff" />
+    
+    <path d="M 808 288 Q 822 282 836 288" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+    <path d="M 854 288 Q 868 282 882 288" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round" />
+    
+    <path d="M 843 315 Q 847 325 841 329" fill="none" stroke="#d4a882" stroke-width="2.5" stroke-linecap="round" />
+    
+    <path d="M 826 342 Q 845 356 864 342" fill="none" stroke="#c07050" stroke-width="3" stroke-linecap="round" />
+    
+    <ellipse cx="806" cy="325" rx="12" ry="7" fill="#f0a080" opacity="0.35" />
+    <ellipse cx="884" cy="325" rx="12" ry="7" fill="#f0a080" opacity="0.35" />
+    
+    <path d="M 760 480 Q 730 530 700 555 Q 680 570 650 560" fill="none" stroke="url(#raincoatGrad)" stroke-width="40" stroke-linecap="round" />
+    
+    <ellipse cx="660" cy="558" rx="20" ry="12" fill="#f0a800" transform="rotate(-10 660 558)" />
+    
+    <path d="M 930 480 Q 960 530 990 555 Q 1010 570 1040 560" fill="none" stroke="url(#raincoatGrad)" stroke-width="40" stroke-linecap="round" />
+    <ellipse cx="1030" cy="558" rx="20" ry="12" fill="#f0a800" transform="rotate(10 1030 558)" />
+    
+    <g id="girl-hands">
+      <ellipse cx="655" cy="552" rx="22" ry="16" fill="#f5d8b8" transform="rotate(15 655 552)" />
+      <ellipse cx="700" cy="548" rx="22" ry="16" fill="#f5d8b8" transform="rotate(-10 700 548)" />
+      
+      <path d="M 668 542 Q 675 532 682 536" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+      <path d="M 660 538 Q 665 528 672 530" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+      <path d="M 690 540 Q 685 530 692 526" fill="none" stroke="#e0b890" stroke-width="3" stroke-linecap="round" />
+    </g>
+    
+    <g id="folded-umbrella">
+      <line x1="680" y1="620" x2="740" y2="480" stroke="#2a2a3a" stroke-width="6" stroke-linecap="round" />
+      <path d="M 740 480 Q 745 470 738 465" fill="none" stroke="#2a2a3a" stroke-width="5" stroke-linecap="round" />
+      <path d="M 680 620 Q 675 630 682 635" fill="none" stroke="#2a2a3a" stroke-width="5" stroke-linecap="round" />
+      
+      <circle cx="740" cy="478" r="4" fill="#4a4a5a" />
+    </g>
+  </g>
+
+  
+  <circle cx="370" cy="520" r="120" fill="url(#lampGlow)" opacity="0.35" />
+
+  
+  <g id="foreground-counter">
+    <rect x="0" y="680" width="1280" height="40" fill="#6b4423" />
+    <rect x="0" y="680" width="1280" height="6" fill="#8a5a2b" />
+  </g>
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="#ffb84d" opacity="0.06" />
+</svg>

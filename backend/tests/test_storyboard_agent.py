@@ -213,6 +213,42 @@ def test_duplicate_active_task_and_restart_recovery_without_replaying(setup):
     assert not pictures.calls
 
 
+def test_failed_picture_can_be_repaired_without_redrawing_completed_shot(setup):
+    boards, shots, pictures, runs = setup
+    board = boards.create("故障续做")
+    board = boards.describe(
+        board.id,
+        0,
+        entries=[
+            {"title": "第一镜", "description": "咖啡"},
+            {"title": "第二镜", "description": "店员"},
+        ],
+    )
+    first, second = [s.id for s in board.state.shots]
+    shots.generate(first, 0, "先完成第一镜")
+
+    def unavailable(*_):
+        raise ShotModelError("暂时失败")
+
+    pictures.generate = unavailable
+
+    def choose(index, messages):
+        if index == 0:
+            return [call("draw_shot", shotId=second, instruction="补画第二镜", reason="补齐")]
+        if index == 1:
+            assert "暂时失败" in messages[-1]["content"]
+            pictures.generate = lambda *_: (SVG, {}, "fixture")
+            return [call("draw_shot", shotId=second, instruction="补画第二镜", reason="错误恢复")]
+        return [call("finish_task", summary="已补齐", shotIds=[first, second], expectedCount=2)]
+
+    run = StoryboardAgentService(boards, shots, Decisions(choose), runs).start(
+        board.id, board.version, "继续补齐没有完成的镜头", background=False
+    )
+    assert run.status == "completed"
+    assert len(shots.get(first).revisions) == len(shots.get(second).revisions) == 1
+    assert [s.status for s in run.steps] == ["failed", "succeeded", "succeeded"]
+
+
 def test_agent_api_returns_run_and_real_board(setup):
     boards, shots, _, runs = setup
     board = boards.create("接口")
@@ -266,6 +302,86 @@ def test_adapter_sends_real_tools_and_parses_tool_calls():
     )
     result, _ = adapter.decide([], [{"type": "function"}])
     assert result.calls[0].name == "get_storyboard"
+
+
+def test_cannot_hide_unfinished_created_shots_with_empty_delivery(setup):
+    boards, shots, pictures, runs = setup
+    board = boards.create("完整交付")
+
+    def choose(index, messages):
+        if index == 0:
+            return [
+                call(
+                    "create_shots",
+                    shots=[
+                        {
+                            "title": "尚未绘制",
+                            "description": "需要真正完成的画面",
+                            "durationSeconds": 5,
+                        }
+                    ],
+                )
+            ]
+        if index == 1:
+            return [call("finish_task", summary="没有画面却声称完成")]
+        assert "遗漏" in messages[-1]["content"]
+        return [call("finish_task", summary="还有未完成镜头", unresolved=["画面尚未生成"])]
+
+    run = StoryboardAgentService(boards, shots, Decisions(choose), runs).start(
+        board.id, 0, "完成分镜", background=False
+    )
+    assert run.status == "needs_input" and run.steps[1].status == "failed"
+    assert not pictures.calls
+
+
+def test_metadata_edit_preserves_selected_shot_and_duration_check(setup):
+    boards, shots, pictures, runs = setup
+    board = boards.create("拍摄说明")
+    board = boards.change(board.id, 0, "add")
+    selected = board.active_id
+    board = boards.describe(board.id, board.version, context="暖色")
+    assert board.active_id == selected
+    board = boards.describe(
+        board.id,
+        board.version,
+        entries=[
+            {
+                "title": "递杯",
+                "description": "双手接杯",
+                "durationSeconds": 5,
+                "camera": "中景",
+            }
+        ],
+        target_id=selected,
+    )
+    shots.generate(selected, 0, "咖啡")
+
+    def choose(index, messages):
+        if index == 0:
+            return [
+                call(
+                    "finish_task",
+                    summary="时长错误",
+                    shotIds=[selected],
+                    expectedCount=1,
+                    expectedDuration=15,
+                )
+            ]
+        assert "总时长" in messages[-1]["content"]
+        return [
+            call(
+                "finish_task",
+                summary="五秒镜头",
+                shotIds=[selected],
+                expectedCount=1,
+                expectedDuration=5,
+            )
+        ]
+
+    run = StoryboardAgentService(boards, shots, Decisions(choose), runs).start(
+        board.id, board.version, "查看", background=False
+    )
+    assert run.status == "completed" and run.steps[0].status == "failed"
 
 
 @pytest.mark.parametrize("body", [None, {}, {"choices": [{"finish_reason": "length"}]}])

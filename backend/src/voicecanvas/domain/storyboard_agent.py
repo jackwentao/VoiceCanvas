@@ -32,4 +32,5 @@ class StoryboardAgentRun(BaseModel):
     client_actions: list[dict] = Field(default_factory=list, alias="clientActions")
     pending_delete: dict | None = Field(default=None, alias="pendingDelete")
     usage: dict[str, int] = Field(default_factory=dict)
+    output_shot_ids: list[str] = Field(default_factory=list, alias="outputShotIds")
     created_at: str = Field(alias="createdAt")
