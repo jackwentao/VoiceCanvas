@@ -28,6 +28,7 @@ from voicecanvas.api.schemas import (
 )
 from voicecanvas.api.shots import create_shot_router
 from voicecanvas.api.showcase import showcase_router
+from voicecanvas.api.storyboard_agent import create_agent_router
 from voicecanvas.api.storyboards import create_storyboard_router
 from voicecanvas.api.workspace import workspace_router
 from voicecanvas.application.asset_storage import (
@@ -51,7 +52,11 @@ from voicecanvas.infrastructure.minio_catalog_seed import (
     load_catalog_seed_assets,
 )
 from voicecanvas.infrastructure.settings import AssetSettings, StorageSettings
-from voicecanvas.infrastructure.shot_factory import create_shot_service, create_storyboard_service
+from voicecanvas.infrastructure.shot_factory import (
+    create_shot_service,
+    create_storyboard_agent_service,
+    create_storyboard_service,
+)
 from voicecanvas.infrastructure.sqlite_project_repository import SQLiteProjectRepository
 
 
@@ -338,6 +343,7 @@ def create_app(
 
     app.include_router(create_shot_router(create_shot_service))
     app.include_router(create_storyboard_router(create_storyboard_service))
+    app.include_router(create_agent_router(create_storyboard_agent_service))
     return app
 
 

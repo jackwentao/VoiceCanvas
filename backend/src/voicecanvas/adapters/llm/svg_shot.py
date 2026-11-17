@@ -8,11 +8,8 @@ from dataclasses import dataclass, field
 import httpx
 
 from voicecanvas.adapters.llm.drawing_skills import compose_drawing_prompt, load_drawing_skill
+from voicecanvas.application.shot_service import ShotModelError
 from voicecanvas.domain.svg_document import apply_source_edits, validate_svg
-
-
-class ShotModelError(RuntimeError):
-    pass
 
 
 @dataclass(frozen=True)

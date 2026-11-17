@@ -18,12 +18,8 @@ def create_storyboard_service() -> StoryboardService:
     )
 
 
-def create_shot_service() -> ShotService:
+def create_shot_model_config() -> ShotModelConfig:
     llm = LLMSettings.from_env()
-    default_path = StorageSettings.from_env().project_db_path.with_name("svg-shots.sqlite3")
-    repository = SQLiteShotRepository(
-        Path(os.getenv("VOICECANVAS_SHOT_DB_PATH", str(default_path)))
-    )
     reasoning_effort = os.getenv("VOICECANVAS_SHOT_REASONING_EFFORT", "off").strip()
     config = ShotModelConfig(
         base_url=os.getenv("VOICECANVAS_SHOT_LLM_BASE_URL", llm.base_url or ""),
@@ -37,4 +33,27 @@ def create_shot_service() -> ShotService:
     )
     if not 1024 <= config.max_tokens <= 65536 or not 1 <= config.timeout_seconds <= 600:
         raise ValueError("单镜头输出预算应为 1024–65536，超时应为 1–600 秒")
+    return config
+
+
+def create_shot_service() -> ShotService:
+    config = create_shot_model_config()
+    default_path = StorageSettings.from_env().project_db_path.with_name("svg-shots.sqlite3")
+    repository = SQLiteShotRepository(
+        Path(os.getenv("VOICECANVAS_SHOT_DB_PATH", str(default_path)))
+    )
     return ShotService(repository, OpenAICompatibleShotGenerator(config))
+
+
+def create_storyboard_agent_service():
+    from voicecanvas.adapters.llm.storyboard_agent import OpenAICompatibleStoryboardAgent
+    from voicecanvas.application.storyboard_agent_service import StoryboardAgentService
+    from voicecanvas.infrastructure.sqlite_agent_run_repository import SQLiteAgentRunRepository
+
+    shots = create_shot_service()
+    return StoryboardAgentService(
+        create_storyboard_service(),
+        shots,
+        OpenAICompatibleStoryboardAgent(create_shot_model_config()),
+        SQLiteAgentRunRepository(shots.repository.db_path),
+    )

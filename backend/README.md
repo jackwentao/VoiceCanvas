@@ -252,3 +252,7 @@ SQLite 默认保存 `projects` 与 `workspace_runtime`；用户偏好继续由�
 ```powershell
 uv run --no-editable pytest tests/test_workspace_api.py tests/test_api.py tests/test_history_manager.py
 ```
+# 自由分镜 Agent 接口
+
+新增自主工具调用 API：`POST /api/storyboards/{id}/agent/runs` 提交任务，`GET /api/storyboards/{id}/agent/run` 查询真实进展。模型选择工具和顺序，应用层不预设拆镜工作流。配置、单进程运行边界和离线测试命令见 [分镜 Agent](../docs/分镜Agent.md)。
+

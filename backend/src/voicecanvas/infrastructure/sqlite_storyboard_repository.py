@@ -69,8 +69,18 @@ class SQLiteStoryboardRepository:
             ).fetchall()
         return {row[0]: ShotDocument.model_validate_json(row[1]) for row in rows}
 
-    def save(self, board: Storyboard, expected_version: int, shots: list[ShotDocument]):
+    def save(
+        self, board: Storyboard, expected_version: int, shots: list[ShotDocument],
+        expected_shots: dict[str, int] | None = None,
+    ):
         with self._connect() as connection:
+            connection.execute("BEGIN IMMEDIATE")
+            for shot_id, version in (expected_shots or {}).items():
+                row = connection.execute(
+                    "SELECT version FROM svg_shots WHERE id=?", (shot_id,)
+                ).fetchone()
+                if not row or row[0] != version:
+                    raise ShotConflict("画面已变化，请重新读取分镜后操作")
             changed = connection.execute(
                 "UPDATE svg_storyboards SET version=?,payload=?,updated_at=CURRENT_TIMESTAMP "
                 "WHERE id=? AND version=?",
