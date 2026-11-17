@@ -9,15 +9,23 @@
 <body>
   <header class="topbar">
     <a class="brand" id="homeLink" href="./index.html"><span class="brand-mark">V</span> VoiceCanvas <span class="brand-caption">创作实验室</span></a>
-    <div class="top-actions"><span class="save-state" id="saveState">正在连接</span><button id="newShot" disabled>＋ 新建镜头</button></div>
+    <div class="top-actions"><span class="save-state" id="saveState">正在连接</span><button id="voiceMode" disabled>开启语音管理</button><button id="newBoard" disabled>新建分镜项目</button><button id="newShot" disabled>＋ 新建镜头</button></div>
   </header>
   <main class="studio">
     <aside class="director">
-      <div class="eyebrow">SINGLE SHOT / 01</div>
-      <h1>先画好一个镜头。</h1>
-      <p class="intro">描述你脑海中的画面，<br />让 Agent 自主构图、绘制，再一起打磨。</p>
+      <div class="eyebrow">STORYBOARD STUDIO</div>
+      <h1>用声音，连成故事。</h1>
+      <p class="intro">自由绘制每个镜头，<br />用语音管理顺序、名称和画面。</p>
+      <section class="board-panel" aria-label="分镜项目">
+        <label for="boardProject">分镜项目</label><select id="boardProject" disabled></select>
+        <div class="board-heading"><h2 id="boardTitle">未命名分镜</h2><span id="shotCount">0 个镜头</span></div>
+        <ol id="shotList" class="shot-list" aria-label="镜头列表"></ol>
+        <div class="board-tools"><button id="duplicateShot" disabled>复制当前</button><button id="deleteShot" disabled>删除当前</button><button id="boardUndo" disabled>撤销分镜操作</button><button id="boardRedo" disabled>重做分镜操作</button></div>
+        <div id="deleteConfirmation" class="delete-confirmation" hidden><p id="deleteQuestion"></p><button id="confirmDelete">确认删除</button><button id="cancelDelete">取消</button></div>
+        <p class="voice-help">可说：“新建三个镜头”“切换到第二个镜头”“当前镜头改名为雨夜”“把第三个镜头移到第一位”。删除后可说“撤销分镜操作”。</p>
+      </section>
       <form id="composer">
-        <label for="instruction" id="promptLabel">你想看到什么画面？</label>
+        <label for="instruction" id="promptLabel">描述画面或输入分镜指令</label>
         <textarea id="instruction" maxlength="4000" placeholder="谁，在什么地方，正在做什么？也可以加上景别、光线和风格。" required disabled></textarea>
         <div class="input-footer"><button type="button" id="dictate" class="subtle" disabled>○ 语音输入</button><span>Ctrl / ⌘ + Enter</span></div>
         <p id="speechStatus" class="speech-status" aria-live="polite"></p>
