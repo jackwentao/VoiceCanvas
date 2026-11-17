@@ -1,0 +1,15 @@
+{
+  "categories": [
+    {"id": "poster", "label": "手绘海报"},
+    {"id": "story", "label": "分镜故事"},
+    {"id": "sketch", "label": "灵感草图"}
+  ],
+  "items": [
+    {"id": "little-escape", "title": "去山里，发一会儿呆", "category": "poster", "categoryLabel": "手绘海报", "description": "一顶帐篷、一轮落日，把周末画成蓝色的。", "file": "little-escape.svg", "paper": "#dce9ef", "hero": "main", "note": "周末，就该浪费在这里"},
+    {"id": "slow-coffee", "title": "慢一点，也没关系", "category": "poster", "categoryLabel": "手绘海报", "description": "给一杯咖啡画张海报，也给忙碌的自己留一点空白。", "file": "slow-coffee.svg", "paper": "#eee0c4", "hero": "front", "note": "灵感浓度：刚刚好"},
+    {"id": "cat-day", "title": "猫的一天，只有三件事", "category": "story", "categoryLabel": "分镜故事", "description": "晒太阳，做白日梦，然后再睡一会儿。三个镜头的小故事。", "file": "cat-day.svg", "paper": "#f4dfb4", "hero": "back", "note": "没什么大事，都是好事"},
+    {"id": "slow-grow", "title": "按自己的节奏生长", "category": "poster", "categoryLabel": "手绘海报", "description": "把窗台上的一盆小植物，画成一张温柔的提醒。", "file": "slow-grow.svg", "paper": "#e1e9d8", "note": "今天也长高了一点点"},
+    {"id": "sea-you", "title": "寄一张，海边的明信片", "category": "sketch", "categoryLabel": "灵感草图", "description": "蓝色遮阳伞、条纹浴巾和柠檬汽水，留住夏天的几个碎片。", "file": "sea-you.svg", "paper": "#d5e8e3", "note": "收件人：明天的自己"},
+    {"id": "idea-garden", "title": "一个小想法的诞生", "category": "sketch", "categoryLabel": "灵感草图", "description": "想到哪儿，画到哪儿。把散落的念头连成自己的灵感地图。", "file": "idea-garden.svg", "paper": "#eee7f1", "note": "先画出来，再慢慢想"}
+  ]
+}

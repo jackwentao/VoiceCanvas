@@ -26,6 +26,7 @@ from voicecanvas.api.schemas import (
     UserMemoryListResponse,
     UserMemoryResponse,
 )
+from voicecanvas.api.showcase import showcase_router
 from voicecanvas.api.workspace import workspace_router
 from voicecanvas.application.asset_storage import (
     AssetStorage,
@@ -151,6 +152,7 @@ def create_app(
         service.set_user_memory_service(memory_service)
 
     app.include_router(workspace_router(service))
+    app.include_router(showcase_router())
 
     @app.get("/health", response_model=HealthResponse)
     async def health() -> HealthResponse:

@@ -93,6 +93,10 @@ export function loadRenderCatalog() {
   return requestJson("/api/render-catalog");
 }
 
+export function loadShowcase(category = "") {
+  return requestJson(`/api/showcase${category ? `?category=${encodeURIComponent(category)}` : ""}`);
+}
+
 export function executeWorkspaceAction(projectId, payload) {
   return requestJson(`/api/projects/${encodeURIComponent(projectId)}/actions`, {
     method: "POST", body: JSON.stringify(payload)

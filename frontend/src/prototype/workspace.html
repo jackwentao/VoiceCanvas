@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f7fa" />
+  <title>VoiceCanvas · 让想法成为画面</title>
+  <link rel="stylesheet" href="./canvas-elements.css" />
+  <link rel="stylesheet" href="./workspace.css" />
+</head>
+<body>
+  <a class="skip-link" href="#voiceInput">跳到创作输入</a>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="返回手绘画廊首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>VoiceCanvas<span class="brand-label">创作工作台</span></a>
+      <div class="project-heading"><button id="renameButton" class="project-name" title="重命名项目" data-requires-project>连接中…</button><span class="save-status" id="saveStatus"><i></i>正在连接</span></div>
+      <div class="header-actions">
+        <button class="button quiet" id="memoryButton" aria-label="创作偏好" data-requires-project><span data-icon="sparkles"></span><span class="wide-label">创作偏好</span></button>
+        <button class="button quiet" id="toggleAssistant" aria-label="创作助手" aria-expanded="true" aria-controls="assistantPanel"><span data-icon="panel"></span><span class="wide-label">助手</span></button>
+        <div class="export-wrap"><button class="button primary small" id="exportButton" aria-expanded="false" aria-controls="exportMenu" data-requires-project><span data-icon="download"></span>导出<span data-icon="chevron"></span></button>
+          <div id="exportMenu" class="popover" hidden><button data-export="png"><span data-icon="image"></span>当前镜头 · PNG</button><button data-export="json"><span data-icon="file"></span>可编辑项目 · JSON</button></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="error-banner" id="errorBanner" role="alert" hidden><span data-icon="alert"></span><span id="errorText"></span><button class="button small" id="retryButton">重新连接</button><button class="icon-button" id="dismissError" aria-label="关闭错误提示"><span data-icon="close"></span></button></div>
+
+    <main class="workspace">
+      <aside class="sidebar" aria-label="项目与镜头">
+        <div class="project-tools"><label class="sr-only" for="projectSelect">切换项目</label><select id="projectSelect" aria-label="切换项目" data-requires-project><option>正在连接…</option></select><button class="icon-button" id="newButton" title="新建项目" aria-label="新建项目"><span data-icon="plus"></span></button></div>
+        <div class="sidebar-heading"><h2>分镜</h2><span id="sceneCount" class="count">—</span></div>
+        <div id="sceneList" class="scene-list"><p class="sidebar-placeholder">连接后显示你的分镜</p></div>
+        <details class="history-section"><summary><span data-icon="history"></span>操作历史<span id="historyCount"></span></summary><ol id="historyList" class="history-list"><li>暂无操作</li></ol></details>
+        <button class="button import-button" id="importButton"><span data-icon="folder"></span>载入项目文件</button><input type="file" id="importInput" accept=".json,application/json" hidden />
+        <div class="sidebar-foot"><span class="tiny-wave" aria-hidden="true">▂▅▇▃▆</span><span>从一句想法开始</span><kbd>Alt V</kbd></div>
+      </aside>
+
+      <section class="editor" aria-label="分镜创作区">
+        <div class="editor-toolbar"><div class="scene-breadcrumb"><span data-icon="layout"></span><span id="sceneName">创作空间</span><span class="dimension" id="canvasSize"></span></div><div class="editor-actions"><button class="icon-button" id="undoButton" title="撤销 · Ctrl+Z" aria-label="撤销" disabled><span data-icon="undo"></span></button><button class="icon-button" id="redoButton" title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled><span data-icon="redo"></span></button><span class="toolbar-divider"></span><label class="background-control" title="画布背景"><span data-icon="palette"></span><span>背景</span><input id="backgroundColorInput" type="color" aria-label="画布背景颜色" value="#ffffff" data-requires-project /></label></div></div>
+        <div class="canvas-viewport" id="canvasViewport">
+          <div class="scene-caption"><span class="eyebrow" id="sceneEyebrow">YOUR NEXT STORY</span><span id="sceneDescription">让灵感，先有一个轮廓。</span></div>
+          <div class="canvas-stage" id="canvasStage"><div id="canvasSurface" class="canvas-surface" aria-label="当前镜头画布"></div>
+            <div id="emptyCanvas" class="empty-canvas">
+              <div class="storyboard-art" aria-hidden="true"><div class="art-card art-left"><i class="art-sun"></i><i class="art-hill"></i></div><div class="art-card art-center"><span data-icon="wave"></span><i></i><b></b></div><div class="art-card art-right"><i class="art-line"></i><i class="art-line short"></i><i class="art-circle"></i></div><span class="art-spark">✦</span></div>
+              <span class="eyebrow">A LITTLE IDEA. A NEW STORY.</span><h1>说出想法，画面从这里开始。</h1><p>描述一个场景，或让助手为你规划一组分镜。<br />之后的每一次调整，也只需要一句话。</p>
+              <div class="suggestions"><button data-prompt="创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"><span data-icon="film"></span>新品奶茶 · 三镜头分镜<span>↗</span></button><button data-prompt="添加一个标题，内容是今天也要好好生活"><span data-icon="type"></span>从一句标题开始<span>↗</span></button></div>
+            </div>
+          </div>
+          <div class="canvas-footer"><span id="selectionLabel">选择画面中的元素，查看它的名称</span><button class="button quiet small" id="fitButton"><span data-icon="maximize"></span>适应画布</button></div>
+        </div>
+        <div class="composer-area"><div class="composer-context" id="composerContext"><span class="status-dot"></span><span id="voiceStatus" role="status">连接后即可开始创作</span><span class="composer-hint">语音 / 文字，随你喜欢</span></div>
+          <form id="composerForm" class="composer"><button type="button" id="voiceButton" class="mic-button" aria-label="开始语音创作" aria-pressed="false" title="开始语音创作 · Alt+V" data-requires-project><span data-icon="mic"></span></button><label class="sr-only" for="voiceInput">描述你想创作或修改的内容</label><textarea id="voiceInput" rows="1" placeholder="描述你的画面，或说“把标题放大一点”…" data-requires-project></textarea><button class="send-button" id="sendButton" type="submit" aria-label="发送指令" title="发送 · Enter" data-requires-project><span data-icon="arrowUp"></span></button></form>
+          <div class="composer-foot"><span><kbd>Enter</kbd> 发送 · <kbd>Shift Enter</kbd> 换行</span><span id="narrationText">每一步创作，都可以继续修改</span></div>
+        </div>
+      </section>
+
+      <aside class="assistant-panel" id="assistantPanel" aria-label="创作助手"><div class="assistant-header"><div class="assistant-avatar"><span data-icon="sparkles"></span></div><div><h2>创作助手</h2><span id="assistantConnection">等待连接</span></div><span class="assistant-live" aria-hidden="true"></span></div>
+        <div class="assistant-body"><div class="assistant-intro"><span class="eyebrow">MAKE ROOM FOR IDEAS</span><h3>你来想象，<br />我们一起完成。</h3><p>从第一幅画面到最后一次修改，把想法交给语音，让注意力留在创作上。</p></div>
+          <div class="assistant-note"><span data-icon="wave"></span><p>可以直接说：<br /><strong>“把第二个镜头的标题放大一点”</strong></p></div>
+          <section class="turn-card" id="turnCard" hidden><div class="user-request" id="lastInput"></div><div class="result-heading"><span data-icon="sparkles"></span><strong id="resultHeading">正在构思画面</strong></div><p id="resultMessage"></p><button class="text-button" id="undoResult" hidden>撤销上一步 <span>↶</span></button></section>
+          <section class="clarification-card" id="clarificationCard" hidden><span class="eyebrow">需要你的选择</span><h3 id="clarificationQuestion"></h3><div id="clarificationOptions" class="clarification-options"></div><p>也可以直接说出或输入你的回答。</p></section>
+          <details class="process-details" id="processDetails"><summary>处理详情 <span id="eventCount">0</span></summary><ol id="eventLog"></ol><p id="tokenUsage"></p><p id="tokenTotal"></p><button class="text-button" id="clearUsage" data-requires-project>清空累计用量</button></details>
+        </div>
+        <div class="assistant-footer"><span data-icon="shield"></span><span id="backendStatus">每次修改，自动保存</span></div>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="nameDialog" class="dialog"><form id="nameForm"><div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>给这次创作取个名字。</p><label for="nameInput">项目名称</label><input id="nameInput" maxlength="120" required placeholder="例如：低糖奶茶上新分镜" /><div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button type="submit" class="button primary">确认</button></div></form></dialog>
+  <dialog id="memoryDialog" class="dialog memory-dialog"><div class="dialog-heading"><h2>创作偏好</h2><button class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>告诉助手你喜欢的风格。偏好由后端保存，可跨项目使用。</p><form id="memoryForm"><label class="sr-only" for="memoryContent">新偏好</label><textarea id="memoryContent" required placeholder="例如：我喜欢清爽的绿色，画面留白多一点" rows="3"></textarea><div class="memory-form-bottom"><label class="sr-only" for="memoryKind">偏好类型</label><select id="memoryKind"><option value="style_preference">视觉风格</option><option value="layout_preference">画面布局</option><option value="naming_convention">命名习惯</option><option value="workflow_preference">创作流程</option><option value="negative_preference">避免事项</option></select><button class="button primary small">保存偏好</button></div></form><p id="memoryError" role="alert"></p><div id="memoryList" class="memory-list"></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

@@ -62,3 +62,10 @@ npm --prefix frontend run test:prototype
 原型 HTML 断言已更新为禁止导入本地命令、Mock 和 localStorage 业务持久化。
 
 页面手动验收见 `docs/工作台使用与验收.md`。
+
+## 手绘首页测试
+
+`npm --prefix frontend run test:prototype` 同时运行 `home-controller.test.mjs` 的六项测试：
+服务端画廊读取、请求失败无本地伪造、分类请求竞态、失败后重试、重复创建互斥和导航参数。
+生产工作台 HTML 契约现读取 `workspace.html`。后端画廊测试见
+`backend/tests/test_showcase_api.py`，验证分类、SVG、作品 ID 白名单及错误响应。

@@ -3,72 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f7f7fa" />
-  <title>VoiceCanvas · 让想法成为画面</title>
-  <link rel="stylesheet" href="./canvas-elements.css" />
-  <link rel="stylesheet" href="./workspace.css" />
+  <meta name="theme-color" content="#f8f6ef" />
+  <title>VoiceCanvas · 让灵感，有迹可循</title>
+  <meta name="description" content="说出脑海里的画面，把一点灵感变成手绘海报、分镜故事和可继续修改的画布。" />
+  <link rel="stylesheet" href="./home.css" />
 </head>
 <body>
-  <a class="skip-link" href="#voiceInput">跳到创作输入</a>
-  <div class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="./index.html" aria-label="VoiceCanvas 首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>VoiceCanvas<span class="brand-label">创作工作台</span></a>
-      <div class="project-heading"><button id="renameButton" class="project-name" title="重命名项目" data-requires-project>连接中…</button><span class="save-status" id="saveStatus"><i></i>正在连接</span></div>
-      <div class="header-actions">
-        <button class="button quiet" id="memoryButton" aria-label="创作偏好" data-requires-project><span data-icon="sparkles"></span><span class="wide-label">创作偏好</span></button>
-        <button class="button quiet" id="toggleAssistant" aria-label="创作助手" aria-expanded="true" aria-controls="assistantPanel"><span data-icon="panel"></span><span class="wide-label">助手</span></button>
-        <div class="export-wrap"><button class="button primary small" id="exportButton" aria-expanded="false" aria-controls="exportMenu" data-requires-project><span data-icon="download"></span>导出<span data-icon="chevron"></span></button>
-          <div id="exportMenu" class="popover" hidden><button data-export="png"><span data-icon="image"></span>当前镜头 · PNG</button><button data-export="json"><span data-icon="file"></span>可编辑项目 · JSON</button></div>
-        </div>
+  <a class="skip-link" href="#gallery">跳到灵感画廊</a>
+  <header class="site-header page-width">
+    <a class="wordmark" href="./index.html" aria-label="VoiceCanvas 首页"><svg viewBox="0 0 42 42" aria-hidden="true"><path d="M6 16v11m7-18v25m8-29v32m8-25v19m7-13v8"/><path d="M3 39q18-3 36 0"/></svg><span>VoiceCanvas<span class="wordmark-dot">.</span></span></a>
+    <nav aria-label="主导航"><a href="#gallery" class="nav-gallery">灵感画廊</a><a href="#how-it-works">如何开始</a></nav>
+    <a class="header-workspace workspace-link" href="./workspace.html">进入工作台 <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main>
+    <section class="hero page-width" aria-labelledby="heroTitle">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="tiny-star" aria-hidden="true">✳</span> A LITTLE VOICE. A LOT OF POSSIBILITIES.</p>
+        <h1 id="heroTitle">脑海里的画面，<br />不如<span class="marked-word">说出来<svg viewBox="0 0 280 28" aria-hidden="true"><path d="M6 18Q126 0 273 12M27 25Q148 13 249 21"/></svg></span><span class="heading-dot">。</span></h1>
+        <p class="hero-description">一个念头，一句描述。<br />把还没成形的灵感，画成有模有样的作品。</p>
+        <div class="hero-actions"><button class="sketch-button primary" data-create>开始我的创作 <svg viewBox="0 0 30 22" aria-hidden="true"><path d="M2 12q13-5 25-2M20 3l8 7-8 8"/></svg></button><a class="gallery-link" href="#gallery">先逛逛画廊 <span aria-hidden="true">↓</span></a></div>
+        <div class="hero-footnote"><svg viewBox="0 0 56 36" aria-hidden="true"><path d="M49 29C17 43 5 10 25 7c19-2 13 22-3 18M21 20l-1 7 8-1"/></svg><span>不用会画画，有想法就好。</span></div>
       </div>
-    </header>
+      <div class="hero-gallery" id="heroGallery" aria-label="精选作品展示" aria-busy="true">
+        <svg class="doodle hero-spark" viewBox="0 0 80 80" aria-hidden="true"><path d="M39 5l3 25 19-17-15 24 28 3-28 5 14 23-19-17-4 25-4-26-23 17 17-24-25-4 27-4-13-23 19 17Z"/></svg>
+        <span class="collage-caption handwriting">一点点灵感，很多种可能</span>
+        <div class="art-paper hero-art main-art skeleton" data-hero="main"><span class="tape"></span></div>
+        <div class="art-paper hero-art back-art skeleton" data-hero="back"><span class="pin"></span></div>
+        <div class="art-paper hero-art front-art skeleton" data-hero="front"><span class="tape"></span></div>
+        <svg class="doodle hero-loop" viewBox="0 0 180 100" aria-hidden="true"><path d="M9 15c29 82 148 42 114 4-27-30-63 59 44 59m-12-10 13 10-16 6"/></svg>
+        <span class="collage-note handwriting">看，想法有了形状 :)</span>
+      </div>
+    </section>
 
-    <div class="error-banner" id="errorBanner" role="alert" hidden><span data-icon="alert"></span><span id="errorText"></span><button class="button small" id="retryButton">重新连接</button><button class="icon-button" id="dismissError" aria-label="关闭错误提示"><span data-icon="close"></span></button></div>
+    <div class="possibilities page-width" aria-label="可以创作的内容"><span class="handwriting possibilities-note">今天，想画点什么？</span><span>一张有温度的海报</span><span class="separator" aria-hidden="true">✳</span><span>一个小小的故事</span><span class="separator" aria-hidden="true">✳</span><span>一闪而过的好点子</span><svg class="doodle possibilities-arrow" viewBox="0 0 100 35" aria-hidden="true"><path d="M4 10Q48 37 91 14m-13-3 14 2-7 12"/></svg></div>
 
-    <main class="workspace">
-      <aside class="sidebar" aria-label="项目与镜头">
-        <div class="project-tools"><label class="sr-only" for="projectSelect">切换项目</label><select id="projectSelect" aria-label="切换项目" data-requires-project><option>正在连接…</option></select><button class="icon-button" id="newButton" title="新建项目" aria-label="新建项目"><span data-icon="plus"></span></button></div>
-        <div class="sidebar-heading"><h2>分镜</h2><span id="sceneCount" class="count">—</span></div>
-        <div id="sceneList" class="scene-list"><p class="sidebar-placeholder">连接后显示你的分镜</p></div>
-        <details class="history-section"><summary><span data-icon="history"></span>操作历史<span id="historyCount"></span></summary><ol id="historyList" class="history-list"><li>暂无操作</li></ol></details>
-        <button class="button import-button" id="importButton"><span data-icon="folder"></span>载入项目文件</button><input type="file" id="importInput" accept=".json,application/json" hidden />
-        <div class="sidebar-foot"><span class="tiny-wave" aria-hidden="true">▂▅▇▃▆</span><span>从一句想法开始</span><kbd>Alt V</kbd></div>
-      </aside>
+    <section class="gallery-section page-width" id="gallery" aria-labelledby="galleryTitle">
+      <div class="section-heading"><div><p class="eyebrow">THE INSPIRATION WALL</p><h2 id="galleryTitle">灵感，先贴在这里<span class="drawn-asterisk" aria-hidden="true">✳</span></h2></div><p class="section-aside handwriting">每一张，都是从一个小念头开始的。<br /><span>原创展示样例 · 点开看大图</span></p></div>
+      <div class="gallery-toolbar"><div class="filters" id="galleryFilters" role="group" aria-label="作品分类"></div><span class="gallery-count" id="galleryCount" aria-live="polite">正在挂上作品…</span></div>
+      <div class="gallery-error" id="galleryError" role="alert" hidden><p>画廊暂时还没连上，请稍后再试。</p><button class="text-button" id="retryGallery">重新加载 ↻</button></div>
+      <div class="gallery-grid" id="galleryGrid" aria-busy="true"><div class="gallery-placeholder skeleton"></div><div class="gallery-placeholder skeleton"></div><div class="gallery-placeholder skeleton"></div></div>
+      <p class="gallery-empty" id="galleryEmpty" hidden>这个分类还在准备新的灵感，先看看其他作品吧。</p>
+      <p class="wall-note handwriting">不必完美，只要是你的。<svg viewBox="0 0 45 36" aria-hidden="true"><path d="M22 31C-8 13 9-4 22 10 37-5 52 14 22 31Z"/></svg></p>
+    </section>
 
-      <section class="editor" aria-label="分镜创作区">
-        <div class="editor-toolbar"><div class="scene-breadcrumb"><span data-icon="layout"></span><span id="sceneName">创作空间</span><span class="dimension" id="canvasSize"></span></div><div class="editor-actions"><button class="icon-button" id="undoButton" title="撤销 · Ctrl+Z" aria-label="撤销" disabled><span data-icon="undo"></span></button><button class="icon-button" id="redoButton" title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled><span data-icon="redo"></span></button><span class="toolbar-divider"></span><label class="background-control" title="画布背景"><span data-icon="palette"></span><span>背景</span><input id="backgroundColorInput" type="color" aria-label="画布背景颜色" value="#ffffff" data-requires-project /></label></div></div>
-        <div class="canvas-viewport" id="canvasViewport">
-          <div class="scene-caption"><span class="eyebrow" id="sceneEyebrow">YOUR NEXT STORY</span><span id="sceneDescription">让灵感，先有一个轮廓。</span></div>
-          <div class="canvas-stage" id="canvasStage"><div id="canvasSurface" class="canvas-surface" aria-label="当前镜头画布"></div>
-            <div id="emptyCanvas" class="empty-canvas">
-              <div class="storyboard-art" aria-hidden="true"><div class="art-card art-left"><i class="art-sun"></i><i class="art-hill"></i></div><div class="art-card art-center"><span data-icon="wave"></span><i></i><b></b></div><div class="art-card art-right"><i class="art-line"></i><i class="art-line short"></i><i class="art-circle"></i></div><span class="art-spark">✦</span></div>
-              <span class="eyebrow">A LITTLE IDEA. A NEW STORY.</span><h1>说出想法，画面从这里开始。</h1><p>描述一个场景，或让助手为你规划一组分镜。<br />之后的每一次调整，也只需要一句话。</p>
-              <div class="suggestions"><button data-prompt="创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"><span data-icon="film"></span>新品奶茶 · 三镜头分镜<span>↗</span></button><button data-prompt="添加一个标题，内容是今天也要好好生活"><span data-icon="type"></span>从一句标题开始<span>↗</span></button></div>
-            </div>
-          </div>
-          <div class="canvas-footer"><span id="selectionLabel">选择画面中的元素，查看它的名称</span><button class="button quiet small" id="fitButton"><span data-icon="maximize"></span>适应画布</button></div>
-        </div>
-        <div class="composer-area"><div class="composer-context" id="composerContext"><span class="status-dot"></span><span id="voiceStatus" role="status">连接后即可开始创作</span><span class="composer-hint">语音 / 文字，随你喜欢</span></div>
-          <form id="composerForm" class="composer"><button type="button" id="voiceButton" class="mic-button" aria-label="开始语音创作" aria-pressed="false" title="开始语音创作 · Alt+V" data-requires-project><span data-icon="mic"></span></button><label class="sr-only" for="voiceInput">描述你想创作或修改的内容</label><textarea id="voiceInput" rows="1" placeholder="描述你的画面，或说“把标题放大一点”…" data-requires-project></textarea><button class="send-button" id="sendButton" type="submit" aria-label="发送指令" title="发送 · Enter" data-requires-project><span data-icon="arrowUp"></span></button></form>
-          <div class="composer-foot"><span><kbd>Enter</kbd> 发送 · <kbd>Shift Enter</kbd> 换行</span><span id="narrationText">每一步创作，都可以继续修改</span></div>
-        </div>
-      </section>
+    <section class="how-section page-width" id="how-it-works" aria-labelledby="howTitle">
+      <div class="how-intro"><p class="eyebrow">FROM A THOUGHT TO A CANVAS</p><h2 id="howTitle">灵感到画面，<br />就这么自然。</h2><span class="handwriting">把注意力，留给想象。</span></div>
+      <ol class="steps"><li><span class="step-number">01</span><h3>说出一个想法</h3><p>“给我画一组新品奶茶分镜。”<br />语音或文字，选你舒服的方式。</p></li><li><span class="step-number">02</span><h3>一起慢慢打磨</h3><p>“把标题放大一点。”<br />继续描述，让画面更接近你的想象。</p></li><li><span class="step-number">03</span><h3>把喜欢的带走</h3><p>导出图片，分享你的作品。<br />也可以保存项目，下次接着画。</p></li></ol>
+    </section>
 
-      <aside class="assistant-panel" id="assistantPanel" aria-label="创作助手"><div class="assistant-header"><div class="assistant-avatar"><span data-icon="sparkles"></span></div><div><h2>创作助手</h2><span id="assistantConnection">等待连接</span></div><span class="assistant-live" aria-hidden="true"></span></div>
-        <div class="assistant-body"><div class="assistant-intro"><span class="eyebrow">MAKE ROOM FOR IDEAS</span><h3>你来想象，<br />我们一起完成。</h3><p>从第一幅画面到最后一次修改，把想法交给语音，让注意力留在创作上。</p></div>
-          <div class="assistant-note"><span data-icon="wave"></span><p>可以直接说：<br /><strong>“把第二个镜头的标题放大一点”</strong></p></div>
-          <section class="turn-card" id="turnCard" hidden><div class="user-request" id="lastInput"></div><div class="result-heading"><span data-icon="sparkles"></span><strong id="resultHeading">正在构思画面</strong></div><p id="resultMessage"></p><button class="text-button" id="undoResult" hidden>撤销上一步 <span>↶</span></button></section>
-          <section class="clarification-card" id="clarificationCard" hidden><span class="eyebrow">需要你的选择</span><h3 id="clarificationQuestion"></h3><div id="clarificationOptions" class="clarification-options"></div><p>也可以直接说出或输入你的回答。</p></section>
-          <details class="process-details" id="processDetails"><summary>处理详情 <span id="eventCount">0</span></summary><ol id="eventLog"></ol><p id="tokenUsage"></p><p id="tokenTotal"></p><button class="text-button" id="clearUsage" data-requires-project>清空累计用量</button></details>
-        </div>
-        <div class="assistant-footer"><span data-icon="shield"></span><span id="backendStatus">每次修改，自动保存</span></div>
-      </aside>
-    </main>
-  </div>
+    <section class="closing page-width"><svg class="doodle closing-flower" viewBox="0 0 100 140" aria-hidden="true"><path d="M48 133q18-41 5-76M54 94Q14 58 19 99q22 18 35-5M58 78q43-32 31 4-19 17-31-4M49 39C15 54 8 27 32 25 14-2 48-9 48 15 65-7 86 14 66 29 97 36 78 66 60 49 46 77 26 57 49 39Z"/><circle cx="51" cy="33" r="9"/></svg><p class="handwriting">下一幅，会是什么样？</p><h2>留一张画布，给你的奇思妙想。</h2><button class="sketch-button primary" data-create>好，现在开始 <span aria-hidden="true">↗</span></button><span class="closing-note">从一句话开始，随时可以修改。</span></section>
+  </main>
 
-  <dialog id="nameDialog" class="dialog"><form id="nameForm"><div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>给这次创作取个名字。</p><label for="nameInput">项目名称</label><input id="nameInput" maxlength="120" required placeholder="例如：低糖奶茶上新分镜" /><div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button type="submit" class="button primary">确认</button></div></form></dialog>
-  <dialog id="memoryDialog" class="dialog memory-dialog"><div class="dialog-heading"><h2>创作偏好</h2><button class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>告诉助手你喜欢的风格。偏好由后端保存，可跨项目使用。</p><form id="memoryForm"><label class="sr-only" for="memoryContent">新偏好</label><textarea id="memoryContent" required placeholder="例如：我喜欢清爽的绿色，画面留白多一点" rows="3"></textarea><div class="memory-form-bottom"><label class="sr-only" for="memoryKind">偏好类型</label><select id="memoryKind"><option value="style_preference">视觉风格</option><option value="layout_preference">画面布局</option><option value="naming_convention">命名习惯</option><option value="workflow_preference">创作流程</option><option value="negative_preference">避免事项</option></select><button class="button primary small">保存偏好</button></div></form><p id="memoryError" role="alert"></p><div id="memoryList" class="memory-list"></div></dialog>
-  <div id="toast" class="toast" role="status" hidden></div>
-  <script type="module" src="./app.js"></script>
+  <footer class="site-footer page-width"><a class="footer-brand" href="./index.html">VoiceCanvas.</a><span>让灵感，有迹可循。</span><span class="footer-note">MADE FOR YOUR LITTLE BIG IDEAS <span aria-hidden="true">✳</span></span></footer>
+
+  <dialog id="artworkDialog" class="artwork-dialog" aria-labelledby="previewTitle"><button class="dialog-close" id="closePreview" aria-label="关闭作品预览">×</button><div class="preview-art"><img id="previewImage" alt="" /></div><div class="preview-details"><span class="eyebrow" id="previewCategory"></span><h2 id="previewTitle"></h2><p id="previewDescription"></p><span class="preview-disclaimer">这是一幅原创展示样例。你的新作品，从空白画布开始。</span><button class="sketch-button primary" data-create>我也来画一幅 <span aria-hidden="true">↗</span></button></div></dialog>
+  <div class="creation-status" id="creationStatus" role="status" hidden></div>
+  <script type="module" src="./home.js"></script>
 </body>
 </html>

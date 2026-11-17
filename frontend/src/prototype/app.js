@@ -2,6 +2,7 @@ import * as backend from "./backend-client.js";
 import { createWorkspaceController } from "./workspace-controller.js";
 import { renderSceneMarkup, renderSceneThumbnailMarkup, setRenderCatalog, markCatalogAssetFailed } from "./canvas-renderer.js";
 import { downloadBackendExport } from "./file-download.js";
+import { pageUrl } from "./home-controller.js";
 import { BrowserSpeechRecognitionAdapter, BrowserVoiceFeedbackAdapter, VoiceSessionController } from "./voice-session.js";
 
 const $ = selector => document.querySelector(selector);
@@ -31,7 +32,7 @@ const paths = {
   close:'<path d="m6 6 12 12M6 18 18 6"/>'
 };
 const icon = name => `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${paths[name] || paths.sparkles}</svg>`;
-$(".brand").href = location.href;
+$(".brand").href = pageUrl("index.html", location.search);
 document.querySelectorAll("[data-icon]").forEach(node => { node.innerHTML = icon(node.dataset.icon); });
 
 let selectedElement = null;
