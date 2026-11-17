@@ -1,0 +1,25 @@
+{
+  "backend": "253 passed, 1 skipped",
+  "frontend": "prototype contracts passed; 16 shot tests passed",
+  "browser": "Microsoft Edge via Playwright",
+  "paidRequests": 0,
+  "checks": {
+    "realMultilineTextSelection": true,
+    "instantPreviewEqualsSavedPixels": true,
+    "localSaveMs": 184,
+    "rotatedPhoneTextPreviewEqualsSavedPixels": true,
+    "undoRedoAndReload": true,
+    "conflictReturns409AndSynchronizes": true,
+    "svgExportContainsNewText": true,
+    "pngExportDimensions": [
+      1280,
+      720
+    ],
+    "smallTextWarning": true,
+    "rectOverflowBlocksSave": true,
+    "mobile390NoHorizontalOverflow": true,
+    "pageErrors": [],
+    "isolatedMeasurementBlocksScripts": true,
+    "isolatedPreviewEqualsSavedPixels": true
+  }
+}

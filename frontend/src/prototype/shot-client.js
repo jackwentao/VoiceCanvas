@@ -46,12 +46,18 @@ export class ShotClient {
   load(id) { return this.run(() => this.request(`/${encodeURIComponent(id)}`)); }
 
   change(action, instruction) {
+    return this.mutate(action, instruction === undefined ? {} : { instruction });
+  }
+
+  editText(layout) { return this.mutate("text", layout); }
+
+  mutate(action, fields) {
     if (!this.shot) return Promise.reject(new Error("请先打开一个镜头"));
     const { id, version } = this.shot;
     return this.run(async () => {
       try {
         return await this.request(`/${encodeURIComponent(id)}/${action}`, {
-          expectedVersion: version, ...(instruction === undefined ? {} : { instruction }),
+          ...fields, expectedVersion: version,
         });
       } catch (error) {
         // 冲突只同步最新文档，不自动重复付费生成。
