@@ -60,13 +60,7 @@ class MinioCatalogCheckClient(Protocol):
 
 
 def default_render_catalog_path() -> Path:
-    return (
-        Path(__file__).resolve().parents[4]
-        / "frontend"
-        / "src"
-        / "prototype"
-        / "render-catalog.json"
-    )
+    return Path(__file__).resolve().parents[1] / "resources" / "render-catalog.json"
 
 
 def load_catalog_seed_assets(catalog_path: Path | None = None) -> list[CatalogSeedAsset]:

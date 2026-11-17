@@ -5,8 +5,9 @@
   "scripts": {
     "prototype": "node scripts/serve-prototype.mjs",
     "test": "npm run test:prototype && npm run test:shot",
+    "test:workspace-browser": "node tests/shot/svg-workspace.e2e.mjs",
     "test:shot": "node --test tests/shot/shot-client.test.mjs tests/shot/shot-text-layout.test.mjs tests/shot/storyboard-client.test.mjs",
-    "test:prototype": "node tests/prototype/prototype-contract.test.mjs"
+    "test:prototype": "node tests/prototype/prototype-contract.test.mjs && node --test tests/prototype/home-controller.test.mjs"
   },
   "dependencies": {
     "cors": "^2.8.6",

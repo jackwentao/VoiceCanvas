@@ -1,11 +1,23 @@
-# VoiceCanvas 源码目录
+# VoiceCanvas 前端源码
 
-本目录用于前端原型与后续正式前端。核心原则是前端只负责交互、渲染和本地投影，不作为 Project 可信状态源。
+首页为 `prototype/index.html`，统一工作台为 `prototype/workspace.html`。工作台直接加载自由 SVG 分镜控制器，不提供旧页面、旧项目分流或单镜头迁移入口。
 
-## 目录说明
+| 模块 | 边界 |
+| --- | --- |
+| home.js / home-controller.js | 画廊展示、创建分镜与页面导航 |
+| showcase-client.js | 只读画廊请求 |
+| svg-workspace.js | 页面装配、交互、语音指令与保存反馈 |
+| storyboard-client.js | 分镜请求、结构版本、确认和并发控制 |
+| shot-client.js | 画面生成、修改、直接改字与画面版本 |
+| shot-text-editor.js / shot-text-layout.js | 文字测量、预览与排版 |
+| voice-session.js | 麦克风、转写、播报与监听恢复 |
+| paper-theme.css / workspace.css / svg-workspace.css | main 手绘视觉与自由 SVG 内容适配 |
 
-- `prototype/`：当前可运行的静态交互原型。
-- `app/`：后续正式前端应用入口、全局 Provider 和装配逻辑。
-- `features/`：面向页面功能的 UI 模块，包括画布、右侧 AI 交互栏、左侧画布历史区、分镜和导出面板。
+业务状态保存在后端；浏览器只保存最近项目定位及尚未应用的文字草稿。模型 SVG 使用 Blob img 预览，不注入页面执行。
 
-后端 AI 编排、命令校验、命令执行、可信 Project State、七牛云适配和导出服务位于 `backend/`。
+```powershell
+npm --prefix frontend test
+npm --prefix frontend run test:workspace-browser
+```
+
+浏览器测试需先启动后端 fixture，完整命令见 [工作台适配](../../docs/main工作台分镜适配.md)。历史 fixtures 只供回归测试，不作为产品入口。

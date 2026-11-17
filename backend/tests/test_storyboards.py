@@ -84,17 +84,6 @@ def test_duplicate_snapshots_current_picture_and_does_not_share_history(services
     assert "第二版" in shots.get(duplicate).svg
 
 
-def test_old_single_shot_is_copied_without_modifying_original(services):
-    boards, shots, _ = services
-    original = shots.create("旧镜头")
-    original = shots.generate(original.id, 0, "原始画面")
-    board = boards.create("迁移项目", original.id)
-    assert board.active_id != original.id
-    copied = shots.get(board.active_id)
-    assert copied.svg == original.svg and copied.revisions == original.revisions
-    shots.generate(copied.id, copied.version, "新分镜修改")
-    assert shots.get(original.id) == original
-
 
 def test_delete_requires_confirmation_last_shot_and_wrong_target_rejected(services):
     boards, _, _ = services
@@ -194,6 +183,9 @@ def test_api_transcript_manage_and_picture_are_separate(services):
     app.include_router(create_storyboard_router(lambda: boards))
     app.include_router(create_shot_router(lambda: shots))
     with TestClient(app) as client:
+        assert client.post(
+            "/api/storyboards", json={"existingShotId": "shot_legacy"}
+        ).status_code == 422
         board = client.post("/api/storyboards", json={"title": "故事"}).json()
         board_id = board["id"]
         response = client.post(

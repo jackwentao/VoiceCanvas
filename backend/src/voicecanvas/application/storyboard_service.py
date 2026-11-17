@@ -32,24 +32,15 @@ class StoryboardService:
     def _blank(title: str) -> ShotDocument:
         return ShotDocument(id=f"shot_{uuid4().hex[:16]}", title=title)
 
-    def create(self, title: str, existing_shot_id: str | None = None) -> Storyboard:
-        new_shots = []
-        if existing_shot_id:
-            source = self.repository.load_shots([existing_shot_id]).get(existing_shot_id)
-            if source is None:
-                raise ShotNotFound("原镜头不存在，未创建分镜")
-            # 迁移时复制文档，避免旧单镜头 URL 与新分镜互相改写。
-            shot = source.model_copy(deep=True, update={"id": f"shot_{uuid4().hex[:16]}"})
-        else:
-            shot = self._blank("镜头 1")
-        new_shots.append(shot)
+    def create(self, title: str) -> Storyboard:
+        shot = self._blank("镜头 1")
         state = StoryboardState(
             title=self._title(title),
             shots=[StoryboardShot(id=shot.id, title=shot.title)],
             activeId=shot.id,
         )
         board = Storyboard(id=f"board_{uuid4().hex[:16]}", states=[state], activeId=shot.id)
-        self.repository.create(board, new_shots)
+        self.repository.create(board, [shot])
         return board
 
     def get(self, board_id: str) -> Storyboard:
