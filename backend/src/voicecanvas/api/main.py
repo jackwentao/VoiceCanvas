@@ -27,6 +27,7 @@ from voicecanvas.api.schemas import (
     UserMemoryResponse,
 )
 from voicecanvas.api.shots import create_shot_router
+from voicecanvas.api.storyboards import create_storyboard_router
 from voicecanvas.application.asset_storage import (
     AssetStorage,
     CatalogAssetPathError,
@@ -48,7 +49,7 @@ from voicecanvas.infrastructure.minio_catalog_seed import (
     load_catalog_seed_assets,
 )
 from voicecanvas.infrastructure.settings import AssetSettings, StorageSettings
-from voicecanvas.infrastructure.shot_factory import create_shot_service
+from voicecanvas.infrastructure.shot_factory import create_shot_service, create_storyboard_service
 from voicecanvas.infrastructure.sqlite_project_repository import SQLiteProjectRepository
 
 
@@ -331,6 +332,7 @@ def create_app(
         memory_service.delete(memory_id)
 
     app.include_router(create_shot_router(create_shot_service))
+    app.include_router(create_storyboard_router(create_storyboard_service))
     return app
 
 

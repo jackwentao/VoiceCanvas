@@ -5,8 +5,17 @@ from pathlib import Path
 
 from voicecanvas.adapters.llm.svg_shot import OpenAICompatibleShotGenerator, ShotModelConfig
 from voicecanvas.application.shot_service import ShotService
+from voicecanvas.application.storyboard_service import StoryboardService
 from voicecanvas.infrastructure.settings import LLMSettings, StorageSettings
 from voicecanvas.infrastructure.sqlite_shot_repository import SQLiteShotRepository
+from voicecanvas.infrastructure.sqlite_storyboard_repository import SQLiteStoryboardRepository
+
+
+def create_storyboard_service() -> StoryboardService:
+    default_path = StorageSettings.from_env().project_db_path.with_name("svg-shots.sqlite3")
+    return StoryboardService(
+        SQLiteStoryboardRepository(Path(os.getenv("VOICECANVAS_SHOT_DB_PATH", str(default_path))))
+    )
 
 
 def create_shot_service() -> ShotService:
