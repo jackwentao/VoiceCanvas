@@ -24,6 +24,7 @@ def create_shot_service() -> ShotService:
     repository = SQLiteShotRepository(
         Path(os.getenv("VOICECANVAS_SHOT_DB_PATH", str(default_path)))
     )
+    reasoning_effort = os.getenv("VOICECANVAS_SHOT_REASONING_EFFORT", "off").strip()
     config = ShotModelConfig(
         base_url=os.getenv("VOICECANVAS_SHOT_LLM_BASE_URL", llm.base_url or ""),
         model=os.getenv("VOICECANVAS_SHOT_LLM_MODEL", llm.model or ""),
@@ -32,6 +33,7 @@ def create_shot_service() -> ShotService:
         timeout_seconds=float(os.getenv("VOICECANVAS_SHOT_TIMEOUT_SECONDS", "300")),
         drawing_skill=os.getenv("VOICECANVAS_SHOT_DRAWING_SKILL", "svg-illustration"),
         local_address=os.getenv("VOICECANVAS_SHOT_LOCAL_ADDRESS") or None,
+        reasoning_effort=None if reasoning_effort == "provider-default" else reasoning_effort,
     )
     if not 1024 <= config.max_tokens <= 65536 or not 1 <= config.timeout_seconds <= 600:
         raise ValueError("单镜头输出预算应为 1024–65536，超时应为 1–600 秒")

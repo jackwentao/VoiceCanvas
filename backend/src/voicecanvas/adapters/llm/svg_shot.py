@@ -24,6 +24,13 @@ class ShotModelConfig:
     timeout_seconds: float = 300
     drawing_skill: str = "svg-illustration"
     local_address: str | None = None
+    reasoning_effort: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.reasoning_effort not in {None, "off", "low", "medium", "high", "xhigh", "max"}:
+            raise ValueError(
+                "绘图思考强度无效，请使用 off、low、medium、high、xhigh、max 或 provider-default"
+            )
 
 
 DRAW_PROMPT = """你是擅长用 SVG 创作完整画面的插画师。根据用户描述自主构图，
@@ -86,6 +93,8 @@ class OpenAICompatibleShotGenerator:
             "stream": True,
             "stream_options": {"include_usage": True},
         }
+        if config.reasoning_effort is not None:
+            payload["reasoning_effort"] = config.reasoning_effort
         text, usage, model = self._complete(payload)
         if current_svg:
             try:

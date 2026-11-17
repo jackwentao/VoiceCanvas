@@ -1,0 +1,180 @@
+{
+  "boardId": "board_c93c9bd095ae463c",
+  "title": "暖杯咖啡 · 雨天促销15秒分镜",
+  "shots": [
+    {
+      "id": "shot_17f6d38587704c04",
+      "title": "镜头 2",
+      "version": 1,
+      "texts": [
+        {
+          "index": 0,
+          "indices": [
+            0
+          ],
+          "text": "暖杯咖啡",
+          "editable": true,
+          "reason": ""
+        }
+      ],
+      "cursor": 0,
+      "canUndo": true,
+      "canRedo": false,
+      "revisions": [
+        {
+          "instruction": "画雨中的街角咖啡店外景，门头清楚写着“暖杯咖啡”，一个黑色短发、穿黄色雨衣的年轻女孩走向店门，手握雨伞。远景，暖棕与奶油色手绘插画，重点表达从雨中走进温暖店铺的意图，不要促销字幕",
+          "createdAt": "2026-11-17T09:57:48.119688+00:00",
+          "usage": {
+            "prompt_tokens": 1002,
+            "completion_tokens": 6782,
+            "total_tokens": 7784,
+            "reasoning_tokens": 0
+          },
+          "model": "deepseek/deepseek-v4.1-flash"
+        }
+      ],
+      "storyboardTitle": "雨中进店"
+    },
+    {
+      "id": "shot_646ee48671994e86",
+      "title": "镜头 3",
+      "version": 2,
+      "texts": [],
+      "cursor": 1,
+      "canUndo": true,
+      "canRedo": false,
+      "revisions": [
+        {
+          "instruction": "画暖杯咖啡店内的中景：左侧是黑色短发、黄色雨衣的年轻女孩，右侧是白衬衫绿色围裙的店员，店员把一杯热咖啡递给女孩，双方手接触同一只杯子，表达交接动作。暖棕和奶油色手绘风格，背景是吧台和咖啡机，不要字幕",
+          "createdAt": "2026-11-17T09:59:12.066501+00:00",
+          "usage": {
+            "prompt_tokens": 1007,
+            "completion_tokens": 4945,
+            "total_tokens": 5952,
+            "reasoning_tokens": 0
+          },
+          "model": "deepseek/deepseek-v4.1-flash"
+        },
+        {
+          "instruction": "修改递咖啡的动作：女孩把右臂伸向画面中间，店员把左臂伸向中间，咖啡杯放在两人之间，女孩的右手和店员的左手都握住杯子。只调整两人的前臂、手和杯子位置，保持人物头发、服装、背景与画面风格。",
+          "createdAt": "2026-11-17T10:00:14.009984+00:00",
+          "usage": {
+            "prompt_tokens": 5713,
+            "completion_tokens": 2009,
+            "total_tokens": 7722,
+            "reasoning_tokens": 0
+          },
+          "model": "deepseek/deepseek-v4.1-flash"
+        }
+      ],
+      "storyboardTitle": "店内递杯"
+    },
+    {
+      "id": "shot_580df2d3392d4b41",
+      "title": "镜头 1",
+      "version": 2,
+      "texts": [
+        {
+          "index": 0,
+          "indices": [
+            0
+          ],
+          "text": "暖杯咖啡",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 1,
+          "indices": [
+            1
+          ],
+          "text": "镜头1 · 0-5秒",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 2,
+          "indices": [
+            2
+          ],
+          "text": "雨中街角 · 女孩走向店门",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 3,
+          "indices": [
+            3
+          ],
+          "text": "镜头2 · 5-10秒",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 4,
+          "indices": [
+            4
+          ],
+          "text": "店内 · 店员递上热咖啡",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 5,
+          "indices": [
+            5
+          ],
+          "text": "雨天咖啡买一送一",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 6,
+          "indices": [
+            6
+          ],
+          "text": "镜头3 · 10-15秒",
+          "editable": true,
+          "reason": ""
+        },
+        {
+          "index": 7,
+          "indices": [
+            7
+          ],
+          "text": "特写 · 字幕“雨天第二杯半价”",
+          "editable": true,
+          "reason": ""
+        }
+      ],
+      "cursor": 1,
+      "canUndo": true,
+      "canRedo": false,
+      "revisions": [
+        {
+          "instruction": "帮我做一个15秒的雨天咖啡店促销短视频分镜，分成三个镜头：第一镜头雨中的街角“暖杯咖啡”店，短发女孩穿黄色雨衣走向店门；第二镜头同一个女孩在店里从穿绿色围裙的店员手里接过热咖啡；第三镜头桌上一杯热咖啡特写，字幕“雨天第二杯半价”。暖色手绘风格，给摄影师看懂怎么拍。",
+          "createdAt": "2026-11-17T09:55:56.995316+00:00",
+          "usage": {
+            "prompt_tokens": 1027,
+            "completion_tokens": 6593,
+            "total_tokens": 7620,
+            "reasoning_tokens": 0
+          },
+          "model": "deepseek/deepseek-v4.1-flash"
+        },
+        {
+          "instruction": "直接改字：雨天咖啡买一送一",
+          "createdAt": "2026-11-17T10:02:43.915566+00:00",
+          "usage": {},
+          "model": null
+        }
+      ],
+      "storyboardTitle": "产品与优惠"
+    }
+  ],
+  "timings": {
+    "exteriorSeconds": 25.82,
+    "actionFixSeconds": 11.55,
+    "wholeBriefSeconds": 24.535
+  }
+}

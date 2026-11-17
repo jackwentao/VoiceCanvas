@@ -1,0 +1,246 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <linearGradient id="bgWarm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5e6d0" />
+      <stop offset="0.55" stop-color="#edd9bd" />
+      <stop offset="1" stop-color="#d9b98f" />
+    </linearGradient>
+    <linearGradient id="counterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9744a" />
+      <stop offset="1" stop-color="#7c4f2c" />
+    </linearGradient>
+    <linearGradient id="raincoat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7d24a" />
+      <stop offset="0.6" stop-color="#eebc2c" />
+      <stop offset="1" stop-color="#d19a18" />
+    </linearGradient>
+    <linearGradient id="shirtGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fdfaf4" />
+      <stop offset="1" stop-color="#e8e0d2" />
+    </linearGradient>
+    <linearGradient id="apronGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#4e7a4a" />
+      <stop offset="1" stop-color="#355c33" />
+    </linearGradient>
+    <linearGradient id="cupGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fdf8ee" />
+      <stop offset="0.5" stop-color="#f3e8d4" />
+      <stop offset="1" stop-color="#d9c4a5" />
+    </linearGradient>
+    <radialGradient id="steamGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff8ec" stop-opacity="0.85" />
+      <stop offset="1" stop-color="#fff8ec" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="machineGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8c8f94" />
+      <stop offset="0.5" stop-color="#6b6e73" />
+      <stop offset="1" stop-color="#4a4d52" />
+    </linearGradient>
+    <linearGradient id="floorGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c9a87c" />
+      <stop offset="1" stop-color="#a8825a" />
+    </linearGradient>
+    <filter id="softBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" />
+    </filter>
+    <filter id="softBlurSmall" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" />
+    </filter>
+  </defs>
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="url(#bgWarm)" />
+
+  
+  <g id="wall-shelf">
+    <rect x="120" y="120" width="420" height="14" rx="4" fill="#b98a5c" />
+    <rect x="760" y="150" width="380" height="14" rx="4" fill="#b98a5c" />
+    
+    <g fill="#e8d6bd" stroke="#b98a5c" stroke-width="2">
+      <path d="M160 120 v-28 h34 v28 z" />
+      <path d="M210 120 v-24 h30 v24 z" />
+      <path d="M258 120 v-30 h32 v30 z" />
+      <path d="M800 150 v-26 h32 v26 z" />
+      <path d="M848 150 v-30 h28 v30 z" />
+      <path d="M900 150 v-24 h34 v24 z" />
+      <path d="M954 150 v-28 h30 v28 z" />
+    </g>
+    
+    <rect x="620" y="90" width="90" height="70" rx="4" fill="#f3e3c8" stroke="#b98a5c" stroke-width="3" />
+    <circle cx="665" cy="120" r="16" fill="#d9a86c" />
+    <path d="M635 145 q30 -20 60 0" fill="none" stroke="#b98a5c" stroke-width="2" />
+  </g>
+
+  
+  <g id="coffee-machine">
+    <rect x="880" y="300" width="260" height="180" rx="10" fill="url(#machineGrad)" />
+    <rect x="900" y="320" width="220" height="60" rx="6" fill="#3d4045" />
+    <rect x="910" y="330" width="80" height="40" rx="4" fill="#2a2c30" />
+    <rect x="1000" y="330" width="110" height="40" rx="4" fill="#2a2c30" />
+    
+    <circle cx="930" cy="350" r="5" fill="#e8b84a" />
+    <circle cx="950" cy="350" r="5" fill="#7ac47a" />
+    
+    <rect x="960" y="400" width="16" height="40" rx="4" fill="#55585d" />
+    <rect x="1030" y="400" width="16" height="40" rx="4" fill="#55585d" />
+    
+    <g opacity="0.35" filter="url(#softBlurSmall)">
+      <ellipse cx="968" cy="390" rx="14" ry="22" fill="#f5efe4" />
+      <ellipse cx="1038" cy="385" rx="12" ry="20" fill="#f5efe4" />
+    </g>
+    
+    <rect x="890" y="470" width="240" height="16" rx="4" fill="#3d4045" />
+  </g>
+
+  
+  <g id="counter">
+    <rect x="0" y="486" width="1280" height="34" fill="url(#counterGrad)" />
+    <rect x="0" y="520" width="1280" height="200" fill="url(#floorGrad)" />
+    
+    <rect x="0" y="520" width="1280" height="18" fill="#6b4426" />
+    
+    <g stroke="#8a5a34" stroke-width="1.5" opacity="0.4">
+      <path d="M0 500 q200 6 400 0 t400 0 t480 0" fill="none" />
+      <path d="M0 512 q180 -4 360 0 t380 0 t540 0" fill="none" />
+    </g>
+  </g>
+
+  
+  <g id="girl">
+    
+    <path d="M300 486               q-10 -80 10 -140               q15 -45 60 -50               q45 -5 65 40               q15 40 10 150               z" fill="url(#raincoat)" />
+    
+    <path d="M340 300 q30 20 60 0 l-8 -14 q-22 12 -44 0 z" fill="#d19a18" />
+    
+    <path d="M310 300 q-20 30 -15 70 q30 -10 40 -40 z" fill="#eebc2c" />
+    
+    <ellipse cx="368" cy="252" rx="42" ry="46" fill="#f2c9a0" />
+    
+    <path d="M326 248               q-4 -50 42 -56               q46 -6 46 44               q0 18 -8 26               q-6 -30 -38 -32               q-30 -2 -34 24               q-6 -2 -8 -6 z" fill="#2b2420" />
+    <path d="M326 248 q-6 20 2 34 q8 -16 6 -30 z" fill="#2b2420" />
+    <path d="M414 244 q8 16 2 32 q-8 -12 -6 -28 z" fill="#2b2420" />
+    
+    <path d="M336 236 q14 -18 34 -16 q20 2 26 18 q-14 -8 -30 -6 q-18 2 -30 4 z" fill="#2b2420" />
+    
+    <g fill="#3a2e26">
+      <ellipse cx="352" cy="254" rx="4.5" ry="5.5" />
+      <ellipse cx="386" cy="254" rx="4.5" ry="5.5" />
+    </g>
+    <g fill="#fff" opacity="0.8">
+      <circle cx="353.5" cy="252" r="1.6" />
+      <circle cx="387.5" cy="252" r="1.6" />
+    </g>
+    
+    <g stroke="#2b2420" stroke-width="2.5" fill="none" stroke-linecap="round">
+      <path d="M344 242 q8 -4 16 -1" />
+      <path d="M378 241 q8 -3 16 1" />
+    </g>
+    
+    <path d="M368 262 q3 6 -1 9" stroke="#d9a87a" stroke-width="2" fill="none" stroke-linecap="round" />
+    
+    <path d="M356 278 q12 8 24 0" stroke="#b5704a" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    
+    <ellipse cx="342" cy="270" rx="8" ry="5" fill="#e8a07a" opacity="0.45" />
+    <ellipse cx="396" cy="270" rx="8" ry="5" fill="#e8a07a" opacity="0.45" />
+    
+    <path d="M400 360 q50 20 100 60 q14 10 12 22 l-24 2 q-46 -40 -88 -58 z" fill="url(#raincoat)" />
+    
+    <path d="M496 436 q14 -4 22 4 q6 6 2 14 q-8 8 -20 4 q-8 -4 -8 -12 z" fill="#f2c9a0" />
+    
+    <path d="M310 360 q-20 40 -14 90 l20 4 q-4 -50 12 -84 z" fill="#eebc2c" />
+    
+    <path d="M300 452 q-10 4 -10 14 q0 8 10 8 q8 0 10 -8 q2 -10 -10 -14 z" fill="#f2c9a0" />
+  </g>
+
+  
+  <g id="barista">
+    
+    <path d="M760 486               q-8 -90 8 -150               q12 -40 52 -44               q40 -4 56 38               q12 40 8 156               z" fill="url(#shirtGrad)" />
+    
+    <path d="M790 340               q30 -10 60 0               l6 146               q-36 10 -72 0               z" fill="url(#apronGrad)" />
+    
+    <path d="M790 340 q-14 -20 -6 -34" stroke="#355c33" stroke-width="6" fill="none" stroke-linecap="round" />
+    <path d="M850 340 q14 -20 6 -34" stroke="#355c33" stroke-width="6" fill="none" stroke-linecap="round" />
+    
+    <rect x="806" y="400" width="36" height="28" rx="4" fill="#3d6839" stroke="#2c4a2a" stroke-width="1.5" />
+    
+    <ellipse cx="820" cy="258" rx="40" ry="44" fill="#e8b88a" />
+    
+    <path d="M780 254               q-2 -46 40 -50               q42 -4 42 42               q0 16 -6 24               q-4 -28 -36 -30               q-30 -2 -34 22               q-4 -2 -6 -8 z" fill="#6b4a32" />
+    
+    <path d="M790 240 q14 -16 32 -14 q18 2 24 16 q-12 -6 -28 -4 q-16 2 -28 2 z" fill="#6b4a32" />
+    
+    <g fill="#3a2e26">
+      <ellipse cx="806" cy="260" rx="4.5" ry="5.5" />
+      <ellipse cx="838" cy="260" rx="4.5" ry="5.5" />
+    </g>
+    <g fill="#fff" opacity="0.8">
+      <circle cx="807.5" cy="258" r="1.6" />
+      <circle cx="839.5" cy="258" r="1.6" />
+    </g>
+    
+    <g stroke="#6b4a32" stroke-width="2.5" fill="none" stroke-linecap="round">
+      <path d="M798 248 q8 -3 15 0" />
+      <path d="M832 248 q8 -3 15 0" />
+    </g>
+    
+    <path d="M820 268 q3 6 -1 9" stroke="#c99a6a" stroke-width="2" fill="none" stroke-linecap="round" />
+    
+    <path d="M808 284 q12 8 24 0" stroke="#a86a42" stroke-width="2.5" fill="none" stroke-linecap="round" />
+    
+    <ellipse cx="794" cy="276" rx="7" ry="4.5" fill="#d98a62" opacity="0.4" />
+    <ellipse cx="846" cy="276" rx="7" ry="4.5" fill="#d98a62" opacity="0.4" />
+    
+    <path d="M780 360 q-50 20 -100 60 q-14 10 -12 22 l24 2 q46 -40 88 -58 z" fill="url(#shirtGrad)" />
+    
+    <path d="M684 436 q-14 -2 -20 6 q-4 8 2 14 q8 6 18 0 q8 -6 6 -14 z" fill="#e8b88a" />
+    
+    <path d="M860 360 q20 40 14 90 l-20 4 q4 -50 -12 -84 z" fill="#e8e0d2" />
+    
+    <path d="M870 452 q10 4 10 14 q0 8 -10 8 q-8 0 -10 -8 q-2 -10 10 -14 z" fill="#e8b88a" />
+  </g>
+
+  
+  <g id="coffee-cup">
+    
+    <path d="M574 408               q-4 40 4 56               q4 10 22 10               q18 0 22 -10               q8 -16 4 -56               z" fill="url(#cupGrad)" stroke="#c9b494" stroke-width="2" />
+    
+    <ellipse cx="600" cy="408" rx="26" ry="8" fill="#fdf8ee" stroke="#c9b494" stroke-width="2" />
+    
+    <ellipse cx="600" cy="410" rx="20" ry="5.5" fill="#6b4226" />
+    
+    <path d="M622 420 q18 2 16 18 q-2 14 -18 12" fill="none" stroke="#c9b494" stroke-width="5" stroke-linecap="round" />
+    
+    <ellipse cx="600" cy="472" rx="20" ry="5" fill="#d9c4a5" />
+    
+    <g opacity="0.5">
+      <path d="M586 396 q-6 -18 2 -30 q6 -10 0 -20" stroke="#fff8ec" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#softBlurSmall)" />
+      <path d="M600 392 q-4 -16 4 -26 q6 -8 0 -18" stroke="#fff8ec" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#softBlurSmall)" />
+      <path d="M614 396 q-6 -18 2 -30 q6 -10 0 -20" stroke="#fff8ec" stroke-width="3" fill="none" stroke-linecap="round" filter="url(#softBlurSmall)" />
+    </g>
+    
+    <ellipse cx="600" cy="370" rx="40" ry="30" fill="url(#steamGlow)" opacity="0.5" />
+  </g>
+
+  
+  <g id="hands-contact">
+    
+    <path d="M496 436 q14 -4 22 4 q6 6 2 14 q-8 8 -20 4 q-8 -4 -8 -12 z" fill="#f2c9a0" />
+    <path d="M504 440 q10 -2 14 4 q2 4 -2 8 q-6 4 -12 0 q-4 -4 0 -12 z" fill="#f2c9a0" />
+    
+    <path d="M684 436 q-14 -2 -20 6 q-4 8 2 14 q8 6 18 0 q8 -6 6 -14 z" fill="#e8b88a" />
+    <path d="M676 440 q-10 -2 -14 4 q-2 4 2 8 q6 4 12 0 q4 -4 0 -12 z" fill="#e8b88a" />
+  </g>
+
+  
+  <g id="foreground-counter">
+    <rect x="0" y="486" width="1280" height="10" fill="#c9a87c" opacity="0.6" />
+    <rect x="0" y="496" width="1280" height="4" fill="#b98a5c" opacity="0.4" />
+  </g>
+
+  
+  <g id="warm-light">
+    <ellipse cx="640" cy="200" rx="500" ry="300" fill="#fff4dc" opacity="0.12" />
+    <ellipse cx="600" cy="400" rx="120" ry="80" fill="#ffe8b8" opacity="0.15" />
+  </g>
+</svg>
