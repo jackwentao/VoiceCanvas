@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/upbrew-tech/svg-creator-skill",
+  "commit": "1eb83d602a992b69a1771c4e0116a9f7de6ffaa2",
+  "retrieved": "2026-11-17",
+  "sha256": {
+    "SKILL.md": "9c01d512f9b5d2041743097ac5bb8489c38ff03d479d1f90bf21c17c94cf1101",
+    "references/advanced-techniques.md": "de6c254e39ae29a386a4890cc8e8a404e2964cd82553f4833500acbade5e1ca2",
+    "README.md": "9fc6639de8372198f2f831712ee6a7871ffde465ed4ad2bcb7404e8004fe9ab5",
+    "LICENSE": "82d01b6a89aeeea4d366bb1da52277b43654519baf7e5154cce9dceb8d2d9ced"
+  },
+  "hash_normalization": "UTF-8 source bytes with CRLF normalized to LF; content unchanged"
+}

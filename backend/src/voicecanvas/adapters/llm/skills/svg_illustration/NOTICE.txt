@@ -1,0 +1,31 @@
+VoiceCanvas SVG illustration skill
+
+This is a modified, Chinese-language, text-only adaptation of selected guidance from:
+
+1. SVG Creator Skill, upbrew-tech/svg-creator-skill
+   https://github.com/upbrew-tech/svg-creator-skill
+   Revision: 1eb83d602a992b69a1771c4e0116a9f7de6ffaa2
+   Copyright 2025 SVG Creator Skill Contributors
+   Licensed under Apache License 2.0; see svg-creator-LICENSE.txt.
+
+2. Vector Illustration, syi0808/svg-skills
+   https://github.com/syi0808/svg-skills
+   Revision: c5937c2bed48aff98c12cda43ccba2ed6f2880f0
+   Copyright (c) 2026 Yein Sung
+   Licensed under the MIT License; see vector-illustration-LICENSE.txt.
+
+Modified by VoiceCanvas on 2026-11-17: distilled selected composition, connectivity,
+lighting, semantic grouping and focused editing guidance into separate draw/edit
+instructions for a text-only model. Removed required external scripts, automatic
+dependency installation, file paths, auxiliary scene documents, fixed character
+templates, animation, image generation and mandatory render/view loops. No upstream
+scripts or examples execute in the application. This is not a full implementation
+of either upstream workflow and does not claim rendered visual verification.
+
+The syi0808 project attributes methodological ideas to Chat2SVG (Ronghuan Wu,
+Wanchao Su and Jing Liao, CVPR 2025). This application does not bundle Chat2SVG
+code, prompts, weights or sample images. The upstream project's license does not
+grant rights to those separate third-party materials.
+
+Unmodified reviewed source documents and provenance are retained in the repository
+under third_party/drawing-skills/. The application loads only the adapted SKILL.md.

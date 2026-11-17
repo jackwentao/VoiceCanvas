@@ -1,0 +1,13 @@
+{
+  "repository": "https://github.com/syi0808/svg-skills",
+  "commit": "c5937c2bed48aff98c12cda43ccba2ed6f2880f0",
+  "retrieved": "2026-11-17",
+  "sha256": {
+    "SKILL.md": "c6a84ed5788a28d0975d97a59fbbee2d1b4a23e9c642d5a4b79d5817946620c3",
+    "references/svg-authoring.md": "d1471ae4a57accc87f34fb2cb7b5ba57e634588966c318c847c30542bbd3f624",
+    "references/visual-review.md": "43bf41e0e3c02c91015d01c5d84fc01c358f8126f3d04516d6267da501472c9e",
+    "LICENSE": "0d4dd2ed18a03a2992af5b12a5f2893875fbe3b112609ffe73cec9d30938c166",
+    "README.md": "fc09643bb28dded2913bbc8747b77ec00b5f31ec0400129e93ee48daeb73ea31"
+  },
+  "hash_normalization": "UTF-8 source bytes with CRLF normalized to LF; content unchanged"
+}

@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 
 import httpx
 
+from voicecanvas.adapters.llm.drawing_skills import compose_drawing_prompt, load_drawing_skill
 from voicecanvas.domain.svg_document import apply_source_edits, validate_svg
 
 
@@ -21,6 +22,7 @@ class ShotModelConfig:
     api_key: str = field(repr=False, default="")
     max_tokens: int = 32768
     timeout_seconds: float = 300
+    drawing_skill: str = "svg-illustration"
 
 
 DRAW_PROMPT = """你是擅长用 SVG 创作完整画面的插画师。根据用户描述自主构图，
@@ -50,6 +52,7 @@ class OpenAICompatibleShotGenerator:
     def __init__(self, config: ShotModelConfig, transport: httpx.BaseTransport | None = None):
         self.config = config
         self.transport = transport
+        self.drawing_skill = load_drawing_skill(config.drawing_skill)
 
     def generate(
         self, instruction: str, current_svg: str | None
@@ -66,7 +69,14 @@ class OpenAICompatibleShotGenerator:
         payload = {
             "model": config.model,
             "messages": [
-                {"role": "system", "content": EDIT_PROMPT if current_svg else DRAW_PROMPT},
+                {
+                    "role": "system",
+                    "content": compose_drawing_prompt(
+                        EDIT_PROMPT if current_svg else DRAW_PROMPT,
+                        self.drawing_skill,
+                        "edit" if current_svg else "draw",
+                    ),
+                },
                 {"role": "user", "content": user_content},
             ],
             "temperature": 0.4,

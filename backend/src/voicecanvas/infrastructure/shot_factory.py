@@ -21,6 +21,7 @@ def create_shot_service() -> ShotService:
         api_key=os.getenv("VOICECANVAS_SHOT_LLM_API_KEY", llm.api_key or ""),
         max_tokens=int(os.getenv("VOICECANVAS_SHOT_MAX_TOKENS", "32768")),
         timeout_seconds=float(os.getenv("VOICECANVAS_SHOT_TIMEOUT_SECONDS", "300")),
+        drawing_skill=os.getenv("VOICECANVAS_SHOT_DRAWING_SKILL", "svg-illustration"),
     )
     if not 1024 <= config.max_tokens <= 65536 or not 1 <= config.timeout_seconds <= 600:
         raise ValueError("单镜头输出预算应为 1024–65536，超时应为 1–600 秒")
