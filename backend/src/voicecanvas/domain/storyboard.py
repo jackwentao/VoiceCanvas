@@ -6,12 +6,16 @@ from pydantic import BaseModel, Field, model_validator
 class StoryboardShot(BaseModel):
     id: str
     title: str = Field(min_length=1, max_length=100)
+    description: str = Field(default="", max_length=2000)
+    duration_seconds: float | None = Field(default=None, alias="durationSeconds", gt=0, le=180)
+    camera: str = Field(default="", max_length=200)
 
 
 class StoryboardState(BaseModel):
     title: str = Field(default="未命名分镜", min_length=1, max_length=100)
     shots: list[StoryboardShot] = Field(min_length=1, max_length=40)
     active_id: str = Field(alias="activeId")
+    context: str = Field(default="", max_length=2000)
 
     @model_validator(mode="after")
     def valid_members(self) -> "StoryboardState":

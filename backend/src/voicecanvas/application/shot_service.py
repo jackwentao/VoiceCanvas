@@ -17,6 +17,12 @@ class ShotNotFound(ValueError):
     pass
 
 
+class ShotModelError(RuntimeError):
+    """生成端口的可展示错误，外部适配器负责脱敏。"""
+
+    pass
+
+
 class ShotGenerator(Protocol):
     def generate(
         self, instruction: str, current_svg: str | None

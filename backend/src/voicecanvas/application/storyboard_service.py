@@ -14,7 +14,13 @@ class StoryboardRepository(Protocol):
     def load(self, board_id: str) -> Storyboard | None: ...
     def list_recent(self) -> list[Storyboard]: ...
     def load_shots(self, ids: list[str]) -> dict[str, ShotDocument]: ...
-    def save(self, board: Storyboard, expected_version: int, shots: list[ShotDocument]) -> None: ...
+    def save(
+        self,
+        board: Storyboard,
+        expected_version: int,
+        shots: list[ShotDocument],
+        expected_shots: dict[str, int] | None = None,
+    ) -> None: ...
 
 
 class StoryboardService:
@@ -54,6 +60,66 @@ class StoryboardService:
         if board.version != version:
             raise ShotConflict("分镜已在其他页面修改，已同步最新状态，请重新操作")
         return board
+
+    def describe(
+        self,
+        board_id: str,
+        version: int,
+        *,
+        context: str | None = None,
+        entries: list[dict] | None = None,
+        target_id: str | None = None,
+    ) -> Storyboard:
+        """Agent 的结构化工具；镜头数量、内容和调用次序由 Agent 决定。"""
+        board = self.current(board_id, version)
+        state = board.state.model_copy(deep=True)
+        created = []
+        expected_shots = {}
+        if context is not None:
+            if len(context) > 2000:
+                raise ValueError("共用设定最多 2000 字")
+            state.context = context
+        if entries:
+            if not 1 <= len(entries) <= 12:
+                raise ValueError("每次创建 1–12 个镜头")
+            documents = self.repository.load_shots([s.id for s in state.shots])
+            empty = (
+                not target_id
+                and len(state.shots) == 1
+                and not documents[state.shots[0].id].revisions
+                and not state.shots[0].description
+            )
+            if not target_id and len(state.shots) + len(entries) - int(empty) > 40:
+                raise ValueError("项目最多 40 个镜头")
+            for index, entry in enumerate(entries):
+                if target_id:
+                    if len(entries) != 1 or target_id not in documents:
+                        raise ValueError("请选择当前项目中的一个镜头")
+                    shot_id = target_id
+                elif empty and index == 0:
+                    shot_id = state.shots[0].id
+                    expected_shots[shot_id] = documents[shot_id].version
+                else:
+                    shot = self._blank(self._title(entry.get("title", "")))
+                    created.append(shot)
+                    shot_id = shot.id
+                item = StoryboardShot.model_validate({**entry, "id": shot_id})
+                old = next((s for s in state.shots if s.id == shot_id), None)
+                if old:
+                    state.shots[state.shots.index(old)] = item
+                else:
+                    state.shots.append(item)
+            state.active_id = state.shots[0].id if empty else board.active_id
+        states = [*board.states[: board.cursor + 1], state][-100:]
+        changed = Storyboard(
+            id=board.id,
+            version=version + 1,
+            states=states,
+            cursor=len(states) - 1,
+            activeId=state.active_id,
+        )
+        self.repository.save(changed, version, created, expected_shots)
+        return changed
 
     def change(
         self,
@@ -136,7 +202,8 @@ class StoryboardService:
                 )
             new_shots.append(shot)
             state.shots.insert(
-                state.shots.index(target) + 1, StoryboardShot(id=shot.id, title=name)
+                state.shots.index(target) + 1,
+                target.model_copy(update={"id": shot.id, "title": name}),
             )
             state.active_id = shot.id
         elif action == "delete":

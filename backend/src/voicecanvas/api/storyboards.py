@@ -35,6 +35,30 @@ class StoryboardTranscript(ShotChange):
     transcript: str = Field(min_length=1, max_length=4000)
 
 
+def present_storyboard(service: StoryboardService, board: Storyboard) -> dict:
+    shots = service.repository.load_shots([shot.id for shot in board.state.shots])
+    if board.active_id not in shots:
+        raise ShotNotFound("当前镜头内容不存在")
+    return {
+        "id": board.id,
+        "version": board.version,
+        "title": board.state.title,
+        "context": board.state.context,
+        "activeId": board.active_id,
+        "canUndo": board.cursor > 0,
+        "canRedo": board.cursor + 1 < len(board.states),
+        "shots": [
+            {
+                **shot.model_dump(by_alias=True),
+                "svg": shots[shot.id].svg,
+                "version": shots[shot.id].version,
+            }
+            for shot in board.state.shots
+        ],
+        "activeShot": present_shot(shots[board.active_id]),
+    }
+
+
 def create_storyboard_router(factory: Callable[[], StoryboardService]) -> APIRouter:
     router = APIRouter(prefix="/api/storyboards", tags=["storyboards"])
     service: StoryboardService | None = None
@@ -48,27 +72,7 @@ def create_storyboard_router(factory: Callable[[], StoryboardService]) -> APIRou
         return service
 
     def present(board: Storyboard) -> dict:
-        shots = get_service().repository.load_shots([shot.id for shot in board.state.shots])
-        if board.active_id not in shots:
-            raise ShotNotFound("当前镜头内容不存在")
-        return {
-            "id": board.id,
-            "version": board.version,
-            "title": board.state.title,
-            "activeId": board.active_id,
-            "canUndo": board.cursor > 0,
-            "canRedo": board.cursor + 1 < len(board.states),
-            "shots": [
-                {
-                    "id": shot.id,
-                    "title": shot.title,
-                    "svg": shots[shot.id].svg,
-                    "version": shots[shot.id].version,
-                }
-                for shot in board.state.shots
-            ],
-            "activeShot": present_shot(shots[board.active_id]),
-        }
+        return present_storyboard(get_service(), board)
 
     def execute(action):
         try:
@@ -82,9 +86,7 @@ def create_storyboard_router(factory: Callable[[], StoryboardService]) -> APIRou
 
     @router.post("", status_code=201)
     def create(request: CreateStoryboard) -> dict:
-        return execute(
-            lambda: present(get_service().create(request.title))
-        )
+        return execute(lambda: present(get_service().create(request.title)))
 
     @router.get("")
     def recent() -> list[dict]:
