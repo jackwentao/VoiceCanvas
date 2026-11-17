@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#f7f7fa" />
+  <meta name="theme-color" content="#f8f6ef" />
   <title>VoiceCanvas · 让想法成为画面</title>
+  <link rel="stylesheet" href="./paper-theme.css" />
   <link rel="stylesheet" href="./canvas-elements.css" />
   <link rel="stylesheet" href="./workspace.css" />
 </head>
@@ -12,7 +13,7 @@
   <a class="skip-link" href="#voiceInput">跳到创作输入</a>
   <div class="app-shell">
     <header class="topbar">
-      <a class="brand" href="./index.html" aria-label="返回手绘画廊首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>VoiceCanvas<span class="brand-label">创作工作台</span></a>
+      <a class="brand" href="./index.html" aria-label="返回手绘画廊首页"><svg class="brand-sketch" viewBox="0 0 42 42" aria-hidden="true"><path d="M6 16v11m7-18v25m8-29v32m8-25v19m7-13v8M3 39q18-3 36 0"/></svg><span>VoiceCanvas<span class="brand-dot">.</span></span><span class="brand-label">我的画桌</span></a>
       <div class="project-heading"><button id="renameButton" class="project-name" title="重命名项目" data-requires-project>连接中…</button><span class="save-status" id="saveStatus"><i></i>正在连接</span></div>
       <div class="header-actions">
         <button class="button quiet" id="memoryButton" aria-label="创作偏好" data-requires-project><span data-icon="sparkles"></span><span class="wide-label">创作偏好</span></button>
@@ -28,7 +29,7 @@
     <main class="workspace">
       <aside class="sidebar" aria-label="项目与镜头">
         <div class="project-tools"><label class="sr-only" for="projectSelect">切换项目</label><select id="projectSelect" aria-label="切换项目" data-requires-project><option>正在连接…</option></select><button class="icon-button" id="newButton" title="新建项目" aria-label="新建项目"><span data-icon="plus"></span></button></div>
-        <div class="sidebar-heading"><h2>分镜</h2><span id="sceneCount" class="count">—</span></div>
+        <div class="sidebar-heading"><h2>我的分镜</h2><span id="sceneCount" class="count">—</span></div>
         <div id="sceneList" class="scene-list"><p class="sidebar-placeholder">连接后显示你的分镜</p></div>
         <details class="history-section"><summary><span data-icon="history"></span>操作历史<span id="historyCount"></span></summary><ol id="historyList" class="history-list"><li>暂无操作</li></ol></details>
         <button class="button import-button" id="importButton"><span data-icon="folder"></span>载入项目文件</button><input type="file" id="importInput" accept=".json,application/json" hidden />
@@ -41,8 +42,13 @@
           <div class="scene-caption"><span class="eyebrow" id="sceneEyebrow">YOUR NEXT STORY</span><span id="sceneDescription">让灵感，先有一个轮廓。</span></div>
           <div class="canvas-stage" id="canvasStage"><div id="canvasSurface" class="canvas-surface" aria-label="当前镜头画布"></div>
             <div id="emptyCanvas" class="empty-canvas">
-              <div class="storyboard-art" aria-hidden="true"><div class="art-card art-left"><i class="art-sun"></i><i class="art-hill"></i></div><div class="art-card art-center"><span data-icon="wave"></span><i></i><b></b></div><div class="art-card art-right"><i class="art-line"></i><i class="art-line short"></i><i class="art-circle"></i></div><span class="art-spark">✦</span></div>
-              <span class="eyebrow">A LITTLE IDEA. A NEW STORY.</span><h1>说出想法，画面从这里开始。</h1><p>描述一个场景，或让助手为你规划一组分镜。<br />之后的每一次调整，也只需要一句话。</p>
+              <div class="storyboard-art" aria-hidden="true"><svg viewBox="0 0 260 140" fill="none" stroke="#526b46" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <g transform="rotate(-12 60 85)"><path d="M12 48 100 46 102 118 14 120Z" fill="#e8ecdb"/><path d="m21 108 26-29 19 17 17-12 10 23"/><circle cx="77" cy="65" r="7" fill="#d5deba"/><path d="m28 43 38 1-1 11-36-1" fill="#d5deba" stroke="none"/></g>
+                <g transform="rotate(11 200 82)"><path d="m157 43 85 2-2 74-84-1Z" fill="#f1e8d7"/><path d="M193 105q-17-28 6-46m-7 31q-19 0-20-16 18-1 20 16m4-17q17 1 22-15-18-2-22 15m-13 31h27"/><path d="m184 39 36 1-1 12-36-1" fill="#ded5bd" stroke="none"/></g>
+                <g transform="rotate(-3 130 70)"><path d="M80 19q48-3 101 0l-2 106q-49 3-100-1Z" fill="#fffdf7"/><path d="M92 94q16-27 30-16l15-28 29 46" fill="#e8ecdb"/><path d="m92 94 74 2m-66 13q27-3 59 0"/><circle cx="108" cy="43" r="9" fill="#e4cc91" stroke="#ad9c70"/><path d="m109 14 40 1-1 13-39-1" fill="#d5deba" stroke="none"/></g>
+                <path d="m224 14 2 13m-8-6 14-1M37 17l-3 8m-7-7 7 7m-14 3 10 1" stroke="#8a9c6a"/>
+              </svg></div>
+              <span class="eyebrow">A LITTLE IDEA. YOUR NEXT STORY.</span><h1>把刚才的灵感，接着画下去。</h1><p>有想法就好，我们从这一张开始。<br />说出一个场景，或试试下面的小灵感。</p>
               <div class="suggestions"><button data-prompt="创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"><span data-icon="film"></span>新品奶茶 · 三镜头分镜<span>↗</span></button><button data-prompt="添加一个标题，内容是今天也要好好生活"><span data-icon="type"></span>从一句标题开始<span>↗</span></button></div>
             </div>
           </div>
@@ -55,7 +61,7 @@
       </section>
 
       <aside class="assistant-panel" id="assistantPanel" aria-label="创作助手"><div class="assistant-header"><div class="assistant-avatar"><span data-icon="sparkles"></span></div><div><h2>创作助手</h2><span id="assistantConnection">等待连接</span></div><span class="assistant-live" aria-hidden="true"></span></div>
-        <div class="assistant-body"><div class="assistant-intro"><span class="eyebrow">MAKE ROOM FOR IDEAS</span><h3>你来想象，<br />我们一起完成。</h3><p>从第一幅画面到最后一次修改，把想法交给语音，让注意力留在创作上。</p></div>
+        <div class="assistant-body"><div class="assistant-intro"><span class="eyebrow">A LITTLE HELP ALONG THE WAY</span><h3>一点点想法，<br />一起慢慢画。</h3><p>不必一次想清楚。说出你的想法，再一起调整成喜欢的样子。</p><svg class="assistant-doodle" viewBox="0 0 120 50" aria-hidden="true"><path d="M8 18c11-14 24 4 10 15C2 47-4 9 34 26s52 3 61-7m-11-1 12 1-4 12M105 6v12m-6-6h12"/></svg></div>
           <div class="assistant-note"><span data-icon="wave"></span><p>可以直接说：<br /><strong>“把第二个镜头的标题放大一点”</strong></p></div>
           <section class="turn-card" id="turnCard" hidden><div class="user-request" id="lastInput"></div><div class="result-heading"><span data-icon="sparkles"></span><strong id="resultHeading">正在构思画面</strong></div><p id="resultMessage"></p><button class="text-button" id="undoResult" hidden>撤销上一步 <span>↶</span></button></section>
           <section class="clarification-card" id="clarificationCard" hidden><span class="eyebrow">需要你的选择</span><h3 id="clarificationQuestion"></h3><div id="clarificationOptions" class="clarification-options"></div><p>也可以直接说出或输入你的回答。</p></section>
