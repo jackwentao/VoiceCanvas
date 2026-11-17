@@ -4,6 +4,7 @@ import threading
 from collections.abc import Callable
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import Field
 
 from voicecanvas.api.shots import ShotChange
@@ -54,5 +55,23 @@ def create_agent_router(factory: Callable[[], StoryboardAgentService]) -> APIRou
     @router.get("/{board_id}/agent/run")
     def latest(board_id: str):
         return execute(board_id)
+
+    @router.get("/{board_id}/shots/{shot_id}/previews/{image_id}.png")
+    def preview(board_id: str, shot_id: str, image_id: str):
+        try:
+            visual = get_service().visuals
+            if visual is None:
+                raise HTTPException(503, "当前服务未配置预览渲染")
+            return Response(
+                visual.read(board_id, shot_id, image_id),
+                media_type="image/png",
+                headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
+            )
+        except ShotNotFound as error:
+            raise HTTPException(404, str(error)) from error
+        except ShotConflict as error:
+            raise HTTPException(409, str(error)) from error
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from error
 
     return router

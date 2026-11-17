@@ -4,6 +4,7 @@ import { ShotTextEditor } from "./shot-text-editor.js";
 import { BrowserSpeechRecognitionAdapter, BrowserVoiceFeedbackAdapter, VoiceSessionController } from "./voice-session.js";
 import { renderWorkspaceIcons } from "./workspace-icons.js";
 import { pageUrl } from "./home-controller.js";
+import { visualFeedback } from "./shot-visual-feedback.js";
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -37,6 +38,7 @@ let previewUrl = null;
 let previewSerial = 0;
 let thumbnails = [];
 let listKey = "";
+let feedbackKey = "";
 let toastTimer;
 let actionStarted = 0;
 let progressTimer;
@@ -64,7 +66,7 @@ function renderStatus() {
   const elapsed = Math.floor((Date.now() - actionStarted) / 1000);
   const run = boards?.agent;
   const active = run?.steps.filter(s => s.status === "running") || [];
-  const labels = { draw_shot: "绘制镜头", create_shots: "建立分镜", set_context: "保存角色设定", describe_shot: "整理拍摄说明", finish_task: "核对交付", manage_storyboard: "调整分镜", get_storyboard: "读取分镜", inspect_shot: "检查画面源码", delete_shot: "处理删除确认", export_shots: "准备导出" };
+  const labels = { draw_shot: "绘制镜头", create_shots: "建立分镜", set_context: "保存角色设定", describe_shot: "整理拍摄说明", finish_task: "核对交付", manage_storyboard: "调整分镜", get_storyboard: "读取分镜", inspect_shot: "检查画面源码", render_shot: "渲染真实预览", review_shot: "看图检查", delete_shot: "处理删除确认", export_shots: "准备导出" };
   const progress = active.map(s => {
     const target = boards.board?.shots.find(p => p.id === s.call.arguments.shotId);
     return `${labels[s.call.name] || "执行操作"}${target ? `：${target.title}` : ""}`;
@@ -130,6 +132,24 @@ function render() {
   $("assistantPanel").dataset.active = String(Boolean(lastInput || boards.pendingDelete));
   $("lastInput").textContent = lastInput || boards.agent?.request || "";
   $("resultHeading").textContent = busy ? "正在完成你的指令" : failure ? "这次需要再试一下" : boards.agent?.status === "needs_input" ? "等待验收或确认" : "已完成";
+  const feedback = visualFeedback(board, boards.agent);
+  const nextFeedbackKey = JSON.stringify(feedback);
+  if (nextFeedbackKey !== feedbackKey) {
+    feedbackKey = nextFeedbackKey;
+    $("visualFeedback").replaceChildren(...feedback.map(item => {
+      const section = document.createElement("details"); section.className = "visual-review";
+      const title = document.createElement("summary");
+      title.textContent = `${item.title} · 版本 ${item.version} · ${item.current ? "当前画面" : "历史评审，画面已变化"}`;
+      const text = document.createElement("p"); text.textContent = item.review;
+      section.append(title);
+      if (item.previewUrl) {
+        const image = new Image(); image.alt = `${item.title}的真实渲染预览`; image.loading = "lazy";
+        image.src = `${baseUrl}${item.previewUrl}`; section.append(image);
+      }
+      section.append(text); return section;
+    }));
+    $("visualFeedback").hidden = !feedback.length;
+  }
   $("clarificationCard").hidden = !boards.pendingDelete;
   if (boards.pendingDelete) assistantOpen = true;
   if (boards.pendingDelete) $("clarificationQuestion").textContent = boards.pendingDelete.message;

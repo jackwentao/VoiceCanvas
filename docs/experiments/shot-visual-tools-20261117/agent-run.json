@@ -1,0 +1,198 @@
+{
+  "run": {
+    "id": "run_c256c698b1744c2b",
+    "boardId": "board_edd737d6e7644521",
+    "request": "请用 render_shot 渲染当前镜头，再用 review_shot 看真实图片，检查是否表达出女孩从店员手中接同一杯咖啡的关键动作，尤其手与杯子的接触。若存在关键偏差，请根据看图结果修正一次，并看修正后的图片复审，最多改画一次。保留暖色插画风、服装和文字。不要仅凭SVG源码假装看图，不要用固定模板替换，也不要反复重画。无法修好的问题如实保留。",
+    "status": "needs_input",
+    "summary": "已按要求渲染当前镜头（v1）并用模型实际看图：v1 中女孩的手与店员的手在杯子左侧连成一条横线，更像握手，女孩未握杯柄、店员未托杯底，属于关键偏差。据此定点改画一次（v2），并再次看图复审：v2 已消除握手结构，两人手臂都伸向中央同一杯冒热气的咖啡，暖色插画风、黄色雨衣、绿色围裙均保留。仍存在的偏差如实保留：女孩手指与杯柄、店员手掌与杯底的接触面被简化，抓握与托举形态不够明确；复审未在画面中观察到「☕」文字。仅改画一次，未再重画，请以真实预览做最终视觉验收。\n待处理：女孩手指握杯柄的抓握结构仍不够明确；店员手掌托住杯底的托举形态仍不够明确；复审未观察到「☕」文字，需确认是否保留\n已核实 1 个独立镜头均有画面；动作与画质仍需看图验收。",
+    "steps": [
+      {
+        "call": {
+          "id": "call_00_2nlksz6cpobbdbv7stf3lzg6",
+          "name": "render_shot",
+          "arguments": {
+            "shotId": "shot_6148305cf48c4703"
+          }
+        },
+        "status": "succeeded",
+        "result": {
+          "shotId": "shot_6148305cf48c4703",
+          "shotVersion": 1,
+          "svgSha256": "ace642279a505f1a0bc7e1c6b36d2afcc089782d03248df3ca796cef5ab716bf",
+          "imageId": "bfbc69250d7980ef5ef06c86c3e9f2385e59e939afe42c5294a6a58a0c711808",
+          "width": 1280,
+          "height": 720,
+          "bytes": 767149,
+          "renderer": "chromium-svg-1280x720-v1",
+          "previewUrl": "/api/storyboards/board_edd737d6e7644521/shots/shot_6148305cf48c4703/previews/bfbc69250d7980ef5ef06c86c3e9f2385e59e939afe42c5294a6a58a0c711808.png",
+          "visualReview": "rendered_only"
+        }
+      },
+      {
+        "call": {
+          "id": "call_00_ilsr0zugfw0pbpp1qv4dlkhm",
+          "name": "review_shot",
+          "arguments": {
+            "shotId": "shot_6148305cf48c4703",
+            "focus": "女孩是否从店员手中接过同一杯咖啡；女孩的手是否握住杯柄、店员的手是否托住杯底，手与杯子是否有真实接触；是否只是互相握手；暖色插画风、黄色雨衣与绿色围裙是否保留"
+          }
+        },
+        "status": "succeeded",
+        "result": {
+          "shotId": "shot_6148305cf48c4703",
+          "shotVersion": 1,
+          "svgSha256": "ace642279a505f1a0bc7e1c6b36d2afcc089782d03248df3ca796cef5ab716bf",
+          "imageId": "bfbc69250d7980ef5ef06c86c3e9f2385e59e939afe42c5294a6a58a0c711808",
+          "width": 1280,
+          "height": 720,
+          "bytes": 767149,
+          "renderer": "chromium-svg-1280x720-v1",
+          "previewUrl": "/api/storyboards/board_edd737d6e7644521/shots/shot_6148305cf48c4703/previews/bfbc69250d7980ef5ef06c86c3e9f2385e59e939afe42c5294a6a58a0c711808.png",
+          "visualReview": "model_observed_image",
+          "review": "已明确满足的事实（仅基于这张 PNG 可见内容）：\n1. 画面中有两个人物：左侧黑色短发、穿黄色雨衣的女孩；右侧戴深色帽子、穿绿色围裙、白色袖子的店员。\n2. 画面中间偏右有一只白色杯子，杯内可见深色咖啡液面，杯身有杯柄。\n3. 女孩的右臂伸向杯子方向，店员左臂也伸向杯子方向，两人手臂在杯子附近交汇。\n4. 暖色插画风成立：整体为米黄/暖棕背景、暖光吊灯、扁平插画质感。\n5. 黄色雨衣与绿色围裙均保留，服装主色可辨。\n6. 中景构图成立，人物上半身与手部区域在画面中占比足够，具备观察手与杯子关系的条件。\n\n可观察偏差（最多三个）：\n1. 关键接触关系不清：女孩伸出的手与店员伸出的手在杯子左侧附近连成一条浅色横线，更像两人互相握手或手臂相接；无法清楚看到女孩的手握住杯柄。\n2. 店员托杯底的动作不成立：店员另一只手在杯身右侧/杯柄附近，未见明确托住杯底；杯子底部与手之间没有清楚的承托接触。\n3. 杯子归属与递接动作不够明确：杯子位于两人手臂交汇处，但女孩的手没有明确包住杯柄，店员的手也没有形成“托底递出”的结构，因此“从店员手中接过同一杯咖啡”的关键动作表达偏弱。\n\n无法从这张图判断的内容：\n- 无法判断完整递接运动过程，因为这是静态图。\n- 没有参考图，无法断言跨镜人物一致性。\n- 杯内是否为“热咖啡”只能从深色液面和暖色氛围推测，无法从静态图确认温度。",
+          "reviewKey": "9c245d54e0f45fbb44d6137f989d01e9c8077c675e7d0dd231beb79f5a6d8465",
+          "requiresUserAcceptance": true
+        }
+      },
+      {
+        "call": {
+          "id": "call_00_jsmoldqgbo66q7rguuoo3a8z",
+          "name": "draw_shot",
+          "arguments": {
+            "shotId": "shot_6148305cf48c4703",
+            "instruction": "保持暖色扁平插画风、米黄暖棕背景、暖光吊灯、左侧黑色短发穿黄色雨衣的女孩、右侧白衬衫绿色围裙店员、中景构图与画面中的「☕」文字不变。只修正手与杯子的接触关系：把白色咖啡杯移到两人之间偏中央的清晰位置，杯身完整可见、杯柄朝左。女孩的右手从左侧伸出，手指明确弯曲包住杯柄，指尖与杯柄轮廓重叠接触；她的另一只手自然垂在身侧，不要伸向店员。店员从右侧伸出双手：一只手从下方托住杯底，手掌与杯底轮廓贴合接触；另一只手扶在杯身右侧。两人的手不要互相接触，不要出现握手或手臂连成一条横线的结构，两只手都只与杯子接触。杯口有少量热气。",
+            "reason": "看图发现女孩未握杯柄、店员未托杯底，两手在杯左侧连成横线像握手，需定点修正手与杯子的接触关系"
+          }
+        },
+        "status": "succeeded",
+        "result": {
+          "shotId": "shot_6148305cf48c4703",
+          "status": "generated",
+          "version": 2,
+          "visualReview": "requires_user",
+          "reason": "看图发现女孩未握杯柄、店员未托杯底，两手在杯左侧连成横线像握手，需定点修正手与杯子的接触关系"
+        }
+      },
+      {
+        "call": {
+          "id": "call_00_2sv9wayyeazwrafgg1umnbu4",
+          "name": "review_shot",
+          "arguments": {
+            "focus": "女孩的手是否明确握住杯柄、店员的手是否从下方托住杯底，两手是否只接触杯子而不互相握手；暖色插画风、黄色雨衣、绿色围裙与「☕」文字是否保留",
+            "shotId": "shot_6148305cf48c4703"
+          }
+        },
+        "status": "succeeded",
+        "result": {
+          "shotId": "shot_6148305cf48c4703",
+          "shotVersion": 2,
+          "svgSha256": "393174c150f5fcd9e1b99f7107c51496f0cb8b0e5ba23f472ec54767cfdcbb72",
+          "imageId": "609aa675750d6d8da9fd4dfbd9e0517f2f9262190eea765d8024498f061870c4",
+          "width": 1280,
+          "height": 720,
+          "bytes": 767384,
+          "renderer": "chromium-svg-1280x720-v1",
+          "previewUrl": "/api/storyboards/board_edd737d6e7644521/shots/shot_6148305cf48c4703/previews/609aa675750d6d8da9fd4dfbd9e0517f2f9262190eea765d8024498f061870c4.png",
+          "visualReview": "model_observed_image",
+          "review": "已明确满足的事实：\n1. 画面为暖色插画风，背景有暖黄光晕与吊灯，整体色调偏暖。\n2. 左侧人物穿黄色雨衣、黑色短发，符合女孩外观设定。\n3. 右侧人物穿绿色围裙、白色内搭，符合店员外观设定。\n4. 画面中央有一杯冒热气的咖啡，两人手臂均伸向杯子，存在递接动作的构图意图。\n5. 画面中未出现两人互相握手的动作。\n\n可观察偏差：\n1. 女孩的手与杯柄的接触关系不清晰：女孩伸出的手在杯身左侧，但无法明确看出手指是否握住杯柄，手部与杯柄的轮廓有重叠但缺乏明确的抓握结构。\n2. 店员的手与杯底的接触关系不清晰：店员伸出的手在杯身下方偏右，但无法明确看出手掌是否从下方托住杯底，手部与杯底的接触面被简化，缺乏托举的明确形态。\n3. 文字可读性：画面中未观察到「☕」文字，无法判断其是否保留。\n\n无法从这张图判断的内容：\n- 无法判断两人是否接触的是“同一杯”咖啡的完整递接过程（静态图仅能呈现瞬间状态）。\n- 无法判断跨镜人物一致性（未提供参考图）。\n- 无法判断完整运动过程（静态图限制）。",
+          "reviewKey": "bff88d8dc952038bf8a65029ec3a1703f32b5989a2774aeb80b26878b37bdf04",
+          "requiresUserAcceptance": true
+        }
+      },
+      {
+        "call": {
+          "id": "call_00_0ryi67xq04ko389zng9bhhbj",
+          "name": "finish_task",
+          "arguments": {
+            "expectedCount": 1,
+            "expectedDuration": 5,
+            "shotIds": [
+              "shot_6148305cf48c4703"
+            ],
+            "summary": "已按要求渲染当前镜头（v1）并用模型实际看图：v1 中女孩的手与店员的手在杯子左侧连成一条横线，更像握手，女孩未握杯柄、店员未托杯底，属于关键偏差。据此定点改画一次（v2），并再次看图复审：v2 已消除握手结构，两人手臂都伸向中央同一杯冒热气的咖啡，暖色插画风、黄色雨衣、绿色围裙均保留。仍存在的偏差如实保留：女孩手指与杯柄、店员手掌与杯底的接触面被简化，抓握与托举形态不够明确；复审未在画面中观察到「☕」文字。仅改画一次，未再重画，请以真实预览做最终视觉验收。",
+            "unresolved": [
+              "女孩手指握杯柄的抓握结构仍不够明确",
+              "店员手掌托住杯底的托举形态仍不够明确",
+              "复审未观察到「☕」文字，需确认是否保留"
+            ]
+          }
+        },
+        "status": "succeeded",
+        "result": {
+          "verifiedShots": 1,
+          "visualReview": "requires_user"
+        }
+      }
+    ],
+    "clientActions": [],
+    "pendingDelete": null,
+    "usage": {
+      "prompt_tokens": 23246,
+      "completion_tokens": 1630,
+      "total_tokens": 24876
+    },
+    "outputShotIds": [
+      "shot_6148305cf48c4703"
+    ],
+    "createdAt": "2026-11-17T11:20:49.540713+00:00"
+  },
+  "board": {
+    "id": "board_edd737d6e7644521",
+    "version": 1,
+    "title": "DeepSeek 看图与递杯修正验收",
+    "context": "黑色短发女孩黄色雨衣；店员白衬衫绿色围裙；暖杯咖啡，温暖插画风",
+    "activeId": "shot_6148305cf48c4703",
+    "canUndo": true,
+    "canRedo": false,
+    "shots": [
+      {
+        "id": "shot_6148305cf48c4703",
+        "title": "递接热咖啡",
+        "description": "女孩从白衬衫绿围裙店员手中接过同一杯热咖啡。女孩握住杯柄，店员托住杯底，两人手应接触同一杯，不能只是互相握手。",
+        "durationSeconds": 5,
+        "camera": "中景，手与杯子接触关系清楚可见",
+        "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1280 720\" width=\"1280\" height=\"720\">\n  <defs>\n    <radialGradient id=\"warmGlow\" cx=\"50%\" cy=\"30%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#FFF3D6\" stop-opacity=\"0.9\" />\n      <stop offset=\"60%\" stop-color=\"#F5C97A\" stop-opacity=\"0.35\" />\n      <stop offset=\"100%\" stop-color=\"#C98A4B\" stop-opacity=\"0\" />\n    </radialGradient>\n    <linearGradient id=\"wallGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#E8C9A0\" />\n      <stop offset=\"100%\" stop-color=\"#D4A878\" />\n    </linearGradient>\n    <linearGradient id=\"counterGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#B87A4B\" />\n      <stop offset=\"100%\" stop-color=\"#8B5A32\" />\n    </linearGradient>\n    <linearGradient id=\"windowGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#7A8FA6\" />\n      <stop offset=\"100%\" stop-color=\"#5A6E85\" />\n    </linearGradient>\n    <linearGradient id=\"raincoatGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#FFD93D\" />\n      <stop offset=\"100%\" stop-color=\"#F0B820\" />\n    </linearGradient>\n    <linearGradient id=\"apronGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#2D5A3D\" />\n      <stop offset=\"100%\" stop-color=\"#1E3D2A\" />\n    </linearGradient>\n    <linearGradient id=\"shirtGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#FAFAF5\" />\n      <stop offset=\"100%\" stop-color=\"#E8E4DA\" />\n    </linearGradient>\n    <radialGradient id=\"lampGlow\" cx=\"50%\" cy=\"50%\" r=\"50%\">\n      <stop offset=\"0%\" stop-color=\"#FFE8A0\" stop-opacity=\"0.8\" />\n      <stop offset=\"100%\" stop-color=\"#FFE8A0\" stop-opacity=\"0\" />\n    </radialGradient>\n    <filter id=\"softBlur\">\n      <feGaussianBlur stdDeviation=\"3\" />\n    </filter>\n    <filter id=\"grain\">\n      <feTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"3\" result=\"noise\" />\n      <feColorMatrix type=\"saturate\" values=\"0\" in=\"noise\" result=\"grayNoise\" />\n      <feComponentTransfer in=\"grayNoise\" result=\"fadedNoise\">\n        <feFuncA type=\"linear\" slope=\"0.06\" />\n      </feComponentTransfer>\n      <feBlend in=\"SourceGraphic\" in2=\"fadedNoise\" mode=\"multiply\" />\n    </filter>\n    <clipPath id=\"windowClip\">\n      <rect x=\"920\" y=\"120\" width=\"300\" height=\"340\" rx=\"8\" />\n    </clipPath>\n  </defs>\n\n  \n  <rect x=\"0\" y=\"0\" width=\"1280\" height=\"720\" fill=\"#E8C9A0\" />\n  <rect x=\"0\" y=\"0\" width=\"1280\" height=\"720\" fill=\"url(#wallGrad)\" />\n\n  \n  <ellipse cx=\"640\" cy=\"200\" rx=\"500\" ry=\"350\" fill=\"url(#warmGlow)\" />\n\n  \n  <g id=\"window\">\n    <rect x=\"910\" y=\"110\" width=\"320\" height=\"360\" rx=\"10\" fill=\"#4A5E72\" stroke=\"#8B6B4A\" stroke-width=\"10\" />\n    <rect x=\"920\" y=\"120\" width=\"300\" height=\"340\" rx=\"6\" fill=\"url(#windowGrad)\" />\n    \n    <g clip-path=\"url(#windowClip)\" opacity=\"0.5\">\n      <line x1=\"950\" y1=\"130\" x2=\"940\" y2=\"180\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"990\" y1=\"140\" x2=\"980\" y2=\"200\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1030\" y1=\"125\" x2=\"1020\" y2=\"175\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1080\" y1=\"150\" x2=\"1070\" y2=\"210\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1120\" y1=\"135\" x2=\"1110\" y2=\"185\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1160\" y1=\"145\" x2=\"1150\" y2=\"195\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"960\" y1=\"220\" x2=\"950\" y2=\"280\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1010\" y1=\"240\" x2=\"1000\" y2=\"300\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1060\" y1=\"230\" x2=\"1050\" y2=\"290\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1110\" y1=\"250\" x2=\"1100\" y2=\"310\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1150\" y1=\"235\" x2=\"1140\" y2=\"295\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"980\" y1=\"320\" x2=\"970\" y2=\"380\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1040\" y1=\"340\" x2=\"1030\" y2=\"400\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1100\" y1=\"330\" x2=\"1090\" y2=\"390\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1160\" y1=\"350\" x2=\"1150\" y2=\"410\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n    </g>\n    \n    <line x1=\"1070\" y1=\"120\" x2=\"1070\" y2=\"460\" stroke=\"#8B6B4A\" stroke-width=\"8\" />\n    <line x1=\"920\" y1=\"290\" x2=\"1220\" y2=\"290\" stroke=\"#8B6B4A\" stroke-width=\"8\" />\n  </g>\n\n  \n  <g id=\"hangingLamp\">\n    <line x1=\"640\" y1=\"0\" x2=\"640\" y2=\"70\" stroke=\"#6B4A2A\" stroke-width=\"3\" />\n    <ellipse cx=\"640\" cy=\"110\" rx=\"80\" ry=\"60\" fill=\"url(#lampGlow)\" />\n    <path d=\"M590 70 Q640 50 690 70 L680 95 Q640 85 600 95 Z\" fill=\"#C98A4B\" />\n    <ellipse cx=\"640\" cy=\"95\" rx=\"40\" ry=\"10\" fill=\"#FFE8A0\" opacity=\"0.8\" />\n    <circle cx=\"640\" cy=\"100\" r=\"8\" fill=\"#FFD060\" />\n  </g>\n\n  \n  <g id=\"coffeeMachine\">\n    <rect x=\"780\" y=\"200\" width=\"100\" height=\"160\" rx=\"8\" fill=\"#8B6B4A\" />\n    <rect x=\"790\" y=\"210\" width=\"80\" height=\"60\" rx=\"4\" fill=\"#6B4A2A\" />\n    <rect x=\"800\" y=\"280\" width=\"60\" height=\"40\" rx=\"4\" fill=\"#A08060\" />\n    <circle cx=\"830\" cy=\"300\" r=\"12\" fill=\"#D4A878\" />\n    <rect x=\"810\" y=\"330\" width=\"40\" height=\"20\" rx=\"3\" fill=\"#5A3A1A\" />\n    <rect x=\"795\" y=\"355\" width=\"70\" height=\"8\" rx=\"2\" fill=\"#6B4A2A\" />\n  </g>\n\n  \n  <g id=\"counter\">\n    <rect x=\"0\" y=\"440\" width=\"1280\" height=\"280\" fill=\"url(#counterGrad)\" />\n    <rect x=\"0\" y=\"440\" width=\"1280\" height=\"20\" rx=\"4\" fill=\"#C98A4B\" />\n    <rect x=\"0\" y=\"460\" width=\"1280\" height=\"6\" fill=\"#A06A3A\" />\n    \n    <line x1=\"100\" y1=\"480\" x2=\"100\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"300\" y1=\"480\" x2=\"300\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"500\" y1=\"480\" x2=\"500\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"700\" y1=\"480\" x2=\"700\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"900\" y1=\"480\" x2=\"900\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"1100\" y1=\"480\" x2=\"1100\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n  </g>\n\n  \n  <g id=\"barista\">\n    \n    <path d=\"M720 440 Q720 340 760 300 Q800 270 840 300 Q880 340 880 440 Z\" fill=\"url(#shirtGrad)\" stroke=\"#C8C0B0\" stroke-width=\"1.5\" />\n    \n    <path d=\"M740 440 L740 320 Q760 300 800 295 Q840 300 860 320 L860 440 Z\" fill=\"url(#apronGrad)\" />\n    \n    <rect x=\"770\" y=\"370\" width=\"60\" height=\"45\" rx=\"4\" fill=\"#2D5A3D\" stroke=\"#1E3D2A\" stroke-width=\"1.5\" />\n    \n    <circle cx=\"800\" cy=\"392\" r=\"10\" fill=\"#C98A4B\" />\n    <text x=\"800\" y=\"396\" font-size=\"9\" fill=\"#FFF3D6\" text-anchor=\"middle\" font-family=\"sans-serif\">☕</text>\n    \n    <path d=\"M740 320 Q720 310 710 330\" stroke=\"#1E3D2A\" stroke-width=\"4\" fill=\"none\" />\n    <path d=\"M860 320 Q880 310 890 330\" stroke=\"#1E3D2A\" stroke-width=\"4\" fill=\"none\" />\n    \n    <rect x=\"785\" y=\"270\" width=\"30\" height=\"35\" rx=\"8\" fill=\"#E8C0A0\" />\n    \n    <ellipse cx=\"800\" cy=\"245\" rx=\"45\" ry=\"50\" fill=\"#F0D0B0\" />\n    \n    <path d=\"M755 235 Q755 190 800 185 Q845 190 845 235 Q845 210 800 205 Q755 210 755 235 Z\" fill=\"#2A1A0A\" />\n    <path d=\"M755 235 Q750 220 760 210 Q770 200 800 195 Q830 200 840 210 Q850 220 845 235\" fill=\"#2A1A0A\" />\n    \n    <ellipse cx=\"755\" cy=\"250\" rx=\"8\" ry=\"12\" fill=\"#E8C0A0\" />\n    <ellipse cx=\"845\" cy=\"250\" rx=\"8\" ry=\"12\" fill=\"#E8C0A0\" />\n    \n    <ellipse cx=\"782\" cy=\"245\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <ellipse cx=\"818\" cy=\"245\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <circle cx=\"784\" cy=\"243\" r=\"2\" fill=\"#FFFFFF\" />\n    <circle cx=\"820\" cy=\"243\" r=\"2\" fill=\"#FFFFFF\" />\n    \n    <path d=\"M772 232 Q782 228 792 232\" stroke=\"#2A1A0A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M808 232 Q818 228 828 232\" stroke=\"#2A1A0A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M798 252 Q800 258 802 252\" stroke=\"#D0A080\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M785 265 Q800 278 815 265\" stroke=\"#C08060\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M740 340 Q700 380 680 400 Q665 412 655 408\" stroke=\"#FAFAF5\" stroke-width=\"22\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M740 340 Q700 380 680 400 Q665 412 655 408\" stroke=\"#E8E4DA\" stroke-width=\"22\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.3\" />\n    \n    <path d=\"M655 408 Q645 410 640 402 Q638 396 645 394 Q652 393 656 398\" fill=\"#F0D0B0\" stroke=\"#D8B090\" stroke-width=\"1.5\" />\n    <path d=\"M648 404 Q644 400 646 396\" stroke=\"#D8B090\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M860 340 Q880 370 870 395 Q862 410 850 408\" stroke=\"#FAFAF5\" stroke-width=\"22\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M850 408 Q842 406 840 398 Q839 392 846 390 Q853 389 857 394\" fill=\"#F0D0B0\" stroke=\"#D8B090\" stroke-width=\"1.5\" />\n    <path d=\"M846 402 Q843 398 845 394\" stroke=\"#D8B090\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" />\n  </g>\n\n  \n  <g id=\"coffeeCup\">\n    \n    <path d=\"M615 318 Q610 298 620 283\" stroke=\"#FFFFFF\" stroke-width=\"2\" fill=\"none\" opacity=\"0.5\" stroke-linecap=\"round\" />\n    <path d=\"M630 313 Q625 293 635 278\" stroke=\"#FFFFFF\" stroke-width=\"2\" fill=\"none\" opacity=\"0.4\" stroke-linecap=\"round\" />\n    <path d=\"M645 316 Q640 296 650 281\" stroke=\"#FFFFFF\" stroke-width=\"2\" fill=\"none\" opacity=\"0.45\" stroke-linecap=\"round\" />\n    \n    <path d=\"M595 338 L605 398 Q630 408 655 398 L665 338 Z\" fill=\"#FAFAF5\" stroke=\"#D0C8B8\" stroke-width=\"1.5\" />\n    \n    <ellipse cx=\"630\" cy=\"338\" rx=\"35\" ry=\"10\" fill=\"#F0EDE5\" stroke=\"#D0C8B8\" stroke-width=\"1.5\" />\n    \n    <ellipse cx=\"630\" cy=\"338\" rx=\"28\" ry=\"7\" fill=\"#6B3A1A\" />\n    \n    <path d=\"M595 353 Q575 353 575 373 Q575 393 595 393\" stroke=\"#D0C8B8\" stroke-width=\"4\" fill=\"none\" />\n    \n    <ellipse cx=\"630\" cy=\"398\" rx=\"25\" ry=\"5\" fill=\"#E8E4DA\" />\n  </g>\n\n  \n  <g id=\"girl\">\n    \n    <path d=\"M380 440 Q380 330 430 290 Q480 260 530 290 Q580 330 580 440 Z\" fill=\"url(#raincoatGrad)\" stroke=\"#D4A020\" stroke-width=\"2\" />\n    \n    <line x1=\"480\" y1=\"300\" x2=\"480\" y2=\"440\" stroke=\"#D4A020\" stroke-width=\"2\" />\n    \n    <path d=\"M455 290 Q480 310 505 290\" stroke=\"#FAFAF5\" stroke-width=\"3\" fill=\"none\" />\n    \n    <path d=\"M400 300 Q390 260 420 240 Q450 225 480 230 Q510 225 540 240 Q570 260 560 300\" fill=\"#FFD93D\" stroke=\"#D4A020\" stroke-width=\"2\" />\n    \n    <circle cx=\"430\" cy=\"250\" r=\"3\" fill=\"#A8C0D8\" opacity=\"0.7\" />\n    <circle cx=\"510\" cy=\"245\" r=\"2.5\" fill=\"#A8C0D8\" opacity=\"0.7\" />\n    <circle cx=\"470\" cy=\"235\" r=\"2\" fill=\"#A8C0D8\" opacity=\"0.6\" />\n    \n    <rect x=\"465\" y=\"270\" width=\"30\" height=\"30\" rx=\"8\" fill=\"#F0D0B0\" />\n    \n    <ellipse cx=\"480\" cy=\"240\" rx=\"45\" ry=\"50\" fill=\"#F0D0B0\" />\n    \n    <path d=\"M435 235 Q435 185 480 180 Q525 185 525 235 Q525 210 480 205 Q435 210 435 235 Z\" fill=\"#1A1A1A\" />\n    <path d=\"M435 235 Q430 220 440 210 Q450 200 480 195 Q510 200 520 210 Q530 220 525 235\" fill=\"#1A1A1A\" />\n    \n    <path d=\"M440 225 Q450 210 465 215 Q475 205 485 215 Q495 205 505 215 Q515 210 520 225\" fill=\"#1A1A1A\" />\n    \n    <ellipse cx=\"435\" cy=\"245\" rx=\"8\" ry=\"12\" fill=\"#F0D0B0\" />\n    <ellipse cx=\"525\" cy=\"245\" rx=\"8\" ry=\"12\" fill=\"#F0D0B0\" />\n    \n    <ellipse cx=\"462\" cy=\"240\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <ellipse cx=\"498\" cy=\"240\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <circle cx=\"464\" cy=\"238\" r=\"2\" fill=\"#FFFFFF\" />\n    <circle cx=\"500\" cy=\"238\" r=\"2\" fill=\"#FFFFFF\" />\n    \n    <path d=\"M452 227 Q462 223 472 227\" stroke=\"#1A1A1A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M488 227 Q498 223 508 227\" stroke=\"#1A1A1A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M478 247 Q480 253 482 247\" stroke=\"#D0A080\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M465 260 Q480 273 495 260\" stroke=\"#C08060\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <ellipse cx=\"452\" cy=\"255\" rx=\"8\" ry=\"5\" fill=\"#F0A0A0\" opacity=\"0.3\" />\n    <ellipse cx=\"508\" cy=\"255\" rx=\"8\" ry=\"5\" fill=\"#F0A0A0\" opacity=\"0.3\" />\n    \n    <path d=\"M540 340 Q560 355 575 368 Q585 376 590 372\" stroke=\"#FFD93D\" stroke-width=\"24\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M540 340 Q560 355 575 368 Q585 376 590 372\" stroke=\"#F0B820\" stroke-width=\"24\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.3\" />\n    \n    <path d=\"M590 372 Q582 366 578 372 Q575 378 580 382 Q586 386 592 382 Q596 378 594 374\" fill=\"#F0D0B0\" stroke=\"#D8B090\" stroke-width=\"1.5\" />\n    <path d=\"M584 374 Q582 378 585 380\" stroke=\"#D8B090\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M420 340 Q400 380 410 420\" stroke=\"#FFD93D\" stroke-width=\"24\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M440 310 Q420 360 430 400\" stroke=\"#8B5A32\" stroke-width=\"5\" fill=\"none\" />\n    \n    <rect x=\"410\" y=\"390\" width=\"40\" height=\"35\" rx=\"5\" fill=\"#8B5A32\" stroke=\"#6B4A2A\" stroke-width=\"1.5\" />\n    <rect x=\"420\" y=\"390\" width=\"20\" height=\"8\" rx=\"2\" fill=\"#A06A3A\" />\n  </g>\n\n  \n  <circle cx=\"630\" cy=\"360\" r=\"25\" fill=\"#FFE8A0\" opacity=\"0.25\" filter=\"url(#softBlur)\" />\n  <circle cx=\"630\" cy=\"360\" r=\"12\" fill=\"#FFE8A0\" opacity=\"0.35\" filter=\"url(#softBlur)\" />\n\n  \n  <g id=\"counterItems\">\n    \n    <ellipse cx=\"350\" cy=\"455\" rx=\"30\" ry=\"8\" fill=\"#E8E4DA\" stroke=\"#D0C8B8\" stroke-width=\"1\" />\n    \n    <path d=\"M335 445 L340 455 L360 455 L365 445 Z\" fill=\"#FAFAF5\" stroke=\"#D0C8B8\" stroke-width=\"1\" />\n    \n    <rect x=\"880\" y=\"430\" width=\"25\" height=\"30\" rx=\"4\" fill=\"#E8E4DA\" stroke=\"#D0C8B8\" stroke-width=\"1\" />\n    <rect x=\"883\" y=\"425\" width=\"19\" height=\"8\" rx=\"2\" fill=\"#C98A4B\" />\n  </g>\n\n  \n  <rect x=\"0\" y=\"0\" width=\"1280\" height=\"720\" fill=\"none\" filter=\"url(#grain)\" opacity=\"0.5\" />\n</svg>",
+        "version": 2
+      }
+    ],
+    "activeShot": {
+      "id": "shot_6148305cf48c4703",
+      "title": "镜头 1",
+      "version": 2,
+      "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1280 720\" width=\"1280\" height=\"720\">\n  <defs>\n    <radialGradient id=\"warmGlow\" cx=\"50%\" cy=\"30%\" r=\"70%\">\n      <stop offset=\"0%\" stop-color=\"#FFF3D6\" stop-opacity=\"0.9\" />\n      <stop offset=\"60%\" stop-color=\"#F5C97A\" stop-opacity=\"0.35\" />\n      <stop offset=\"100%\" stop-color=\"#C98A4B\" stop-opacity=\"0\" />\n    </radialGradient>\n    <linearGradient id=\"wallGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#E8C9A0\" />\n      <stop offset=\"100%\" stop-color=\"#D4A878\" />\n    </linearGradient>\n    <linearGradient id=\"counterGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#B87A4B\" />\n      <stop offset=\"100%\" stop-color=\"#8B5A32\" />\n    </linearGradient>\n    <linearGradient id=\"windowGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#7A8FA6\" />\n      <stop offset=\"100%\" stop-color=\"#5A6E85\" />\n    </linearGradient>\n    <linearGradient id=\"raincoatGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#FFD93D\" />\n      <stop offset=\"100%\" stop-color=\"#F0B820\" />\n    </linearGradient>\n    <linearGradient id=\"apronGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#2D5A3D\" />\n      <stop offset=\"100%\" stop-color=\"#1E3D2A\" />\n    </linearGradient>\n    <linearGradient id=\"shirtGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">\n      <stop offset=\"0%\" stop-color=\"#FAFAF5\" />\n      <stop offset=\"100%\" stop-color=\"#E8E4DA\" />\n    </linearGradient>\n    <radialGradient id=\"lampGlow\" cx=\"50%\" cy=\"50%\" r=\"50%\">\n      <stop offset=\"0%\" stop-color=\"#FFE8A0\" stop-opacity=\"0.8\" />\n      <stop offset=\"100%\" stop-color=\"#FFE8A0\" stop-opacity=\"0\" />\n    </radialGradient>\n    <filter id=\"softBlur\">\n      <feGaussianBlur stdDeviation=\"3\" />\n    </filter>\n    <filter id=\"grain\">\n      <feTurbulence type=\"fractalNoise\" baseFrequency=\"0.9\" numOctaves=\"3\" result=\"noise\" />\n      <feColorMatrix type=\"saturate\" values=\"0\" in=\"noise\" result=\"grayNoise\" />\n      <feComponentTransfer in=\"grayNoise\" result=\"fadedNoise\">\n        <feFuncA type=\"linear\" slope=\"0.06\" />\n      </feComponentTransfer>\n      <feBlend in=\"SourceGraphic\" in2=\"fadedNoise\" mode=\"multiply\" />\n    </filter>\n    <clipPath id=\"windowClip\">\n      <rect x=\"920\" y=\"120\" width=\"300\" height=\"340\" rx=\"8\" />\n    </clipPath>\n  </defs>\n\n  \n  <rect x=\"0\" y=\"0\" width=\"1280\" height=\"720\" fill=\"#E8C9A0\" />\n  <rect x=\"0\" y=\"0\" width=\"1280\" height=\"720\" fill=\"url(#wallGrad)\" />\n\n  \n  <ellipse cx=\"640\" cy=\"200\" rx=\"500\" ry=\"350\" fill=\"url(#warmGlow)\" />\n\n  \n  <g id=\"window\">\n    <rect x=\"910\" y=\"110\" width=\"320\" height=\"360\" rx=\"10\" fill=\"#4A5E72\" stroke=\"#8B6B4A\" stroke-width=\"10\" />\n    <rect x=\"920\" y=\"120\" width=\"300\" height=\"340\" rx=\"6\" fill=\"url(#windowGrad)\" />\n    \n    <g clip-path=\"url(#windowClip)\" opacity=\"0.5\">\n      <line x1=\"950\" y1=\"130\" x2=\"940\" y2=\"180\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"990\" y1=\"140\" x2=\"980\" y2=\"200\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1030\" y1=\"125\" x2=\"1020\" y2=\"175\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1080\" y1=\"150\" x2=\"1070\" y2=\"210\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1120\" y1=\"135\" x2=\"1110\" y2=\"185\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1160\" y1=\"145\" x2=\"1150\" y2=\"195\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"960\" y1=\"220\" x2=\"950\" y2=\"280\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1010\" y1=\"240\" x2=\"1000\" y2=\"300\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1060\" y1=\"230\" x2=\"1050\" y2=\"290\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1110\" y1=\"250\" x2=\"1100\" y2=\"310\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1150\" y1=\"235\" x2=\"1140\" y2=\"295\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"980\" y1=\"320\" x2=\"970\" y2=\"380\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1040\" y1=\"340\" x2=\"1030\" y2=\"400\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1100\" y1=\"330\" x2=\"1090\" y2=\"390\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n      <line x1=\"1160\" y1=\"350\" x2=\"1150\" y2=\"410\" stroke=\"#A8C0D8\" stroke-width=\"1.5\" />\n    </g>\n    \n    <line x1=\"1070\" y1=\"120\" x2=\"1070\" y2=\"460\" stroke=\"#8B6B4A\" stroke-width=\"8\" />\n    <line x1=\"920\" y1=\"290\" x2=\"1220\" y2=\"290\" stroke=\"#8B6B4A\" stroke-width=\"8\" />\n  </g>\n\n  \n  <g id=\"hangingLamp\">\n    <line x1=\"640\" y1=\"0\" x2=\"640\" y2=\"70\" stroke=\"#6B4A2A\" stroke-width=\"3\" />\n    <ellipse cx=\"640\" cy=\"110\" rx=\"80\" ry=\"60\" fill=\"url(#lampGlow)\" />\n    <path d=\"M590 70 Q640 50 690 70 L680 95 Q640 85 600 95 Z\" fill=\"#C98A4B\" />\n    <ellipse cx=\"640\" cy=\"95\" rx=\"40\" ry=\"10\" fill=\"#FFE8A0\" opacity=\"0.8\" />\n    <circle cx=\"640\" cy=\"100\" r=\"8\" fill=\"#FFD060\" />\n  </g>\n\n  \n  <g id=\"coffeeMachine\">\n    <rect x=\"780\" y=\"200\" width=\"100\" height=\"160\" rx=\"8\" fill=\"#8B6B4A\" />\n    <rect x=\"790\" y=\"210\" width=\"80\" height=\"60\" rx=\"4\" fill=\"#6B4A2A\" />\n    <rect x=\"800\" y=\"280\" width=\"60\" height=\"40\" rx=\"4\" fill=\"#A08060\" />\n    <circle cx=\"830\" cy=\"300\" r=\"12\" fill=\"#D4A878\" />\n    <rect x=\"810\" y=\"330\" width=\"40\" height=\"20\" rx=\"3\" fill=\"#5A3A1A\" />\n    <rect x=\"795\" y=\"355\" width=\"70\" height=\"8\" rx=\"2\" fill=\"#6B4A2A\" />\n  </g>\n\n  \n  <g id=\"counter\">\n    <rect x=\"0\" y=\"440\" width=\"1280\" height=\"280\" fill=\"url(#counterGrad)\" />\n    <rect x=\"0\" y=\"440\" width=\"1280\" height=\"20\" rx=\"4\" fill=\"#C98A4B\" />\n    <rect x=\"0\" y=\"460\" width=\"1280\" height=\"6\" fill=\"#A06A3A\" />\n    \n    <line x1=\"100\" y1=\"480\" x2=\"100\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"300\" y1=\"480\" x2=\"300\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"500\" y1=\"480\" x2=\"500\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"700\" y1=\"480\" x2=\"700\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"900\" y1=\"480\" x2=\"900\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n    <line x1=\"1100\" y1=\"480\" x2=\"1100\" y2=\"700\" stroke=\"#7A4A22\" stroke-width=\"1\" opacity=\"0.3\" />\n  </g>\n\n  \n  <g id=\"barista\">\n    \n    <path d=\"M720 440 Q720 340 760 300 Q800 270 840 300 Q880 340 880 440 Z\" fill=\"url(#shirtGrad)\" stroke=\"#C8C0B0\" stroke-width=\"1.5\" />\n    \n    <path d=\"M740 440 L740 320 Q760 300 800 295 Q840 300 860 320 L860 440 Z\" fill=\"url(#apronGrad)\" />\n    \n    <rect x=\"770\" y=\"370\" width=\"60\" height=\"45\" rx=\"4\" fill=\"#2D5A3D\" stroke=\"#1E3D2A\" stroke-width=\"1.5\" />\n    \n    <circle cx=\"800\" cy=\"392\" r=\"10\" fill=\"#C98A4B\" />\n    <text x=\"800\" y=\"396\" font-size=\"9\" fill=\"#FFF3D6\" text-anchor=\"middle\" font-family=\"sans-serif\">☕</text>\n    \n    <path d=\"M740 320 Q720 310 710 330\" stroke=\"#1E3D2A\" stroke-width=\"4\" fill=\"none\" />\n    <path d=\"M860 320 Q880 310 890 330\" stroke=\"#1E3D2A\" stroke-width=\"4\" fill=\"none\" />\n    \n    <rect x=\"785\" y=\"270\" width=\"30\" height=\"35\" rx=\"8\" fill=\"#E8C0A0\" />\n    \n    <ellipse cx=\"800\" cy=\"245\" rx=\"45\" ry=\"50\" fill=\"#F0D0B0\" />\n    \n    <path d=\"M755 235 Q755 190 800 185 Q845 190 845 235 Q845 210 800 205 Q755 210 755 235 Z\" fill=\"#2A1A0A\" />\n    <path d=\"M755 235 Q750 220 760 210 Q770 200 800 195 Q830 200 840 210 Q850 220 845 235\" fill=\"#2A1A0A\" />\n    \n    <ellipse cx=\"755\" cy=\"250\" rx=\"8\" ry=\"12\" fill=\"#E8C0A0\" />\n    <ellipse cx=\"845\" cy=\"250\" rx=\"8\" ry=\"12\" fill=\"#E8C0A0\" />\n    \n    <ellipse cx=\"782\" cy=\"245\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <ellipse cx=\"818\" cy=\"245\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <circle cx=\"784\" cy=\"243\" r=\"2\" fill=\"#FFFFFF\" />\n    <circle cx=\"820\" cy=\"243\" r=\"2\" fill=\"#FFFFFF\" />\n    \n    <path d=\"M772 232 Q782 228 792 232\" stroke=\"#2A1A0A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M808 232 Q818 228 828 232\" stroke=\"#2A1A0A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M798 252 Q800 258 802 252\" stroke=\"#D0A080\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M785 265 Q800 278 815 265\" stroke=\"#C08060\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M740 340 Q700 380 680 400 Q665 412 655 408\" stroke=\"#FAFAF5\" stroke-width=\"22\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M740 340 Q700 380 680 400 Q665 412 655 408\" stroke=\"#E8E4DA\" stroke-width=\"22\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.3\" />\n    \n    <path d=\"M655 408 Q645 410 640 402 Q638 396 645 394 Q652 393 656 398\" fill=\"#F0D0B0\" stroke=\"#D8B090\" stroke-width=\"1.5\" />\n    <path d=\"M648 404 Q644 400 646 396\" stroke=\"#D8B090\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M860 340 Q880 370 870 395 Q862 410 850 408\" stroke=\"#FAFAF5\" stroke-width=\"22\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M850 408 Q842 406 840 398 Q839 392 846 390 Q853 389 857 394\" fill=\"#F0D0B0\" stroke=\"#D8B090\" stroke-width=\"1.5\" />\n    <path d=\"M846 402 Q843 398 845 394\" stroke=\"#D8B090\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" />\n  </g>\n\n  \n  <g id=\"coffeeCup\">\n    \n    <path d=\"M615 318 Q610 298 620 283\" stroke=\"#FFFFFF\" stroke-width=\"2\" fill=\"none\" opacity=\"0.5\" stroke-linecap=\"round\" />\n    <path d=\"M630 313 Q625 293 635 278\" stroke=\"#FFFFFF\" stroke-width=\"2\" fill=\"none\" opacity=\"0.4\" stroke-linecap=\"round\" />\n    <path d=\"M645 316 Q640 296 650 281\" stroke=\"#FFFFFF\" stroke-width=\"2\" fill=\"none\" opacity=\"0.45\" stroke-linecap=\"round\" />\n    \n    <path d=\"M595 338 L605 398 Q630 408 655 398 L665 338 Z\" fill=\"#FAFAF5\" stroke=\"#D0C8B8\" stroke-width=\"1.5\" />\n    \n    <ellipse cx=\"630\" cy=\"338\" rx=\"35\" ry=\"10\" fill=\"#F0EDE5\" stroke=\"#D0C8B8\" stroke-width=\"1.5\" />\n    \n    <ellipse cx=\"630\" cy=\"338\" rx=\"28\" ry=\"7\" fill=\"#6B3A1A\" />\n    \n    <path d=\"M595 353 Q575 353 575 373 Q575 393 595 393\" stroke=\"#D0C8B8\" stroke-width=\"4\" fill=\"none\" />\n    \n    <ellipse cx=\"630\" cy=\"398\" rx=\"25\" ry=\"5\" fill=\"#E8E4DA\" />\n  </g>\n\n  \n  <g id=\"girl\">\n    \n    <path d=\"M380 440 Q380 330 430 290 Q480 260 530 290 Q580 330 580 440 Z\" fill=\"url(#raincoatGrad)\" stroke=\"#D4A020\" stroke-width=\"2\" />\n    \n    <line x1=\"480\" y1=\"300\" x2=\"480\" y2=\"440\" stroke=\"#D4A020\" stroke-width=\"2\" />\n    \n    <path d=\"M455 290 Q480 310 505 290\" stroke=\"#FAFAF5\" stroke-width=\"3\" fill=\"none\" />\n    \n    <path d=\"M400 300 Q390 260 420 240 Q450 225 480 230 Q510 225 540 240 Q570 260 560 300\" fill=\"#FFD93D\" stroke=\"#D4A020\" stroke-width=\"2\" />\n    \n    <circle cx=\"430\" cy=\"250\" r=\"3\" fill=\"#A8C0D8\" opacity=\"0.7\" />\n    <circle cx=\"510\" cy=\"245\" r=\"2.5\" fill=\"#A8C0D8\" opacity=\"0.7\" />\n    <circle cx=\"470\" cy=\"235\" r=\"2\" fill=\"#A8C0D8\" opacity=\"0.6\" />\n    \n    <rect x=\"465\" y=\"270\" width=\"30\" height=\"30\" rx=\"8\" fill=\"#F0D0B0\" />\n    \n    <ellipse cx=\"480\" cy=\"240\" rx=\"45\" ry=\"50\" fill=\"#F0D0B0\" />\n    \n    <path d=\"M435 235 Q435 185 480 180 Q525 185 525 235 Q525 210 480 205 Q435 210 435 235 Z\" fill=\"#1A1A1A\" />\n    <path d=\"M435 235 Q430 220 440 210 Q450 200 480 195 Q510 200 520 210 Q530 220 525 235\" fill=\"#1A1A1A\" />\n    \n    <path d=\"M440 225 Q450 210 465 215 Q475 205 485 215 Q495 205 505 215 Q515 210 520 225\" fill=\"#1A1A1A\" />\n    \n    <ellipse cx=\"435\" cy=\"245\" rx=\"8\" ry=\"12\" fill=\"#F0D0B0\" />\n    <ellipse cx=\"525\" cy=\"245\" rx=\"8\" ry=\"12\" fill=\"#F0D0B0\" />\n    \n    <ellipse cx=\"462\" cy=\"240\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <ellipse cx=\"498\" cy=\"240\" rx=\"5\" ry=\"6\" fill=\"#3A2A1A\" />\n    <circle cx=\"464\" cy=\"238\" r=\"2\" fill=\"#FFFFFF\" />\n    <circle cx=\"500\" cy=\"238\" r=\"2\" fill=\"#FFFFFF\" />\n    \n    <path d=\"M452 227 Q462 223 472 227\" stroke=\"#1A1A1A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M488 227 Q498 223 508 227\" stroke=\"#1A1A1A\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M478 247 Q480 253 482 247\" stroke=\"#D0A080\" stroke-width=\"1.5\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M465 260 Q480 273 495 260\" stroke=\"#C08060\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <ellipse cx=\"452\" cy=\"255\" rx=\"8\" ry=\"5\" fill=\"#F0A0A0\" opacity=\"0.3\" />\n    <ellipse cx=\"508\" cy=\"255\" rx=\"8\" ry=\"5\" fill=\"#F0A0A0\" opacity=\"0.3\" />\n    \n    <path d=\"M540 340 Q560 355 575 368 Q585 376 590 372\" stroke=\"#FFD93D\" stroke-width=\"24\" fill=\"none\" stroke-linecap=\"round\" />\n    <path d=\"M540 340 Q560 355 575 368 Q585 376 590 372\" stroke=\"#F0B820\" stroke-width=\"24\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.3\" />\n    \n    <path d=\"M590 372 Q582 366 578 372 Q575 378 580 382 Q586 386 592 382 Q596 378 594 374\" fill=\"#F0D0B0\" stroke=\"#D8B090\" stroke-width=\"1.5\" />\n    <path d=\"M584 374 Q582 378 585 380\" stroke=\"#D8B090\" stroke-width=\"1.2\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M420 340 Q400 380 410 420\" stroke=\"#FFD93D\" stroke-width=\"24\" fill=\"none\" stroke-linecap=\"round\" />\n    \n    <path d=\"M440 310 Q420 360 430 400\" stroke=\"#8B5A32\" stroke-width=\"5\" fill=\"none\" />\n    \n    <rect x=\"410\" y=\"390\" width=\"40\" height=\"35\" rx=\"5\" fill=\"#8B5A32\" stroke=\"#6B4A2A\" stroke-width=\"1.5\" />\n    <rect x=\"420\" y=\"390\" width=\"20\" height=\"8\" rx=\"2\" fill=\"#A06A3A\" />\n  </g>\n\n  \n  <circle cx=\"630\" cy=\"360\" r=\"25\" fill=\"#FFE8A0\" opacity=\"0.25\" filter=\"url(#softBlur)\" />\n  <circle cx=\"630\" cy=\"360\" r=\"12\" fill=\"#FFE8A0\" opacity=\"0.35\" filter=\"url(#softBlur)\" />\n\n  \n  <g id=\"counterItems\">\n    \n    <ellipse cx=\"350\" cy=\"455\" rx=\"30\" ry=\"8\" fill=\"#E8E4DA\" stroke=\"#D0C8B8\" stroke-width=\"1\" />\n    \n    <path d=\"M335 445 L340 455 L360 455 L365 445 Z\" fill=\"#FAFAF5\" stroke=\"#D0C8B8\" stroke-width=\"1\" />\n    \n    <rect x=\"880\" y=\"430\" width=\"25\" height=\"30\" rx=\"4\" fill=\"#E8E4DA\" stroke=\"#D0C8B8\" stroke-width=\"1\" />\n    <rect x=\"883\" y=\"425\" width=\"19\" height=\"8\" rx=\"2\" fill=\"#C98A4B\" />\n  </g>\n\n  \n  <rect x=\"0\" y=\"0\" width=\"1280\" height=\"720\" fill=\"none\" filter=\"url(#grain)\" opacity=\"0.5\" />\n</svg>",
+      "texts": [
+        {
+          "index": 0,
+          "indices": [
+            0
+          ],
+          "text": "☕",
+          "editable": true,
+          "reason": ""
+        }
+      ],
+      "cursor": 1,
+      "canUndo": true,
+      "canRedo": false,
+      "revisions": [
+        {
+          "instruction": "复用真实业务失败镜头作为实验初稿",
+          "createdAt": "2026-11-17T11:20:48.560891+00:00",
+          "usage": {},
+          "model": null
+        },
+        {
+          "instruction": "保持暖色扁平插画风、米黄暖棕背景、暖光吊灯、左侧黑色短发穿黄色雨衣的女孩、右侧白衬衫绿色围裙店员、中景构图与画面中的「☕」文字不变。只修正手与杯子的接触关系：把白色咖啡杯移到两人之间偏中央的清晰位置，杯身完整可见、杯柄朝左。女孩的右手从左侧伸出，手指明确弯曲包住杯柄，指尖与杯柄轮廓重叠接触；她的另一只手自然垂在身侧，不要伸向店员。店员从右侧伸出双手：一只手从下方托住杯底，手掌与杯底轮廓贴合接触；另一只手扶在杯身右侧。两人的手不要互相接触，不要出现握手或手臂连成一条横线的结构，两只手都只与杯子接触。杯口有少量热气。",
+          "createdAt": "2026-11-17T11:21:39.503627+00:00",
+          "usage": {
+            "prompt_tokens": 6791,
+            "completion_tokens": 2103,
+            "total_tokens": 8894,
+            "reasoning_tokens": 0
+          },
+          "model": "deepseek/deepseek-v4.1-flash"
+        }
+      ]
+    }
+  }
+}

@@ -254,5 +254,7 @@ uv run --no-editable pytest tests/test_workspace_api.py tests/test_api.py tests/
 ```
 # 自由分镜 Agent 接口
 
+已增加可选的真实 PNG 渲染与同模型图片评审工具。复用 DeepSeek v4.1 Flash 的 `image_url`，浏览器由服务端部署提供，不自动下载。配置及测试见 [镜头视觉工具](../docs/镜头视觉工具.md)。
+
 新增自主工具调用 API：`POST /api/storyboards/{id}/agent/runs` 提交任务，`GET /api/storyboards/{id}/agent/run` 查询真实进展。模型选择工具和顺序，应用层不预设拆镜工作流。配置、单进程运行边界和离线测试命令见 [分镜 Agent](../docs/分镜Agent.md)。
 

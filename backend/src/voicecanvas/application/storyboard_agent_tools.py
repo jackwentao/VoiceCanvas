@@ -28,6 +28,10 @@ class Target(ToolArgs):
     shot_id: str = Field(alias="shotId", min_length=1, max_length=100)
 
 
+class ReviewShot(Target):
+    focus: str = Field(default="", max_length=500)
+
+
 class DescribeShot(ShotDescription, Target):
     pass
 
@@ -71,6 +75,15 @@ TOOL_SPECS = {
     "describe_shot": (DescribeShot, "保存或修订指定镜头的拍摄说明、时长、景别，不重画。"),
     "manage_storyboard": (Manage, "按稳定镜头 id 新增、切换、重命名、移动、复制或撤销结构。"),
     "inspect_shot": (Target, "读取某镜 SVG 源码与文字，供必要的源码检查；这不代表看到了画面。"),
+    "render_shot": (
+        Target,
+        "把指定镜头的当前 SVG 用确定性浏览器渲染为真实 PNG，供视觉模型检查；不会修改画面。",
+    ),
+    "review_shot": (
+        ReviewShot,
+        "让同一个模型查看当前镜头 PNG，并对照本镜要求指出可观察的动作、构图、文字和外观偏差；"
+        "不能把评审当成自动通过。无需先调用 render_shot；会复用或生成当前版本的预览。",
+    ),
     "draw_shot": (DrawShot, "自由生成或局部改画指定镜头；已有图则修改；必须说明本次原因。"),
     "move_shot_history": (MoveHistory, "撤销或重做指定镜头的画面版本。"),
     "delete_shot": (Target, "提出删除，绑定镜头与版本等待用户确认；模型不能自行授予确认。"),

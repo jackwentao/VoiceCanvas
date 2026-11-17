@@ -8,7 +8,8 @@
 - `set_context`：保存共同角色外观和画风，首次生成自动携带。
 - `draw_shot`：自由 SVG 生成或修改；同轮不同镜头最多两镜并发，逐镜保存。
 - `manage_storyboard` / `move_shot_history`：结构管理及单镜头画面撤销重做。
-- `get_storyboard` / `inspect_shot`：真实数据和 SVG 源码查询。没有图像感知能力，不能用源码检查冒充视觉验收。
+- `get_storyboard` / `inspect_shot`：真实数据和 SVG 源码查询，不能用源码检查冒充视觉验收。
+- `render_shot` / `review_shot`：可选真实 PNG 渲染和同一模型图片评审。工具由 Agent 自主选择，缓存、版本和资源边界见 [镜头视觉工具](镜头视觉工具.md)。
 - `delete_shot`：绑定目标与版本等待用户确认，模型无法通过工具参数自行确认。
 - `export_shots`：返回浏览器下载请求；后台返回不代表文件已下载。
 - `finish_task`：核对交付镜头存在、画面已保存、数量和总时长；语义与画质仍需用户验收。

@@ -47,13 +47,23 @@ def create_shot_service() -> ShotService:
 
 def create_storyboard_agent_service():
     from voicecanvas.adapters.llm.storyboard_agent import OpenAICompatibleStoryboardAgent
+    from voicecanvas.adapters.rendering.chromium import ChromiumShotRenderer
+    from voicecanvas.application.shot_visual_service import ShotVisualService
     from voicecanvas.application.storyboard_agent_service import StoryboardAgentService
+    from voicecanvas.infrastructure.file_preview_store import FilePreviewStore
     from voicecanvas.infrastructure.sqlite_agent_run_repository import SQLiteAgentRunRepository
 
     shots = create_shot_service()
+    boards = create_storyboard_service()
+    agent = OpenAICompatibleStoryboardAgent(create_shot_model_config())
+    root = shots.repository.db_path.parent / "shot-previews"
     return StoryboardAgentService(
-        create_storyboard_service(),
+        boards,
         shots,
-        OpenAICompatibleStoryboardAgent(create_shot_model_config()),
+        agent,
         SQLiteAgentRunRepository(shots.repository.db_path),
+        ShotVisualService(
+            boards, shots, ChromiumShotRenderer(root / "tmp"), FilePreviewStore(root)
+        ),
+        agent,
     )

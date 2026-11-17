@@ -20,6 +20,8 @@
 
 ## 功能与边界
 
+Agent 已具备可选 `render_shot` / `review_shot` 工具：用本机 Edge/Chromium 生成版本绑定的真实 PNG，再用同一个 DeepSeek v4.1 Flash 接收图片评审。没有强制评审工作流；模型自行选择检查和修正，画质仍需人工验收。浏览器配置、Docker 限制和测试见 [镜头视觉工具](docs/镜头视觉工具.md)。
+
 自然语言统一接入自主工具调用 Agent，已删除旧 `/command` 正则路由。Agent 决定工具和执行顺序，任务逐镜保存，刷新继续查看，完成前核对实际镜头数量与时长。详见 [分镜 Agent](docs/分镜Agent.md)。后台任务使用单个 Uvicorn 进程，不要启用多 worker。
 
 绘图默认关闭当前网关的深度思考（`VOICECANVAS_SHOT_REASONING_EFFORT=off`），同题两次实测 16.7/20.8 秒，对照 123.4 秒；完整输出后才显示画面。没有减少自由绘图能力或输出预算，动作准确性仍需验收。其他供应商不支持该参数时可显式设为 `provider-default`。真实咖啡店三镜头业务模拟的失败项、全部用量和对比图见 [提速与业务验收](docs/experiments/drawing-latency-20261117/README.md)。
