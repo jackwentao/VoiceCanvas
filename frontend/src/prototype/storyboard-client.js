@@ -123,8 +123,11 @@ export class StoryboardClient {
       if (reply.action === "draw") {
         if (!allowDrawing) throw new Error("文字预览尚未应用，请先应用或关闭编辑面板，再绘制画面");
         if (reply.targetId !== this.board.activeId) await this.manageRequest({ action: "switch", targetId: reply.targetId });
+        const previousSvg = this.shots.shot.svg;
         await this.shots.change("generate", reply.instruction);
+        const unchanged = previousSvg && previousSvg === this.shots.shot.svg;
         await this.refresh();
+        if (unchanged) return `第 ${currentNumber()} 镜头没有变化：模型返回了相同画面，请具体说明要修改的对象和效果。`;
         return `第 ${currentNumber()} 镜头已保存。`;
       }
       if (reply.action === "undo_shot" || reply.action === "redo_shot") {
