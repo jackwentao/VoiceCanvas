@@ -1,0 +1,256 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720" width="1280" height="720">
+  <defs>
+    <radialGradient id="warmGlow" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FFF3D6" stop-opacity="0.9" />
+      <stop offset="60%" stop-color="#F5C97A" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#C98A4B" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="wallGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8C9A0" />
+      <stop offset="100%" stop-color="#D4A878" />
+    </linearGradient>
+    <linearGradient id="counterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B87A4B" />
+      <stop offset="100%" stop-color="#8B5A32" />
+    </linearGradient>
+    <linearGradient id="windowGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7A8FA6" />
+      <stop offset="100%" stop-color="#5A6E85" />
+    </linearGradient>
+    <linearGradient id="raincoatGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFD93D" />
+      <stop offset="100%" stop-color="#F0B820" />
+    </linearGradient>
+    <linearGradient id="apronGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2D5A3D" />
+      <stop offset="100%" stop-color="#1E3D2A" />
+    </linearGradient>
+    <linearGradient id="shirtGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FAFAF5" />
+      <stop offset="100%" stop-color="#E8E4DA" />
+    </linearGradient>
+    <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFE8A0" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#FFE8A0" stop-opacity="0" />
+    </radialGradient>
+    <filter id="softBlur">
+      <feGaussianBlur stdDeviation="3" />
+    </filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" />
+      <feColorMatrix type="saturate" values="0" in="noise" result="grayNoise" />
+      <feComponentTransfer in="grayNoise" result="fadedNoise">
+        <feFuncA type="linear" slope="0.06" />
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="fadedNoise" mode="multiply" />
+    </filter>
+    <clipPath id="windowClip">
+      <rect x="920" y="120" width="300" height="340" rx="8" />
+    </clipPath>
+  </defs>
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="#E8C9A0" />
+  <rect x="0" y="0" width="1280" height="720" fill="url(#wallGrad)" />
+
+  
+  <ellipse cx="640" cy="200" rx="500" ry="350" fill="url(#warmGlow)" />
+
+  
+  <g id="window">
+    <rect x="910" y="110" width="320" height="360" rx="10" fill="#4A5E72" stroke="#8B6B4A" stroke-width="10" />
+    <rect x="920" y="120" width="300" height="340" rx="6" fill="url(#windowGrad)" />
+    
+    <g clip-path="url(#windowClip)" opacity="0.5">
+      <line x1="950" y1="130" x2="940" y2="180" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="990" y1="140" x2="980" y2="200" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1030" y1="125" x2="1020" y2="175" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1080" y1="150" x2="1070" y2="210" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1120" y1="135" x2="1110" y2="185" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1160" y1="145" x2="1150" y2="195" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="960" y1="220" x2="950" y2="280" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1010" y1="240" x2="1000" y2="300" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1060" y1="230" x2="1050" y2="290" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1110" y1="250" x2="1100" y2="310" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1150" y1="235" x2="1140" y2="295" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="980" y1="320" x2="970" y2="380" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1040" y1="340" x2="1030" y2="400" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1100" y1="330" x2="1090" y2="390" stroke="#A8C0D8" stroke-width="1.5" />
+      <line x1="1160" y1="350" x2="1150" y2="410" stroke="#A8C0D8" stroke-width="1.5" />
+    </g>
+    
+    <line x1="1070" y1="120" x2="1070" y2="460" stroke="#8B6B4A" stroke-width="8" />
+    <line x1="920" y1="290" x2="1220" y2="290" stroke="#8B6B4A" stroke-width="8" />
+  </g>
+
+  
+  <g id="hangingLamp">
+    <line x1="640" y1="0" x2="640" y2="70" stroke="#6B4A2A" stroke-width="3" />
+    <ellipse cx="640" cy="110" rx="80" ry="60" fill="url(#lampGlow)" />
+    <path d="M590 70 Q640 50 690 70 L680 95 Q640 85 600 95 Z" fill="#C98A4B" />
+    <ellipse cx="640" cy="95" rx="40" ry="10" fill="#FFE8A0" opacity="0.8" />
+    <circle cx="640" cy="100" r="8" fill="#FFD060" />
+  </g>
+
+  
+  <g id="coffeeMachine">
+    <rect x="780" y="200" width="100" height="160" rx="8" fill="#8B6B4A" />
+    <rect x="790" y="210" width="80" height="60" rx="4" fill="#6B4A2A" />
+    <rect x="800" y="280" width="60" height="40" rx="4" fill="#A08060" />
+    <circle cx="830" cy="300" r="12" fill="#D4A878" />
+    <rect x="810" y="330" width="40" height="20" rx="3" fill="#5A3A1A" />
+    <rect x="795" y="355" width="70" height="8" rx="2" fill="#6B4A2A" />
+  </g>
+
+  
+  <g id="counter">
+    <rect x="0" y="440" width="1280" height="280" fill="url(#counterGrad)" />
+    <rect x="0" y="440" width="1280" height="20" rx="4" fill="#C98A4B" />
+    <rect x="0" y="460" width="1280" height="6" fill="#A06A3A" />
+    
+    <line x1="100" y1="480" x2="100" y2="700" stroke="#7A4A22" stroke-width="1" opacity="0.3" />
+    <line x1="300" y1="480" x2="300" y2="700" stroke="#7A4A22" stroke-width="1" opacity="0.3" />
+    <line x1="500" y1="480" x2="500" y2="700" stroke="#7A4A22" stroke-width="1" opacity="0.3" />
+    <line x1="700" y1="480" x2="700" y2="700" stroke="#7A4A22" stroke-width="1" opacity="0.3" />
+    <line x1="900" y1="480" x2="900" y2="700" stroke="#7A4A22" stroke-width="1" opacity="0.3" />
+    <line x1="1100" y1="480" x2="1100" y2="700" stroke="#7A4A22" stroke-width="1" opacity="0.3" />
+  </g>
+
+  
+  <g id="barista">
+    
+    <path d="M720 440 Q720 340 760 300 Q800 270 840 300 Q880 340 880 440 Z" fill="url(#shirtGrad)" stroke="#C8C0B0" stroke-width="1.5" />
+    
+    <path d="M740 440 L740 320 Q760 300 800 295 Q840 300 860 320 L860 440 Z" fill="url(#apronGrad)" />
+    
+    <rect x="770" y="370" width="60" height="45" rx="4" fill="#2D5A3D" stroke="#1E3D2A" stroke-width="1.5" />
+    
+    <circle cx="800" cy="392" r="10" fill="#C98A4B" />
+    <text x="800" y="396" font-size="9" fill="#FFF3D6" text-anchor="middle" font-family="sans-serif">☕</text>
+    
+    <path d="M740 320 Q720 310 710 330" stroke="#1E3D2A" stroke-width="4" fill="none" />
+    <path d="M860 320 Q880 310 890 330" stroke="#1E3D2A" stroke-width="4" fill="none" />
+    
+    <rect x="785" y="270" width="30" height="35" rx="8" fill="#E8C0A0" />
+    
+    <ellipse cx="800" cy="245" rx="45" ry="50" fill="#F0D0B0" />
+    
+    <path d="M755 235 Q755 190 800 185 Q845 190 845 235 Q845 210 800 205 Q755 210 755 235 Z" fill="#2A1A0A" />
+    <path d="M755 235 Q750 220 760 210 Q770 200 800 195 Q830 200 840 210 Q850 220 845 235" fill="#2A1A0A" />
+    
+    <ellipse cx="755" cy="250" rx="8" ry="12" fill="#E8C0A0" />
+    <ellipse cx="845" cy="250" rx="8" ry="12" fill="#E8C0A0" />
+    
+    <ellipse cx="782" cy="245" rx="5" ry="6" fill="#3A2A1A" />
+    <ellipse cx="818" cy="245" rx="5" ry="6" fill="#3A2A1A" />
+    <circle cx="784" cy="243" r="2" fill="#FFFFFF" />
+    <circle cx="820" cy="243" r="2" fill="#FFFFFF" />
+    
+    <path d="M772 232 Q782 228 792 232" stroke="#2A1A0A" stroke-width="2" fill="none" stroke-linecap="round" />
+    <path d="M808 232 Q818 228 828 232" stroke="#2A1A0A" stroke-width="2" fill="none" stroke-linecap="round" />
+    
+    <path d="M798 252 Q800 258 802 252" stroke="#D0A080" stroke-width="1.5" fill="none" stroke-linecap="round" />
+    
+    <path d="M785 265 Q800 278 815 265" stroke="#C08060" stroke-width="2" fill="none" stroke-linecap="round" />
+    
+    <path d="M740 340 Q700 370 660 390 Q640 400 630 395" stroke="#FAFAF5" stroke-width="22" fill="none" stroke-linecap="round" />
+    <path d="M740 340 Q700 370 660 390 Q640 400 630 395" stroke="#E8E4DA" stroke-width="22" fill="none" stroke-linecap="round" opacity="0.3" />
+    
+    <ellipse cx="625" cy="393" rx="16" ry="12" fill="#F0D0B0" transform="rotate(-20 625 393)" />
+    
+    <path d="M860 340 Q890 370 870 400 Q850 420 830 410" stroke="#FAFAF5" stroke-width="22" fill="none" stroke-linecap="round" />
+    
+    <ellipse cx="825" cy="408" rx="16" ry="12" fill="#F0D0B0" transform="rotate(20 825 408)" />
+  </g>
+
+  
+  <g id="coffeeCup">
+    
+    <path d="M715 340 Q710 320 720 305" stroke="#FFFFFF" stroke-width="2" fill="none" opacity="0.5" stroke-linecap="round" />
+    <path d="M730 335 Q725 315 735 300" stroke="#FFFFFF" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round" />
+    <path d="M745 338 Q740 318 750 303" stroke="#FFFFFF" stroke-width="2" fill="none" opacity="0.45" stroke-linecap="round" />
+    
+    <path d="M695 360 L705 420 Q730 430 755 420 L765 360 Z" fill="#FAFAF5" stroke="#D0C8B8" stroke-width="1.5" />
+    
+    <ellipse cx="730" cy="360" rx="35" ry="10" fill="#F0EDE5" stroke="#D0C8B8" stroke-width="1.5" />
+    
+    <ellipse cx="730" cy="360" rx="28" ry="7" fill="#6B3A1A" />
+    
+    <path d="M765 375 Q785 375 785 395 Q785 415 765 415" stroke="#D0C8B8" stroke-width="4" fill="none" />
+    
+    <ellipse cx="730" cy="420" rx="25" ry="5" fill="#E8E4DA" />
+  </g>
+
+  
+  <g id="girl">
+    
+    <path d="M380 440 Q380 330 430 290 Q480 260 530 290 Q580 330 580 440 Z" fill="url(#raincoatGrad)" stroke="#D4A020" stroke-width="2" />
+    
+    <line x1="480" y1="300" x2="480" y2="440" stroke="#D4A020" stroke-width="2" />
+    
+    <path d="M455 290 Q480 310 505 290" stroke="#FAFAF5" stroke-width="3" fill="none" />
+    
+    <path d="M400 300 Q390 260 420 240 Q450 225 480 230 Q510 225 540 240 Q570 260 560 300" fill="#FFD93D" stroke="#D4A020" stroke-width="2" />
+    
+    <circle cx="430" cy="250" r="3" fill="#A8C0D8" opacity="0.7" />
+    <circle cx="510" cy="245" r="2.5" fill="#A8C0D8" opacity="0.7" />
+    <circle cx="470" cy="235" r="2" fill="#A8C0D8" opacity="0.6" />
+    
+    <rect x="465" y="270" width="30" height="30" rx="8" fill="#F0D0B0" />
+    
+    <ellipse cx="480" cy="240" rx="45" ry="50" fill="#F0D0B0" />
+    
+    <path d="M435 235 Q435 185 480 180 Q525 185 525 235 Q525 210 480 205 Q435 210 435 235 Z" fill="#1A1A1A" />
+    <path d="M435 235 Q430 220 440 210 Q450 200 480 195 Q510 200 520 210 Q530 220 525 235" fill="#1A1A1A" />
+    
+    <path d="M440 225 Q450 210 465 215 Q475 205 485 215 Q495 205 505 215 Q515 210 520 225" fill="#1A1A1A" />
+    
+    <ellipse cx="435" cy="245" rx="8" ry="12" fill="#F0D0B0" />
+    <ellipse cx="525" cy="245" rx="8" ry="12" fill="#F0D0B0" />
+    
+    <ellipse cx="462" cy="240" rx="5" ry="6" fill="#3A2A1A" />
+    <ellipse cx="498" cy="240" rx="5" ry="6" fill="#3A2A1A" />
+    <circle cx="464" cy="238" r="2" fill="#FFFFFF" />
+    <circle cx="500" cy="238" r="2" fill="#FFFFFF" />
+    
+    <path d="M452 227 Q462 223 472 227" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round" />
+    <path d="M488 227 Q498 223 508 227" stroke="#1A1A1A" stroke-width="2" fill="none" stroke-linecap="round" />
+    
+    <path d="M478 247 Q480 253 482 247" stroke="#D0A080" stroke-width="1.5" fill="none" stroke-linecap="round" />
+    
+    <path d="M465 260 Q480 273 495 260" stroke="#C08060" stroke-width="2" fill="none" stroke-linecap="round" />
+    
+    <ellipse cx="452" cy="255" rx="8" ry="5" fill="#F0A0A0" opacity="0.3" />
+    <ellipse cx="508" cy="255" rx="8" ry="5" fill="#F0A0A0" opacity="0.3" />
+    
+    <path d="M540 340 Q570 360 600 380 Q620 390 630 395" stroke="#FFD93D" stroke-width="24" fill="none" stroke-linecap="round" />
+    <path d="M540 340 Q570 360 600 380 Q620 390 630 395" stroke="#F0B820" stroke-width="24" fill="none" stroke-linecap="round" opacity="0.3" />
+    
+    <ellipse cx="635" cy="395" rx="16" ry="12" fill="#F0D0B0" transform="rotate(15 635 395)" />
+    
+    <path d="M420 340 Q400 380 410 420" stroke="#FFD93D" stroke-width="24" fill="none" stroke-linecap="round" />
+    
+    <path d="M440 310 Q420 360 430 400" stroke="#8B5A32" stroke-width="5" fill="none" />
+    
+    <rect x="410" y="390" width="40" height="35" rx="5" fill="#8B5A32" stroke="#6B4A2A" stroke-width="1.5" />
+    <rect x="420" y="390" width="20" height="8" rx="2" fill="#A06A3A" />
+  </g>
+
+  
+  <circle cx="630" cy="395" r="25" fill="#FFE8A0" opacity="0.25" filter="url(#softBlur)" />
+  <circle cx="630" cy="395" r="12" fill="#FFE8A0" opacity="0.35" filter="url(#softBlur)" />
+
+  
+  <g id="counterItems">
+    
+    <ellipse cx="350" cy="455" rx="30" ry="8" fill="#E8E4DA" stroke="#D0C8B8" stroke-width="1" />
+    
+    <path d="M335 445 L340 455 L360 455 L365 445 Z" fill="#FAFAF5" stroke="#D0C8B8" stroke-width="1" />
+    
+    <rect x="880" y="430" width="25" height="30" rx="4" fill="#E8E4DA" stroke="#D0C8B8" stroke-width="1" />
+    <rect x="883" y="425" width="19" height="8" rx="2" fill="#C98A4B" />
+  </g>
+
+  
+  <rect x="0" y="0" width="1280" height="720" fill="none" filter="url(#grain)" opacity="0.5" />
+</svg>

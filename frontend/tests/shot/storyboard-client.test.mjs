@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { ShotClient } from "../../src/prototype/shot-client.js";
 import { StoryboardClient } from "../../src/prototype/storyboard-client.js";
 import { VoiceSessionController } from "../../src/prototype/voice-session.js";
+import { visualFeedback } from "../../src/prototype/shot-visual-feedback.js";
 
 const response = (value, status = 200) => ({ ok: status < 400, status, json: async () => value });
 const board = (version = 0, activeId = "a") => ({ id: "board_a", version, title: "故事", activeId,
@@ -116,4 +117,21 @@ test("语音最终转写走同一Agent，完成后恢复监听", async () => {
   assert.equal(requests[0].body.request, "切换到第二镜然后改名相遇");
   assert.ok(spoken.some(s => s.includes("相遇")));
   await session.stop({ speak: false });
+});
+
+test("视觉记录绑定版本，旧评审不套用到新画面，也不把源码当成视觉评审", () => {
+  const steps = [
+    { call: { name: "review_shot" }, status: "succeeded", result: { shotId: "a", shotVersion: 1, previewUrl: "/image.png", review: "手离杯柄很远" } },
+    { call: { name: "inspect_shot" }, status: "succeeded", result: { shotId: "a", svg: "<svg/>" } },
+    { call: { name: "review_shot" }, status: "failed", result: { error: "不可用" } },
+  ];
+  const current = visualFeedback(board(), { steps });
+  assert.equal(current.length, 1);
+  assert.equal(current[0].current, true);
+  assert.equal(current[0].previewUrl, "/image.png");
+  const changed = board(); changed.shots[0].version = 2;
+  const stale = visualFeedback(changed, { steps })[0];
+  assert.equal(stale.current, false);
+  assert.equal(stale.previewUrl, null);
+  assert.match(stale.review, /离杯柄/);
 });

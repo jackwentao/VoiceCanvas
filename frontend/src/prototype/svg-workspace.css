@@ -12,6 +12,10 @@
 .svg-workspace .shot-brief { width:100%; max-width:1200px; align-self:center; font-size:12px; line-height:1.7; padding:10px 0; color:var(--muted) }
 .svg-workspace .shot-brief summary { cursor:pointer }
 .svg-workspace .shot-brief p { white-space:pre-wrap; margin:8px 0 }
+.svg-workspace .visual-review { border-top:1px dashed var(--line); margin:14px 0; padding-top:12px; font-size:12px; line-height:1.7 }
+.svg-workspace .visual-review summary { cursor:pointer }
+.svg-workspace .visual-review img { display:block; width:100%; margin:10px 0; border:1px solid var(--line) }
+.svg-workspace .visual-review p { white-space:pre-wrap }
 .svg-workspace .canvas-stage { overflow:hidden; min-height:0 }
 .svg-workspace .text-editor { width:100%; max-width:1200px; align-self:center; border:1px dashed var(--line); background:var(--paper-surface); padding:16px; margin-top:16px; flex-shrink:0 }
 .svg-workspace .text-editor-heading { display:flex; justify-content:space-between; gap:12px; align-items:flex-start }
