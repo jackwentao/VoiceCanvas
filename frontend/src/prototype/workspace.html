@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="./paper-theme.css" />
   <link rel="stylesheet" href="./canvas-elements.css" />
   <link rel="stylesheet" href="./workspace.css" />
+  <link rel="stylesheet" href="./svg-workspace.css" />
 </head>
 <body>
   <a class="skip-link" href="#voiceInput">跳到创作输入</a>
@@ -30,7 +31,9 @@
       <aside class="sidebar" aria-label="项目与镜头">
         <div class="project-tools"><label class="sr-only" for="projectSelect">切换项目</label><select id="projectSelect" aria-label="切换项目" data-requires-project><option>正在连接…</option></select><button class="icon-button" id="newButton" title="新建项目" aria-label="新建项目"><span data-icon="plus"></span></button></div>
         <div class="sidebar-heading"><h2>我的分镜</h2><span id="sceneCount" class="count">—</span></div>
+        <div class="svg-scene-tools" data-svg-only hidden><button class="button small" id="addSvgScene">＋ 镜头</button><button class="button small" id="copySvgScene">复制</button><button class="button small" id="deleteSvgScene">删除</button></div>
         <div id="sceneList" class="scene-list"><p class="sidebar-placeholder">连接后显示你的分镜</p></div>
+        <div class="svg-structure-tools" data-svg-only hidden><button class="button quiet small" id="undoStructure">撤销分镜</button><button class="button quiet small" id="redoStructure">重做分镜</button></div>
         <details class="history-section"><summary><span data-icon="history"></span>操作历史<span id="historyCount"></span></summary><ol id="historyList" class="history-list"><li>暂无操作</li></ol></details>
         <button class="button import-button" id="importButton"><span data-icon="folder"></span>载入项目文件</button><input type="file" id="importInput" accept=".json,application/json" hidden />
         <div class="sidebar-foot"><span class="tiny-wave" aria-hidden="true">▂▅▇▃▆</span><span>从一句想法开始</span><kbd>Alt V</kbd></div>
@@ -52,7 +55,19 @@
               <div class="suggestions"><button data-prompt="创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"><span data-icon="film"></span>新品奶茶 · 三镜头分镜<span>↗</span></button><button data-prompt="添加一个标题，内容是今天也要好好生活"><span data-icon="type"></span>从一句标题开始<span>↗</span></button></div>
             </div>
           </div>
+          <div class="svg-shot-tools" data-svg-only hidden><button class="button quiet small" id="renameSvgScene">镜头改名</button><button class="button quiet small" id="moveSvgSceneUp">前移</button><button class="button quiet small" id="moveSvgSceneDown">后移</button><button class="button quiet small" id="editTextToggle" disabled>编辑文字</button></div>
           <div class="canvas-footer"><span id="selectionLabel">选择画面中的元素，查看它的名称</span><button class="button quiet small" id="fitButton"><span data-icon="maximize"></span>适应画布</button></div>
+      <section id="textEditor" class="text-editor" aria-label="直接编辑镜头文字" hidden>
+        <div class="text-editor-heading"><div><h3>编辑画面文字</h3><p>改字即时预览，应用后可撤销。</p></div><button id="closeTextEditor" type="button">关闭</button></div>
+        <label for="textTarget">选择文字</label>
+        <select id="textTarget"></select>
+        <label for="textContent">文字内容</label>
+        <textarea id="textContent" maxlength="2000" rows="3"></textarea>
+        <div class="text-layout-controls"><label for="textFontSize">字号<input id="textFontSize" type="number" min="8" max="160" step="0.5" /></label><label for="textWrapWidth">换行宽度<input id="textWrapWidth" type="number" min="20" max="1280" step="1" /></label><button type="button" id="recommendedTextSize">按预览放大字号</button></div>
+        <p id="textReadability" class="text-edit-feedback"></p>
+        <p id="textEditFeedback" class="text-edit-feedback" role="status" aria-live="polite"></p>
+        <div class="text-edit-actions"><button type="button" id="resetTextDraft">还原预览</button><button type="button" id="applyTextEdit" disabled>应用改字</button></div>
+      </section>
         </div>
         <div class="composer-area"><div class="composer-context" id="composerContext"><span class="status-dot"></span><span id="voiceStatus" role="status">连接后即可开始创作</span><span class="composer-hint">语音 / 文字，随你喜欢</span></div>
           <form id="composerForm" class="composer"><button type="button" id="voiceButton" class="mic-button" aria-label="开始语音创作" aria-pressed="false" title="开始语音创作 · Alt+V" data-requires-project><span data-icon="mic"></span></button><label class="sr-only" for="voiceInput">描述你想创作或修改的内容</label><textarea id="voiceInput" rows="1" placeholder="描述你的画面，或说“把标题放大一点”…" data-requires-project></textarea><button class="send-button" id="sendButton" type="submit" aria-label="发送指令" title="发送 · Enter" data-requires-project><span data-icon="arrowUp"></span></button></form>
@@ -75,6 +90,6 @@
   <dialog id="nameDialog" class="dialog"><form id="nameForm"><div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>给这次创作取个名字。</p><label for="nameInput">项目名称</label><input id="nameInput" maxlength="120" required placeholder="例如：低糖奶茶上新分镜" /><div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button type="submit" class="button primary">确认</button></div></form></dialog>
   <dialog id="memoryDialog" class="dialog memory-dialog"><div class="dialog-heading"><h2>创作偏好</h2><button class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>告诉助手你喜欢的风格。偏好由后端保存，可跨项目使用。</p><form id="memoryForm"><label class="sr-only" for="memoryContent">新偏好</label><textarea id="memoryContent" required placeholder="例如：我喜欢清爽的绿色，画面留白多一点" rows="3"></textarea><div class="memory-form-bottom"><label class="sr-only" for="memoryKind">偏好类型</label><select id="memoryKind"><option value="style_preference">视觉风格</option><option value="layout_preference">画面布局</option><option value="naming_convention">命名习惯</option><option value="workflow_preference">创作流程</option><option value="negative_preference">避免事项</option></select><button class="button primary small">保存偏好</button></div></form><p id="memoryError" role="alert"></p><div id="memoryList" class="memory-list"></div></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./workspace-entry.js"></script>
 </body>
 </html>

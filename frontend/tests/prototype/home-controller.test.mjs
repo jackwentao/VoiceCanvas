@@ -58,3 +58,13 @@ test("首页导航保留连接设置，返回首页时不携带旧项目定位",
   assert.equal(pageUrl("index.html", "?projectId=old&userId=user_2&other=x"), "./index.html?userId=user_2");
   assert.equal(pageUrl("workspace.html"), "./workspace.html");
 });
+
+test("自由SVG创建使用分镜API返回的id，跳转保留board定位与连接参数", async () => {
+  const destinations = [];
+  const controller = createHomeController({ create: async () => ({ id: "board_server" }) },
+    () => {}, url => destinations.push(url), "?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8013&projectId=old",
+    { projectParam: "board" });
+  await controller.create();
+  assert.deepEqual(destinations, ["./workspace.html?apiBaseUrl=http%3A%2F%2F127.0.0.1%3A8013&board=board_server"]);
+  assert.equal(pageUrl("index.html", "?board=old&shot=old&apiBaseUrl=x"), "./index.html?apiBaseUrl=x");
+});

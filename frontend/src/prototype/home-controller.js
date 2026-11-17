@@ -1,15 +1,15 @@
 /** 首页只编排读取与跳转，不生成作品数据或本地项目。 */
-export function pageUrl(page, search = "", projectId) {
+export function pageUrl(page, search = "", projectId, projectParam = "projectId") {
   const source = new URLSearchParams(search);
   const target = new URLSearchParams();
   for (const key of ["apiBaseUrl", "userId", "streamStepDelayMs"]) {
     if (source.has(key)) target.set(key, source.get(key));
   }
-  if (projectId) target.set("projectId", projectId);
+  if (projectId) target.set(projectParam, projectId);
   return `./${page}${target.size ? `?${target}` : ""}`;
 }
 
-export function createHomeController(api, notify = () => {}, navigate = () => {}, search = "") {
+export function createHomeController(api, notify = () => {}, navigate = () => {}, search = "", { projectParam = "projectId" } = {}) {
   const state = { items: [], categories: [], category: "", total: 0, loading: false,
     loaded: false, error: null, creating: false, creationError: null };
   let requestNumber = 0;
@@ -36,8 +36,9 @@ export function createHomeController(api, notify = () => {}, navigate = () => {}
     notify(state);
     try {
       const response = await api.create();
-      if (!response.project?.id) throw new Error("新画布没有创建成功，请重试。");
-      navigate(pageUrl("workspace.html", search, response.project.id));
+      const id = projectParam === "board" ? response.id : response.project?.id;
+      if (!id) throw new Error("新画布没有创建成功，请重试。");
+      navigate(pageUrl("workspace.html", search, id, projectParam));
     } catch (error) {
       state.creationError = error;
     } finally {

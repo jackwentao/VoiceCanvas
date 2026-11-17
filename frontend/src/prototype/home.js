@@ -1,5 +1,7 @@
-import { loadShowcase, createProjectState, resolveBackendUrl } from "./backend-client.js";
+import { loadShowcase, resolveBackendUrl } from "./backend-client.js";
 import { createHomeController, pageUrl } from "./home-controller.js";
+import { ShotClient } from "./shot-client.js";
+import { StoryboardClient } from "./storyboard-client.js";
 
 const $ = selector => document.querySelector(selector);
 const escape = value => String(value ?? "").replace(/[&<>"']/g, char =>
@@ -9,9 +11,10 @@ let lastItems = null;
 let lastCategories = null;
 let artworks = new Map();
 const dialog = $("#artworkDialog");
+const boardApi = new StoryboardClient({ shots: new ShotClient({ baseUrl: resolveBackendUrl("/") }) });
 const controller = createHomeController(
-  { showcase: loadShowcase, create: createProjectState }, render,
-  url => { location.href = url; }, location.search
+  { showcase: loadShowcase, create: () => boardApi.request("", { title: "未命名分镜" }) }, render,
+  url => { location.href = url; }, location.search, { projectParam: "board" }
 );
 
 document.querySelectorAll(".workspace-link").forEach(link => {

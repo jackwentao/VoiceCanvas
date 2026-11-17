@@ -1,5 +1,14 @@
 # VoiceCanvas 测试目录
 
+## 自由 SVG 工作台验收
+
+`npm test` 同时运行 main 首页/旧工作台控制器与自由分镜客户端/排版测试。
+`npm run test:workspace-browser` 运行新工作台的真实浏览器集成测试，需先启动
+固定生成器的后端 fixture 与静态前端，设置现有 Playwright 和浏览器路径。
+完整 PowerShell 命令见 `docs/main工作台分镜适配.md`；不需要在线密钥，不自动安装工具。
+测试覆盖首页创建 API、分镜 CRUD、独立改字、草稿保护、语音最终转写、删除确认、
+PNG 下载、刷新恢复、390px 布局、旧 shot 跳转和旧 projectId 兼容。
+
 本目录用于沉淀可运行测试。每个核心模块完成后，都应补充对应测试和运行方式。
 
 ## 测试分层

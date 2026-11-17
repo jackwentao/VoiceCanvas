@@ -1,0 +1,33 @@
+/* 只适配自由 SVG 内容与新增工具，基础视觉来自 main 的 paper-theme/workspace。 */
+.svg-workspace #memoryButton,.svg-workspace #importButton,.svg-workspace .background-control,
+.svg-workspace #processDetails { display:none }
+.svg-workspace .canvas-surface { inset:0; width:100%; height:100%; background:transparent }
+.svg-workspace .canvas-surface img { width:100%; height:100%; object-fit:contain; display:block }
+.svg-workspace .scene-thumbnail img { display:block; width:100%; height:100%; object-fit:contain }
+.svg-workspace .svg-scene-tools,.svg-workspace .svg-structure-tools { display:flex; flex-wrap:wrap; gap:4px; margin:0 0 12px; flex-shrink:0 }
+.svg-workspace .svg-scene-tools .button { flex:1; padding:7px 5px }
+.svg-workspace .svg-structure-tools { margin:10px 0 0 }
+.svg-workspace .svg-structure-tools .button { padding:6px }
+.svg-workspace .svg-shot-tools { display:flex; gap:6px; flex-wrap:wrap; width:100%; max-width:1200px; align-self:center; margin-top:14px }
+.svg-workspace .svg-shot-tools button { font-size:10px; padding:6px 8px }
+.svg-workspace .canvas-viewport { overflow:auto }
+.svg-workspace .canvas-stage { overflow:hidden; min-height:0 }
+.svg-workspace .text-editor { width:100%; max-width:1200px; align-self:center; border:1px dashed var(--line); background:var(--paper-surface); padding:16px; margin-top:16px; flex-shrink:0 }
+.svg-workspace .text-editor-heading { display:flex; justify-content:space-between; gap:12px; align-items:flex-start }
+.svg-workspace .text-editor h3 { font-size:14px; margin:0 0 8px }
+.svg-workspace .text-editor p { color:var(--muted); font-size:11px; line-height:1.7; margin:8px 0 }
+.svg-workspace .text-editor label { display:block; margin:10px 0 6px; font-size:11px }
+.svg-workspace .text-editor select,.svg-workspace .text-editor input,.svg-workspace .text-editor textarea { width:100%; border:1px solid var(--line); background:#fffdf7; padding:8px; color:inherit; border-radius:5px }
+.svg-workspace .text-editor textarea { resize:vertical }
+.svg-workspace .text-editor button { padding:8px; border:1px solid var(--line); border-radius:5px; font-size:11px }
+.svg-workspace .text-layout-controls { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap }
+.svg-workspace .text-layout-controls label { flex:1; min-width:100px }
+.svg-workspace .text-edit-actions { display:flex; justify-content:flex-end; gap:8px }
+.svg-workspace #applyTextEdit { background:var(--paper-action) }
+.text-measure-host { position:fixed; left:-10000px; top:0; width:1280px; height:720px; visibility:hidden; pointer-events:none; overflow:hidden; border:0 }
+@media(max-width:640px) {
+  .svg-workspace .svg-scene-tools { margin-bottom:8px }
+  .svg-workspace .svg-structure-tools { margin-top:4px }
+  .svg-workspace .empty-canvas .suggestions { display:none }
+  .svg-workspace .empty-canvas .storyboard-art { display:none }
+}
