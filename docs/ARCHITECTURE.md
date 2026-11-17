@@ -1,117 +1,88 @@
-# VoiceCanvas 运行架构
+# 架构说明
 
-[返回项目首页](../README.md)
+[项目首页](../README.md) · [接口](API.md) · [测试](TESTING.md)
 
-## 前端架构
+## 当前产品链路
 
-`index.html` 为手绘首页：`home-controller.js` 请求后端画廊，`home.js` 只投影作品、
-预览和导航；首页创建画布通过既有项目 API 完成。`workspace.html` 为下列创作工作台。
-作品目录与原创 SVG 位于后端 `resources/showcase/`，接口见 [首页画廊接口](首页画廊接口.md)。
+前端是原生 HTML/CSS/JavaScript 工作台，后端是 FastAPI。自然语言通过模型原生 tools 调用驱动自由 SVG 分镜；模型决定工具与顺序，应用层负责可信执行、预算、版本和持久化。
 
 ```mermaid
 flowchart TD
-    User[语音或文字输入] --> App[app.js 页面与交互]
-    App --> Controller[workspace-controller.js 请求与展示状态]
-    Controller --> Client[backend-client.js 固定 HTTP / SSE 接口]
-    Client --> Backend[后端业务服务与存储]
-    Backend --> Snapshot[完整工作台快照]
-    Snapshot --> Renderer[canvas-renderer.js 画布投影]
-    Snapshot --> Panels[镜头 / 历史 / 助手 / 用量]
-    Backend --> Export[导出内容或获准的展示转换]
-    Export --> Download[file-download.js 浏览器下载]
+    U[用户语音或文字] --> UI[工作台]
+    UI --> API[FastAPI]
+    API --> RUN[持久化 Agent 任务]
+    RUN --> MODEL[DeepSeek 工具调用决策]
+    MODEL --> TOOLS[受校验的工具执行]
+    TOOLS --> BOARD[分镜结构与拍摄说明]
+    TOOLS --> DRAW[SVG 生成或源码修改]
+    TOOLS --> VISUAL[可选真实渲染与图片评审]
+    BOARD --> DB[(SQLite)]
+    DRAW --> CHECK[SVG 校验与条件提交]
+    CHECK --> DB
+    VISUAL --> PNG[版本绑定 PNG 缓存]
+    TOOLS --> MODEL
+    DB --> UI
 ```
 
-前端只持有后端快照和临时 UI 状态，不执行领域命令、不生成项目数据、不解析澄清候选。
-SSE 中间事件用于进度展示，最终画面重新读取后端工作台快照。后端失败时展示错误并
-重新读取状态，不用本地演示修改数据，也不自动重放请求。
+图中是依赖与结果回传关系，不是固定创作顺序。已有画面可以直接修改，简单管理无需看图，图片评审也可直接调用。管理按钮和直接改字通过确定性 API 完成，不经过模型决策。
 
-后端保存项目、撤销重做历史、待澄清任务与用量。语义素材目录属于后端资源，页面通过
-`GET /api/render-catalog` 获取展示配置。固定按钮动作与自然语言编排复用同一套
-CommandValidator / CommandExecutor，接口见[工作台接口](工作台接口.md)。
+## 模块边界
 
-## 后端架构
+| 层 | 主要文件或目录 | 职责 |
+| --- | --- | --- |
+| 前端页面 | `frontend/src/prototype/svg-workspace.js` | 交互装配、轮询、预览、语音与导出 |
+| 前端客户端 | `storyboard-client.js`、`shot-client.js` | 请求、版本传递、冲突同步及重复提交保护 |
+| API | `backend/src/voicecanvas/api/` | HTTP 请求响应与错误映射 |
+| 应用 | `application/storyboard_agent_service.py` | 工具执行、预算、任务保存与交付核对 |
+| 应用 | `storyboard_service.py`、`shot_service.py`、`shot_visual_service.py` | 分镜、画面、版本绑定预览 |
+| 领域 | `domain/` | 分镜与镜头模型、SVG 校验、受限源码和文字编辑 |
+| 外部适配 | `adapters/llm/`、`adapters/rendering/` | 模型 HTTP、作画知识加载与 Chromium 渲染 |
+| 基础设施 | `infrastructure/` | SQLite、缓存文件和配置组装 |
 
-```mermaid
-flowchart TD
-    API["FastAPI<br/>HTTP / SSE 路由"]
-    Service["OrchestrationService<br/>编排应用服务"]
-    Planner["PlannerFactory<br/>Demo / LLM / Hybrid"]
-    LLM["adapters/llm<br/>OpenAI-compatible"]
-    Memory["UserMemoryService<br/>长期记忆检索与写入"]
-    Resolver["ReferentResolver<br/>指代消解"]
-    Validator["CommandValidator<br/>命令校验"]
-    Executor["CommandExecutor<br/>确定性写操作"]
-    Domain["domain<br/>Project / Scene / Element / Command"]
-    History["HistoryManager<br/>撤销 / 重做 / 操作记录"]
-    ProjectRepo["SQLiteProjectRepository<br/>Project State"]
-    MemoryRepo["LocalUserMemoryRepository<br/>JSON 记忆"]
-    Export["ExportService<br/>JSON / PNG 兜底导出"]
-    Asset["AssetStorage<br/>Local / MinIO"]
+领域和应用通过生成器、决策、评审、渲染器及仓储协议隔离外部实现，可用替身运行离线测试。绘图知识按 draw/edit 阶段读取随包资源；它不是固定人物或构图模板，来源见[依赖声明](技术选型与依赖声明.md)。
 
-    API --> Service
-    Service --> Planner
-    Planner --> LLM
-    Service --> Memory
-    Service --> Resolver
-    Service --> Validator
-    Validator --> Executor
-    Executor --> Domain
-    Executor --> History
-    Service --> ProjectRepo
-    Memory --> MemoryRepo
-    Service --> Export
-    API --> Asset
-```
+## Agent 的自主性与执行边界
 
-后端核心原则：
+| 工具 | 用途 |
+| --- | --- |
+| `get_storyboard`、`inspect_shot` | 查询真实状态与源码；源码检查不等于看图 |
+| `set_context`、`create_shots`、`describe_shot` | 共用设定、独立拆镜、拍摄说明与时长 |
+| `manage_storyboard`、`move_shot_history` | 管理结构和单镜头历史 |
+| `draw_shot` | 生成自由 SVG 或提出局部源码替换 |
+| `render_shot`、`review_shot` | 可选真实预览和同模型图片评审 |
+| `delete_shot` | 记录待确认目标，用户确认后删除 |
+| `export_shots` | 请求浏览器下载指定镜头 |
+| `finish_task` | 核对真实交付数量、画面和时长，保留未完成项 |
 
-- AI 负责理解和规划，系统负责确定性执行。
-- 所有画布写操作都经过 `CommandValidator` 和 `CommandExecutor`。
-- Project State 是唯一可信状态，前端完整工作台快照只是 UI 展示副本。
-- LLM、MinIO、未来七牛云能力都通过 adapter 接入，领域层不依赖外部 SDK。
+完整参数定义在 `application/storyboard_agent_tools.py`。每任务最多16次决策、40个工具步骤、8次绘图，每镜最多2次绘图；不同镜头最多两路并发绘制，结果逐镜保存。专门图片评审最多4次、每镜2次，相同图和要求复用已有成功结果。预算避免失控调用，不代表必须走完这些步骤。
 
-## 数据完整流转
+模型看到当前项目、用户要求和上一任务摘要，自主判断拆镜、生成及修正。代码核对本轮实际创建或绘制的镜头，阻止模型用空交付跳过未画镜头；但数量、时长与合法 SVG 都不能证明语义和画质合格。跨镜人物共用设定目前是文字约束，没有可靠的视觉一致性保证。
 
-```mermaid
-sequenceDiagram
-    participant U as 用户
-    participant F as 前端原型
-    participant B as FastAPI
-    participant O as OrchestrationService
-    participant P as Demo/LLM Planner
-    participant V as CommandValidator
-    participant E as CommandExecutor
-    participant R as SQLite Repository
-    participant M as Memory Service
-    participant A as MinIO/Local Asset
+## 文档修改与并发
 
-    U->>F: 语音输入或点击 Demo 指令
-    F->>B: POST /api/orchestrations 或 /stream
-    B->>O: 构造编排请求
-    O->>M: 检索相关长期记忆
-    O->>R: 读取当前 Project State
-    O->>P: 生成结构化命令
-    P-->>O: CanvasCommand 列表 / 澄清 / 总结
-    O->>V: 校验命令字段、目标和风险
-    V->>E: 提交合法命令
-    E->>R: 写入 Project State 和 History
-    E-->>O: 返回 CanvasPatch、History、Summary
-    O-->>B: 返回响应或 SSE 事件
-    B-->>F: project / patches / history / events / summary
-    F->>F: 合并状态并刷新画布、历史区、AI 栏
-    F->>B: GET /api/assets/catalog?path=...
-    B->>A: 读取或代理素材
-    A-->>B: 素材 URL 或二进制内容
-    B-->>F: 可渲染素材地址
-```
+初次生成返回完整 SVG；改画返回最多20处唯一原文替换。所有替换成功、最终 SVG 通过白名单后，才以 `expectedVersion` 条件提交。校验拒绝脚本、事件属性、外链、DTD、嵌入 HTML 与外部图片。前端通过 Blob img 预览，不把模型 SVG 直接作为页面脚本执行。
 
-## 指令能力边界
+直接改字由浏览器测量字体与布局，提交文字索引、文本行、字号、行高和基线；服务端重建选中块并再次校验，不接收任意候选 SVG。隐藏测量 iframe 使用 sandbox 和 CSP；用户输入作为文本写入。确定性边界不保证任意复杂 SVG 的视觉排版。
 
-完整指令验收基线见 [Demo 脚本与指令能力验收](./Demo脚本与指令能力验收.md)，预计实现、已完成、部分完成和未完成原因见 [指令完成情况](./指令完成情况.md)。
+| 状态 | 存储 | 历史与一致性 |
+| --- | --- | --- |
+| 镜头画面 | `svg_shots` | 最多40个快照；画面版本单调递增，撤销不等于降低版本 |
+| 分镜结构 | `svg_storyboards` | 最多100个结构快照；元数据与新增画面同事务提交 |
+| Agent 任务 | `svg_agent_runs` | 步骤、用量和状态持久化，同项目禁止重复运行任务 |
+| 图片缓存 | 数据库同级 `shot-previews/` | 项目、镜头、版本、源码摘要与渲染器共同确定缓存键 |
 
-当前 README 只保留评审视角的边界：
+画面与结构分别进行版本检查，长模型调用不能覆盖其他页面已保存的修改。删除只移除分镜引用，保留画面以便结构撤销；当前没有项目删除或自动垃圾回收。
 
-- MVP 已覆盖创建分镜、镜头切换、文字/商品/标签/箭头添加、内容修改、视觉属性修改、位置调整、删除、澄清、撤销、重做、清空确认、JSON/PNG 导出、未知元素占位、长期记忆基础能力。
-- 长图导出属于 P1，当前不作为 MVP 通过条件。
-- 任意复杂图像生成质量、PS/Figma 级精细图层编辑、多人协作、无限步 AI 自动规划不在本次 MVP 承诺范围内。
-- 普通编辑操作不依赖生图模型；未知对象会先落为结构化占位，保证创作链路不中断。
+任务在单个 Uvicorn 进程的线程池执行，尚未接入独立队列。页面轮询只读取；进程重启标记中断，不重放结果未知的付费请求。当前不支持多 worker 部署。
+
+## 真实预览与评审
+
+渲染器先校验 SVG，再用独立临时 profile 启动已有 Edge/Chromium，输出1280×720 PNG。渲染25秒超时，图片最大8 MB；临时文件随缓存配置放置，不使用用户浏览器配置，不关闭浏览器沙箱。
+
+`render_shot` 的真实 PNG 附在下一次 Agent 决策消息中；Base64 不写入任务数据库。`review_shot` 自带渲染与缓存，把 PNG、拍摄要求和检查重点发送给同一模型，不附 SVG 源码。评审最多列三个可观察偏差和不确定项，无自动重试。
+
+渲染、缓存读取和评审结束时核对版本，旧图不能作为当前图返回。只读预览 GET 不启动浏览器、不请求模型；前端把改画前记录标为历史。模型可能误判，静态图不能证明完整运动过程，真实失败样本见[视觉实测](experiments/shot-visual-tools-20261117/README.md)。
+
+## 仓库中的历史模块
+
+`graph/`、旧 CanvasElement/Planner、`/api/projects`、`/api/orchestrations`、长期记忆与 MinIO 素材模块仍保留源码和回归测试，但当前工作台不调用这些创作入口。它们不是当前产品功能清单，也不是启动自由 SVG Agent 的必备配置。本轮文档整理不删除业务代码。旧实现可通过 Git 历史和代码定位，当前 HTTP 全集可查看服务的 `/docs`。

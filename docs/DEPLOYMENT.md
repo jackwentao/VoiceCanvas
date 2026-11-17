@@ -1,161 +1,91 @@
-# VoiceCanvas 部署与联调
+# 部署与配置
 
-[返回项目首页](../README.md)
+[项目首页](../README.md) · [使用指南](使用指南.md) · [测试指南](TESTING.md)
 
-各命令均注明执行目录。启用 MinIO 或真实 LLM 前，先完成首页的本地 Demo。
+## 本地启动
 
-## MinIO 素材包启动
+Python 3.11+、uv、Node.js 20+ 为基础运行环境。建议将仓库、虚拟环境、缓存和数据目录放在 D 盘等工作盘。当前前端直接由 Node 内置模块提供静态服务，无需安装 npm 包。
 
-比赛现场如果要验证后端代理 MinIO 素材链路，可用 Docker 启动 MinIO。
-
-### 1. 启动 MinIO
-
-```powershell
-docker run --rm --name voicecanvas-minio `
-  -p 9000:9000 `
-  -p 9001:9001 `
-  -e MINIO_ROOT_USER=voicecanvas `
-  -e MINIO_ROOT_PASSWORD=voicecanvas123 `
-  quay.io/minio/minio server /data --console-address ":9001"
-```
-
-MinIO 控制台：
-
-```text
-http://127.0.0.1:9001
-```
-
-### 2. 配置后端环境变量
+从仓库根目录分别开启两个终端：
 
 ```powershell
 cd backend
-$env:VOICECANVAS_ASSET_PROVIDER="minio"
-$env:VOICECANVAS_MINIO_ENDPOINT="127.0.0.1:9000"
-$env:VOICECANVAS_MINIO_BUCKET="voicecanvas-assets"
-$env:VOICECANVAS_MINIO_ACCESS_KEY="voicecanvas"
-$env:VOICECANVAS_MINIO_SECRET_KEY="voicecanvas123"
-$env:VOICECANVAS_MINIO_SECURE="false"
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+# 编辑 .env，填入模型密钥；不要提交 .env。
+uv sync --frozen --no-editable
+$env:PYTHONPATH="src"
+uv run --frozen --no-editable uvicorn voicecanvas.api.main:app --host 127.0.0.1 --port 8000
 ```
-
-### 3. 下载并上传 Render Catalog 素材
 
 ```powershell
-uv run --no-editable python scripts/download_real_catalog_assets.py --overwrite
-uv run --no-editable python scripts/seed_minio_catalog.py --asset-root ".\data\real-assets"
-uv run --no-editable python scripts/check_minio_catalog.py --strict
+cd frontend
+npm run prototype
 ```
 
-素材路径统一位于 `catalog/commerce/` 前缀下，例如：
+打开 `http://127.0.0.1:4178/index.html`，健康检查 `http://127.0.0.1:8000/health`。OpenAPI 位于 `http://127.0.0.1:8000/docs`。运行单个 Uvicorn 进程，不添加 `--workers`；调试时的自动重启会中断正在执行的 Agent 任务。
 
-```text
-catalog/commerce/food-drink/bubble-tea.png
-catalog/commerce/digital/smartphone.png
+前端默认 API 为8000；使用其他端口时可打开 `workspace.html?apiBaseUrl=http://127.0.0.1:8001`。后端 CORS 默认允许 localhost/127.0.0.1:4178，更换前端端口或域名需相应调整服务配置。
+
+## 模型与浏览器配置
+
+`backend/.env.example` 是可复制的配置样例。Agent 决策、绘图和专门图片评审共用一份模型配置，当前实测使用：
+
+```dotenv
+VOICECANVAS_SHOT_LLM_BASE_URL=https://api.commandcode.ai/provider/v1
+VOICECANVAS_SHOT_LLM_MODEL=deepseek/deepseek-v4.1-flash
+VOICECANVAS_SHOT_LLM_API_KEY=填入自己的密钥
+VOICECANVAS_SHOT_REASONING_EFFORT=off
 ```
 
-后端启动时如果 `VOICECANVAS_ASSET_PROVIDER=minio`，会默认检查素材包完整性；缺失任意 Catalog 素材时服务会拒绝启动并列出缺失路径。临时调试时可设置：
+| 变量 | 默认值与用途 |
+| --- | --- |
+| `VOICECANVAS_SHOT_LLM_BASE_URL`、`MODEL`、`API_KEY` | 优先使用镜头配置；未设置时回退到对应 `VOICECANVAS_LLM_*` |
+| `VOICECANVAS_SHOT_REASONING_EFFORT` | `off`，当前网关关闭思考的有效参数；`provider-default` 表示不发送该字段 |
+| `VOICECANVAS_SHOT_MAX_TOKENS` | 32768；绘图输出预算，允许1024–65536 |
+| `VOICECANVAS_SHOT_TIMEOUT_SECONDS` | 300秒；绘图超时，允许1–600 |
+| `VOICECANVAS_SHOT_DRAWING_SKILL` | `svg-illustration`；`none` 关闭内置作画知识 |
+| `VOICECANVAS_SHOT_DB_PATH` | 默认 `backend/data/svg-shots.sqlite3`；可指定工作盘上的绝对路径 |
+| `VOICECANVAS_RENDER_BROWSER_PATH` | 可选 Chromium/Edge 可执行文件；Windows 自动寻找系统 Edge，Linux 查找 chromium/google-chrome |
+| `VOICECANVAS_SHOT_LOCAL_ADDRESS` | 默认不设置；只在验证 IPv6 可用且 IPv4 TLS 有问题时设置 `::` |
 
-```powershell
-$env:VOICECANVAS_SKIP_MINIO_CATALOG_CHECK="true"
-```
+决策和专门评审各有90秒请求超时；专门评审输出预算1800 token。配置在服务初始化时读取，修改后重启后端。模型须支持工具调用；图片评审还要求接口实际支持 `image_url`。工具不可用会返回错误，不回退为固定图或把源码检查冒充看图。
 
-## Docker 验证后端
+浏览器由部署方提供，产品不会自动下载安装。看图工具使用服务端独立临时 profile；未安装浏览器时基本绘图和管理仍可运行。字体回退会改变中文排版，目标部署环境应具备所需中文字体并实际检查导出。
 
-仓库根目录提供后端 Dockerfile。
+语音识别和播报使用访问者浏览器的 Web Speech API，可能依赖其联网服务。建议使用支持中文的 Chrome/Edge，通过 localhost 或 HTTPS 访问；没有自研 ASR、离线语音识别或外部 ASR SDK 配置。
+
+## 数据与备份
+
+项目、镜头与 Agent 任务保存在同一个镜头 SQLite 文件。图片缓存位于其同级 `shot-previews/`，临时浏览器目录位于该缓存的 `tmp/`。例如数据库配置为 `D:/VoiceCanvas/data/svg-shots.sqlite3`，图片也保存在 D 盘。
+
+备份时先停止服务，再复制数据库文件；恢复时让 `VOICECANVAS_SHOT_DB_PATH` 指向副本。浏览器仅记录最近项目定位，不能代替数据库备份。图片缓存是派生产物，可在停止服务后清理并由工具重新渲染。当前没有自动缓存淘汰和画面垃圾回收，长期运行需管理磁盘容量。
+
+## Docker 后端
+
+仓库 Dockerfile 只提供后端。以下 PowerShell 命令从仓库根目录运行，先准备有效的 `backend/.env`：
 
 ```powershell
 docker build -t voicecanvas-backend .
-docker run --rm --name voicecanvas-backend -p 8000:8000 `
-  -e VOICECANVAS_PROJECT_DB_PATH=/app/backend/data/voicecanvas.sqlite3 `
+New-Item -ItemType Directory -Force backend/data | Out-Null
+docker run --rm --name voicecanvas-backend -p 127.0.0.1:8000:8000 `
+  --env-file backend/.env `
+  -e VOICECANVAS_SHOT_DB_PATH=/app/backend/data/svg-shots.sqlite3 `
+  -v "${PWD}/backend/data:/app/backend/data" `
   voicecanvas-backend
 ```
 
-如果需要让容器后端连接宿主机 MinIO，可使用 `host.docker.internal:9000`：
+前端按本地方式启动。基础镜像没有 Chromium 和中文字体，上述命令仅运行基本 API/绘图；完整视觉工具需要另备具有浏览器、字体和正常沙箱支持的非 root 运行环境，不能把 Windows 浏览器路径传入 Linux 容器。本次文档整理没有验收完整 Docker 视觉部署，也没有增加一键容器化承诺。
 
-```powershell
-docker run --rm --name voicecanvas-backend -p 8000:8000 `
-  -e VOICECANVAS_ASSET_PROVIDER=minio `
-  -e VOICECANVAS_MINIO_ENDPOINT=host.docker.internal:9000 `
-  -e VOICECANVAS_MINIO_BUCKET=voicecanvas-assets `
-  -e VOICECANVAS_MINIO_ACCESS_KEY=voicecanvas `
-  -e VOICECANVAS_MINIO_SECRET_KEY=voicecanvas123 `
-  -e VOICECANVAS_MINIO_SECURE=false `
-  voicecanvas-backend
-```
+## 故障排查
 
-前端仍按本地方式启动，并访问 `http://127.0.0.1:4178/index.html`。
-
-## 真实 LLM 配置
-
-默认 Demo Planner 不需要 API Key。需要验证真实模型时：
-
-```powershell
-cd backend
-$env:VOICECANVAS_PLANNER="hybrid"
-$env:VOICECANVAS_LLM_BASE_URL="https://你的-openai-compatible-endpoint/v1"
-$env:VOICECANVAS_LLM_MODEL="你的模型名"
-$env:VOICECANVAS_LLM_API_KEY="你的 API Key"
-$env:VOICECANVAS_LLM_MAX_ATTEMPTS="3"
-$env:VOICECANVAS_LLM_TIMEOUT_SECONDS="20"
-$env:PYTHONPATH="src"
-uv run --no-editable uvicorn voicecanvas.api.main:app --reload
-```
-
-Planner 模式：
-
-| 模式 | 说明 |
+| 现象 | 检查与处理 |
 | --- | --- |
-| `demo` | 默认模式，使用本地确定性演示 Planner，适合离线评审和录屏 |
-| `llm` | 只使用真实 LLM，失败后返回错误，不自动降级 |
-| `hybrid` | 优先真实 LLM，额度不足、网络失败、超时、格式错误或业务校验失败后降级到 Demo Planner |
+| 页面连接失败 | 先请求 `/health`；检查前端 API 地址、端口和 CORS |
+| 输入没有实际绘图效果 | 产品后端应为 `voicecanvas.api.main:app`；`browser_fixture:app` 是固定响应测试服务，只供验收 |
+| HTTP 401/403、模型错误或连接失败 | 核对密钥、模型名、端点、额度和网络，修改配置后重启；已有画面保留，无自动付费重试 |
+| IPv4 TLS 中断 | 先独立确认 IPv6 连通，再尝试 `VOICECANVAS_SHOT_LOCAL_ADDRESS=::`；不关闭证书校验 |
+| 渲染浏览器未找到 | 指定有效的服务端浏览器路径，确认服务账号可启动；重新部署后再检查字体与图片 |
+| 任务中断 | 检查已经保存的镜头，再提交继续需求；刷新不会自动重放 |
+| 启动时检查 MinIO 素材失败 | 当前 SVG 工作台无需 MinIO；移除遗留 `VOICECANVAS_ASSET_PROVIDER=minio` 或设为 `local` |
 
-真实 LLM 只负责把自然语言转成结构化命令；所有写操作仍必须经过 Pydantic 结构校验、`CommandValidator` 和 `CommandExecutor`，不能直接覆盖 Project State。
-
-## 常用 API 验证
-
-```powershell
-Invoke-RestMethod -Method Get -Uri "http://127.0.0.1:8000/health"
-```
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://127.0.0.1:8000/api/orchestrations" `
-  -ContentType "application/json" `
-  -Body '{"projectId":"project_demo_voicecanvas","userInput":"创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"}'
-```
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas"
-```
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas/export" `
-  -ContentType "application/json" `
-  -Body '{"format":"json","scope":"project"}'
-```
-
-```powershell
-Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://127.0.0.1:8000/api/projects/project_demo_voicecanvas/export" `
-  -ContentType "application/json" `
-  -Body '{"format":"png","scope":"active_scene"}'
-```
-
-SSE 流式编排：
-
-```powershell
-$body = @{
-  projectId = "project_demo_voicecanvas"
-  userInput = "创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"
-} | ConvertTo-Json -Compress
-
-curl.exe -N `
-  -X POST "http://127.0.0.1:8000/api/orchestrations/stream" `
-  -H "Content-Type: application/json" `
-  --data $body
-```
+当前没有账号权限隔离及生产任务队列，本地演示默认绑定127.0.0.1。当前工作台不使用旧 Planner、长期记忆或素材桶；无需为了启动本产品配置它们，技术范围见[架构说明](ARCHITECTURE.md)。
