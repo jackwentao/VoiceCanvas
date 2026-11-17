@@ -13,7 +13,8 @@
 | `canvas-renderer.js`、`shape-renderer.js`、`text-layout.js` | 后端数据的画布投影 |
 | `voice-session.js` | 麦克风、转写、播报与监听恢复 |
 | `file-download.js` | 下载后端产物、后端授权的 PNG 展示转换 |
-| `workspace.css`、`canvas-elements.css` | 工作台布局与画布元素样式 |
+| `paper-theme.css` | 首页与工作台共用的纸张、墨绿、手写标题视觉令牌；原生 CSS，无新增依赖 |
+| `workspace.css`、`canvas-elements.css` | 画桌界面与作品样式隔离；纸纹、胶带和涂鸦不进入作品导出 |
 
 原型早期的 mock-data/state-sync/element-patch/export-service 已移到 `frontend/tests/fixtures`，
 仅供历史回归测试使用，不随前端静态页面提供。新代码不得重新接入本地领域命令或浏览器业务存储。
@@ -23,3 +24,8 @@ npm --prefix frontend run test:prototype
 ```
 
 详见 [工作台接口](../../docs/工作台接口.md) 与 [使用验收](../../docs/工作台使用与验收.md)。
+
+首页和工作台沿用同一套原创手绘视觉。字体使用系统字体栈，未下载字体或引入设计 SDK。
+手写字体只用于界面标题；作品保留原有字体、真实比例和后端指定的颜色。
+空白引导在窄屏预留最小高度，有作品时仍按后端画布比例缩放。
+视觉验收步骤见上述使用验收文档的“首页与画桌视觉连续性”。
