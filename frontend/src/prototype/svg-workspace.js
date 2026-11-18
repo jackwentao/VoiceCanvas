@@ -210,11 +210,6 @@ function render() {
   $("projectSelect").value = board.id;
   $("sceneList").querySelectorAll("button").forEach(button => { button.disabled = busy; });
   void showSvg(textEditor?.previewSvg || shot.svg);
-  fitCanvas();
-}
-function fitCanvas() {
-  const maxHeight = Math.max(160, $("canvasViewport").clientHeight - 125);
-  $("canvasStage").style.setProperty("--fit-stage-width", innerWidth > 640 ? `${Math.min(1200, maxHeight * 16 / 9)}px` : "100%");
 }
 function errorMessage(error) { return error instanceof TypeError ? "连接失败，请检查服务并刷新确认结果后再试。" : error?.message || String(error); }
 function showError(error) { failure = errorMessage(error); render(); }
@@ -382,18 +377,16 @@ $("exportMenu").addEventListener("click", event => { const button = event.target
 document.addEventListener("click", event => { if (!event.target.closest(".export-wrap")) { $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); } });
 $("toggleAssistant").addEventListener("click", () => { assistantOpen = !assistantOpen; render(); });
 $("dismissError").addEventListener("click", () => { failure = ""; render(); });
-$("fitButton").addEventListener("click", fitCanvas);
 document.querySelectorAll("[data-prompt]").forEach(button => button.addEventListener("click", () => { $("voiceInput").value = button.dataset.prompt; resizeInput(); $("voiceInput").focus(); }));
 document.addEventListener("keydown", event => {
   if (event.altKey && event.key.toLowerCase() === "v") { event.preventDefault(); if (!$("voiceButton").disabled) $("voiceButton").click(); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.target.closest("input,textarea,select,[contenteditable]")) { event.preventDefault(); $(event.shiftKey ? "redoButton" : "undoButton").click(); }
 });
-new ResizeObserver(fitCanvas).observe($("canvasViewport"));
 let compact = innerWidth <= 980;
 window.addEventListener("resize", () => {
   const next = innerWidth <= 980;
   if (next && !compact) { assistantOpen = false; render(); }
-  compact = next; fitCanvas();
+  compact = next;
 });
 window.addEventListener("pagehide", () => { void voice.stop({ speak: false }); recognition.abort(); if (previewUrl) URL.revokeObjectURL(previewUrl); thumbnails.forEach(url => URL.revokeObjectURL(url)); });
 

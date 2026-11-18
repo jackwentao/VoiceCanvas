@@ -1309,8 +1309,6 @@ kbd {
   pointer-events:none;
   z-index:2;
 }
-/* 空白引导是界面内容，预留可读高度；有作品时仍遵循后端画布比例。 */
-.canvas-stage:has(.empty-canvas:not([hidden])) { min-height:300px!important; }
 .canvas-stage::before { left:22px; transform:rotate(-8deg); }
 .canvas-stage::after { right:22px; transform:rotate(7deg); }
 
@@ -1602,9 +1600,6 @@ kbd {
   }
   .canvas-stage {
     min-height:260px;
-  }
-  .canvas-stage:has(.empty-canvas:not([hidden])) {
-    min-height:280px!important;
   }
   .scene-caption {
     margin-bottom:10px;

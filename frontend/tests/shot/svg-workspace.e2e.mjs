@@ -29,6 +29,16 @@ await page.addInitScript(() => {
 });
 const waitIdle = () => page.waitForFunction(() => document.querySelector("#saveStatus").dataset.busy === "false");
 const count = async n => page.waitForFunction(n => document.querySelectorAll("[data-scene]").length === n, n);
+const canvasFits = () => page.waitForFunction(() => {
+  const viewport = document.querySelector("#canvasViewport");
+  const stage = document.querySelector("#canvasStage").getBoundingClientRect();
+  const footer = viewport.querySelector(".canvas-footer").getBoundingClientRect();
+  const bounds = viewport.getBoundingClientRect();
+  return viewport.scrollHeight <= viewport.clientHeight + 1
+    && viewport.scrollWidth <= viewport.clientWidth + 1
+    && stage.height > 0 && Math.abs(stage.width / stage.height - 16 / 9) < 0.02
+    && stage.top >= bounds.top && stage.bottom <= footer.top && footer.bottom <= bounds.bottom;
+});
 const submit = async text => {
   await page.locator("#voiceInput").fill(text);
   await page.locator("#composerForm").evaluate(f => f.requestSubmit()); await waitIdle();
@@ -38,6 +48,11 @@ try {
   await page.goto(`${ui}/index.html?apiBaseUrl=${encodeURIComponent(api)}`);
   await page.locator("[data-create]").first().click();
   await page.waitForURL(/workspace.html.*board=/); await count(1);
+  for (const width of [1920, 1366]) {
+    await page.setViewportSize({ width, height: width === 1920 ? 906 : 768 });
+    await canvasFits();
+    await page.locator("[data-prompt]").first().click({ trial: true });
+  }
   const styleInput = page.locator("#drawingStyleInput");
   await page.locator("#drawingStyleButton").click();
   await styleInput.fill("暖色手绘，背景简洁");
@@ -96,6 +111,7 @@ try {
   assert.equal(await styleInput.inputValue(), "");
   await page.locator("#drawingStyleDialog [data-close-dialog]").click();
   await page.locator("#canvasSurface img").waitFor();
+  await canvasFits();
   await page.locator("#editTextToggle").click();
   await page.locator("#textContent").fill("我到家了。");
   await page.waitForFunction(() => !document.querySelector("#applyTextEdit").disabled);
