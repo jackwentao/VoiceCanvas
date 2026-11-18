@@ -30,9 +30,11 @@
 .svg-workspace .text-edit-actions { display:flex; justify-content:flex-end; gap:8px }
 .svg-workspace #applyTextEdit { background:var(--paper-action) }
 .text-measure-host { position:fixed; left:-10000px; top:0; width:1280px; height:720px; visibility:hidden; pointer-events:none; overflow:hidden; border:0 }
+.svg-workspace .dialog-error { color:var(--danger, #9d3127); overflow-wrap:anywhere }
 @media(max-width:640px) {
   .svg-workspace .svg-scene-tools { margin-bottom:8px }
   .svg-workspace .svg-structure-tools { margin-top:4px }
-  .svg-workspace .empty-canvas .suggestions { display:none }
+  .svg-workspace .empty-canvas .suggestions { flex-direction:column; width:min(100%, 260px); gap:8px }
+  .svg-workspace .empty-canvas .suggestions button { min-height:44px; font-size:12px; padding:7px 10px; text-align:left }
   .svg-workspace .empty-canvas .storyboard-art { display:none }
 }

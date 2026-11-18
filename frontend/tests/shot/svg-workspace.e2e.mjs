@@ -40,22 +40,86 @@ try {
   await page.waitForURL(/workspace.html.*board=/); await count(1);
   assert.ok(requests.some(url => url.endsWith("/api/storyboards")));
   assert.equal(requests.some(url => /\/api\/projects$/.test(url)), false);
+  const originalBoard = new URL(page.url()).searchParams.get("board");
+  const otherBoard = await (await page.request.post(`${api}/api/storyboards`, {
+    data: { title: "另一个分镜项目" },
+  })).json();
+  await page.reload();
+  await page.locator("#projectSelect").locator(`option[value="${otherBoard.id}"]`).waitFor({ state: "attached" });
+  await waitIdle();
+  await page.locator("#voiceInput").fill("当前项目的指令草稿");
+  await page.locator("#projectSelect").selectOption(otherBoard.id);
+  await page.waitForURL(url => url.searchParams.get("board") === otherBoard.id);
+  await waitIdle();
+  assert.equal(await page.locator("#renameButton").textContent(), otherBoard.title);
+  assert.equal(await page.locator("#voiceInput").inputValue(), "");
+  await page.locator("#projectSelect").selectOption(originalBoard);
+  await page.waitForURL(url => url.searchParams.get("board") === originalBoard);
+  await waitIdle();
+  assert.equal(await page.locator("#voiceInput").inputValue(), "当前项目的指令草稿");
+
+  const listUrl = `${api}/api/storyboards`;
+  await page.route(listUrl, route => route.fulfill({ status: 503, json: { detail: "最近项目暂时读不到" } }));
   await submit("新建两个镜头"); await count(3);
+  assert.equal(await page.locator("#voiceInput").inputValue(), "");
+  assert.match(await page.locator("#toast").textContent(), /项目列表暂时无法更新/);
+  await page.unroute(listUrl);
+
+  const manageUrl = `${listUrl}/${originalBoard}/manage`;
+  await page.route(manageUrl, route => route.fulfill({ status: 503, json: { detail: "保存失败，请重试" } }));
+  await page.locator("#renameButton").click();
+  await page.locator("#nameInput").fill("雨夜分镜");
+  await page.locator("#nameSubmit").click();
+  await page.locator("#nameError").waitFor({ state: "visible" });
+  assert.equal(await page.locator("#nameError").textContent(), "保存失败，请重试");
+  assert.equal(await page.locator("#nameInput").inputValue(), "雨夜分镜");
+  assert.equal(await page.locator("#errorBanner").isVisible(), false);
+  await page.unroute(manageUrl);
+  await page.locator("#nameSubmit").click();
+  await page.locator("#nameDialog").waitFor({ state: "hidden" });
+  assert.equal(await page.locator("#renameButton").textContent(), "雨夜分镜");
+
   await submit("切换到第一个镜头"); await submit("画一个雨夜镜头");
   await page.locator("#canvasSurface img").waitFor();
   await page.locator("#editTextToggle").click();
   await page.locator("#textContent").fill("我到家了。");
   await page.waitForFunction(() => !document.querySelector("#applyTextEdit").disabled);
+  const textTarget = page.locator("#textTarget");
+  const initialText = await textTarget.inputValue();
+  const secondText = await textTarget.locator("option").nth(1).getAttribute("value");
+  await textTarget.selectOption(secondText);
+  assert.equal(await textTarget.inputValue(), initialText);
+  assert.equal(await page.locator("#textContent").inputValue(), "我到家了。");
+  await page.locator("#editTextToggle").click();
+  assert.equal(await page.locator("#textContent").inputValue(), "我到家了。");
+  await page.locator("#textFontSize").fill("1");
+  assert.equal(await page.locator("#applyTextEdit").isDisabled(), true);
   assert.equal(await page.locator("#exportButton").isDisabled(), true);
   await page.locator("#addSvgScene").click();
   assert.match(await page.locator("#errorText").textContent(), /先应用/); await count(3);
+  await page.locator("#textFontSize").fill("48");
+  await page.waitForFunction(() => !document.querySelector("#applyTextEdit").disabled);
   await page.locator("#applyTextEdit").click(); await waitIdle();
   assert.match(await page.locator("#resultMessage").textContent(), /文字已保存/);
   await page.locator("#closeTextEditor").click();
   assert.equal(await page.locator("#exportButton").isDisabled(), false);
   await page.locator("#copySvgScene").click(); await count(4); await waitIdle();
   await submit("把第二个镜头移到第一位");
+  const agentUrl = `${listUrl}/${originalBoard}/agent/runs`;
+  await page.route(agentUrl, route => route.fulfill({ status: 503, json: { detail: "模型服务暂不可用" } }));
+  const requestsBeforeDelete = requests.length;
+  page.once("dialog", dialog => dialog.dismiss());
   await page.locator("#deleteSvgScene").click(); await waitIdle(); await count(4);
+  assert.equal(requests.length, requestsBeforeDelete);
+  page.once("dialog", async dialog => {
+    assert.match(dialog.message(), /删除镜头/);
+    await dialog.accept();
+  });
+  await page.locator("#deleteSvgScene").click(); await waitIdle(); await count(3);
+  assert.deepEqual(requests.slice(requestsBeforeDelete), [manageUrl]);
+  await page.unroute(agentUrl);
+  await page.locator("#undoStructure").click(); await count(4); await waitIdle();
+  await submit("删除当前镜头"); await count(4);
   await page.locator('[data-delete-answer="确认删除"]').click(); await count(3); await waitIdle();
   await page.locator("#undoStructure").click(); await count(4); await waitIdle();
   await page.locator("#voiceButton").click(); await page.waitForFunction(() => window.__listening);
@@ -84,6 +148,24 @@ try {
   assert.equal(new URL(page.url()).searchParams.has("projectId"), false);
   for (const selector of ["#importButton", "#memoryDialog", "#backgroundColorInput"]) assert.equal(await page.locator(selector).count(), 0);
   assert.equal((await page.request.get(`${ui}/shot.html`)).status(), 404);
+
+  const missingId = "board_e2e_missing";
+  await page.goto(`${ui}/workspace.html?apiBaseUrl=${encodeURIComponent(api)}&board=${missingId}`);
+  await page.getByRole("button", { name: "打开可用项目" }).click();
+  await page.waitForURL(url => url.searchParams.has("board") && url.searchParams.get("board") !== missingId);
+  await waitIdle();
+  assert.equal(await page.locator("#errorBanner").isVisible(), false);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`${ui}/workspace.html?apiBaseUrl=${encodeURIComponent(api)}&board=${otherBoard.id}`);
+  await waitIdle();
+  const prompts = page.locator("[data-prompt]");
+  assert.equal(await prompts.nth(0).isVisible(), true);
+  assert.equal(await prompts.nth(1).isVisible(), true);
+  await prompts.nth(1).click();
+  assert.match(await page.locator("#voiceInput").inputValue(), /雨夜便利店/);
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
+  if (out) await page.screenshot({ path: `${out}/mobile-empty.png`, fullPage: true });
+
   assert.deepEqual(errors, []);
-  console.log("工作台 E2E 通过：首页API、分镜、改字、语音、导出、恢复、窄屏；无旧入口分流。");
+  console.log("工作台 E2E 通过：首页、项目切换、失败提示、分镜管理、改字草稿、语音、下载、失效链接与窄屏示例。");
 } finally { await browser.close(); }

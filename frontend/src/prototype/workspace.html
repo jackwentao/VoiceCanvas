@@ -85,7 +85,16 @@
     </main>
   </div>
 
-  <dialog id="nameDialog" class="dialog"><form id="nameForm"><div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>给这次创作取个名字。</p><label for="nameInput">项目名称</label><input id="nameInput" maxlength="120" required placeholder="例如：雨天咖啡" /><div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button type="submit" class="button primary">确认</button></div></form></dialog>
+  <dialog id="nameDialog" class="dialog" aria-labelledby="nameDialogTitle">
+    <form id="nameForm">
+      <div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div>
+      <p>给这次创作取个名字。</p>
+      <label for="nameInput">项目名称</label>
+      <input id="nameInput" maxlength="100" required placeholder="例如：雨天咖啡" />
+      <p class="dialog-error" id="nameError" role="alert" hidden></p>
+      <div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button id="nameSubmit" type="submit" class="button primary">确认</button></div>
+    </form>
+  </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <script type="module" src="./svg-workspace.js"></script>
 </body>

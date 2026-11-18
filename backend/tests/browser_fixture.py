@@ -22,7 +22,8 @@ class FixtureGenerator:
         svg = (
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">'
             '<rect width="1280" height="720" fill="#243b36"/>'
-            '<text x="100" y="200" fill="white" font-size="48">到家了吗？</text></svg>'
+            '<text x="100" y="200" fill="white" font-size="48">到家了吗？</text>'
+            '<text x="100" y="420" fill="white" font-size="48">雨夜</text></svg>'
         )
         return current_svg or svg, {}, "browser-fixture"
 

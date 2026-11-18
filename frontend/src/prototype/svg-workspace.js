@@ -18,14 +18,16 @@ $("exportMenu").replaceChildren(...[ ["png", "当前镜头 · PNG"], ["svg", "�
 }));
 $("voiceInput").maxLength = 8000;
 $("voiceInput").placeholder = "描述完整故事、需要几个镜头，或直接说要修改哪里…";
-$("nameInput").maxLength = 100;
 $("selectionLabel").textContent = "自由绘制 · 可继续改画或编辑文字";
 
 let boards, textEditor, voice;
 let working = false;
 let lastInput = "";
+let renderedBoardId;
+const inputDrafts = new Map();
 let message = "连接后即可开始创作";
 let failure = "";
+let missingBoardId;
 let assistantOpen = innerWidth > 980;
 let dialogMode = "new";
 let previewSvg = null;
@@ -43,8 +45,8 @@ boards = new StoryboardClient({ shots, onChange: () => render(), exportShot });
 textEditor = new ShotTextEditor({ frame: $("canvasStage"),
   preview: svg => {
     void showSvg(svg);
-    $("exportButton").disabled = isBusy() || !shots.shot?.svg || Boolean(textEditor?.previewSvg);
-    $("selectionLabel").textContent = textEditor?.previewSvg ? "文字预览未应用，请保存或关闭编辑面板" : "自由绘制 · 可继续改画或编辑文字";
+    $("exportButton").disabled = isBusy() || !shots.shot?.svg || Boolean(textEditor?.hasDraft);
+    $("selectionLabel").textContent = textEditor?.hasDraft ? "改字草稿未保存" : "自由绘制 · 可继续改画或编辑文字";
   },
   save: layout => act(async () => { await shots.editText(layout); await boards.refresh(); return "文字已保存，可以撤销或继续修改。"; }, { guard: false }).catch(showError),
 });
@@ -105,6 +107,15 @@ async function showSvg(svg) {
 function render() {
   if (!boards) return;
   const board = boards.board, shot = shots.shot, busy = isBusy();
+  if (board && board.id !== renderedBoardId) {
+    if (renderedBoardId) {
+      inputDrafts.set(renderedBoardId, $("voiceInput").value);
+      $("voiceInput").value = inputDrafts.get(board.id) || "";
+      resizeInput();
+    }
+    renderedBoardId = board.id;
+    lastInput = "";
+  }
   textEditor?.setState(shot, busy);
   document.querySelectorAll("[data-requires-project]").forEach(node => { node.disabled = !board || busy; });
   for (const id of ["newButton", "addSvgScene", "copySvgScene", "deleteSvgScene", "renameSvgScene", "moveSvgSceneUp", "moveSvgSceneDown", "retryButton"]) $(id).disabled = busy || (id !== "newButton" && id !== "retryButton" && !board);
@@ -114,10 +125,15 @@ function render() {
   $("undoButton").disabled = busy || !shot?.canUndo;
   $("redoButton").disabled = busy || !shot?.canRedo;
   $("undoResult").hidden = busy || !shot?.canUndo;
-  $("exportButton").disabled = busy || !shot?.svg || Boolean(textEditor?.previewSvg);
+  $("exportButton").disabled = busy || !shot?.svg || Boolean(textEditor?.hasDraft);
   $("saveStatus").replaceChildren(document.createTextNode(failure ? "连接待确认" : busy ? "处理中…" : board ? "已同步" : "等待连接"));
   $("saveStatus").dataset.busy = String(busy);
   $("errorBanner").hidden = !failure; $("errorText").textContent = failure;
+  $("retryButton").textContent = missingBoardId ? "打开可用项目" : "重新连接";
+  const naming = $("nameDialog").open && busy;
+  $("nameInput").disabled = naming;
+  $("nameSubmit").disabled = naming;
+  $("nameSubmit").textContent = naming ? "正在保存…" : "确认";
   $("assistantConnection").textContent = busy ? "正在协助创作" : board ? "准备好和你一起创作" : "等待连接";
   $("backendStatus").textContent = busy ? "正在执行，完成后自动保存" : "每次修改，自动保存";
   $("composerContext").dataset.busy = String(busy);
@@ -201,33 +217,62 @@ function fitCanvas() {
 function errorMessage(error) { return error instanceof TypeError ? "连接失败，请检查服务并刷新确认结果后再试。" : error?.message || String(error); }
 function showError(error) { failure = errorMessage(error); render(); }
 function toast(text) { $("toast").textContent = text; $("toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3500); }
-async function act(fn, { guard = true } = {}) {
+async function act(fn, { guard = true, inlineError = false } = {}) {
   if (isBusy()) throw new Error("正在完成上一条指令，请稍候");
-  if (guard && textEditor?.previewSvg) { const e = new Error("请先应用或关闭文字预览，再切换镜头或执行指令。"); showError(e); throw e; }
+  if (guard && textEditor?.hasDraft) throw new Error("请先应用改字或舍弃草稿，再切换镜头或执行指令。");
   working = true; failure = ""; message = "正在完成指令，请稍候…";
   actionStarted = Date.now(); progressTimer = setInterval(renderStatus, 1000); render();
   try { const result = await fn(); message = typeof result === "string" ? result : "已保存，可以继续创作。"; return message; }
-  catch (error) { failure = errorMessage(error); message = "本次指令未完成，输入已保留。"; throw error; }
+  catch (error) {
+    if (!inlineError) failure = errorMessage(error);
+    message = "本次操作未完成。";
+    throw error;
+  }
   finally { clearInterval(progressTimer); working = false; render(); }
 }
 // 按钮吞掉已展示的错误；语音路径保留异常供语音反馈播报。
 const clickAction = fn => { void fn().catch(showError); };
 async function refreshProjects() {
-  const recent = await boards.request();
+  let recent;
+  try { recent = await boards.request(); }
+  catch { toast("最近项目列表暂时无法更新。"); return; }
   $("projectSelect").replaceChildren(...recent.map(b => { const option = document.createElement("option"); option.value = b.id; option.textContent = b.title; return option; }));
   if (boards.board) { listKey = ""; render(); }
 }
 async function submit(text) {
   text = String(text || "").trim(); if (!text) return "请描述画面或分镜指令。";
-  lastInput = text;
-  const result = await act(async () => { const reply = await boards.execute(text); await refreshProjects(); return reply; });
-  $("voiceInput").value = ""; resizeInput(); return result;
+  return act(async () => {
+    lastInput = text;
+    const reply = await boards.execute(text);
+    $("voiceInput").value = ""; resizeInput();
+    await refreshProjects();
+    return reply;
+  });
 }
 function resizeInput() { $("voiceInput").style.height = "auto"; $("voiceInput").style.height = `${Math.min($("voiceInput").scrollHeight, 120)}px`; }
 function openName(mode) {
   dialogMode = mode; $("nameDialogTitle").textContent = mode === "new" ? "新建分镜项目" : mode === "scene" ? "重命名镜头" : "重命名项目";
   $("nameInput").value = mode === "new" ? "" : mode === "scene" ? boards.board.shots.find(s => s.id === boards.board.activeId).title : boards.board.title;
+  $("nameError").hidden = true;
   $("nameDialog").showModal(); $("nameInput").focus();
+}
+async function saveName(title) {
+  $("nameError").hidden = true;
+  try {
+    await act(async () => {
+      if (dialogMode === "new") {
+        await boards.create(title);
+        missingBoardId = undefined;
+      } else {
+        await boards.manage({ action: dialogMode === "scene" ? "rename" : "rename_project", title });
+      }
+      await refreshProjects();
+    }, { inlineError: true });
+    $("nameDialog").close();
+  } catch (error) {
+    $("nameError").textContent = errorMessage(error);
+    $("nameError").hidden = false;
+  }
 }
 function download(blob, extension, shotId) {
   const url = URL.createObjectURL(blob), link = document.createElement("a");
@@ -235,7 +280,7 @@ function download(blob, extension, shotId) {
 }
 async function exportShot(format, shotId = shots.shot?.id) {
   const target = boards.board?.shots.find(s => s.id === shotId);
-  if (!target?.svg || textEditor.previewSvg) throw new Error("请先保存画面，再导出镜头。");
+  if (!target?.svg || textEditor.hasDraft) throw new Error("请先保存画面，再导出镜头。");
   if (format === "svg") { download(new Blob([target.svg], { type: "image/svg+xml" }), "svg", shotId); return; }
   const img = new Image(), url = URL.createObjectURL(new Blob([target.svg], { type: "image/svg+xml" }));
   try {
@@ -251,16 +296,34 @@ $("voiceInput").addEventListener("input", resizeInput);
 $("voiceInput").addEventListener("keydown", event => { if (event.key === "Enter" && !event.shiftKey && !event.isComposing) { event.preventDefault(); $("composerForm").requestSubmit(); } });
 $("voiceButton").addEventListener("click", () => clickAction(() => voice.isActive() ? voice.stop() : voice.start()));
 $("sceneList").addEventListener("click", event => { const button = event.target.closest("[data-scene]"); if (button) clickAction(() => act(() => boards.manage({ action: "switch", targetId: button.dataset.scene }))); });
-$("projectSelect").addEventListener("change", event => clickAction(() => act(() => boards.load(event.target.value))));
+$("projectSelect").addEventListener("change", event => {
+  const boardId = event.target.value;
+  clickAction(() => act(async () => {
+    await boards.load(boardId);
+    return boards.agent?.summary || "已切换项目。";
+  }));
+});
 for (const [id, action] of [["addSvgScene", "add"], ["copySvgScene", "duplicate"], ["undoStructure", "undo"], ["redoStructure", "redo"]]) $(id).addEventListener("click", () => clickAction(() => act(() => boards.manage({ action }))));
-$("deleteSvgScene").addEventListener("click", () => clickAction(() => submit("删除当前镜头")));
+$("deleteSvgScene").addEventListener("click", () => clickAction(() => act(async () => {
+  const { activeId, shots: members } = boards.board;
+  const target = members.find(member => member.id === activeId);
+  if (!window.confirm(`删除镜头「${target.title}」？可通过“撤销分镜”恢复。`)) return "已取消删除。";
+  await boards.manage({ action: "delete", targetId: activeId, confirmed: true });
+  return `已删除镜头「${target.title}」。`;
+})));
 for (const [id, direction] of [["moveSvgSceneUp", -1], ["moveSvgSceneDown", 1]]) $(id).addEventListener("click", () => clickAction(() => act(() => boards.manage({ action: "move", position: boards.board.shots.findIndex(s => s.id === boards.board.activeId) + 1 + direction }))));
 for (const [id, action] of [["undoButton", "undo"], ["redoButton", "redo"], ["undoResult", "undo"]]) $(id).addEventListener("click", () => clickAction(() => act(async () => { await shots.change(action); await boards.refresh(); })));
 $("clarificationOptions").replaceChildren(...[ ["确认删除", "确认删除"], ["取消", "取消"] ].map(([answer, text]) => { const button = document.createElement("button"); button.textContent = text; button.dataset.deleteAnswer = answer; button.addEventListener("click", () => clickAction(() => submit(answer))); return button; }));
 $("newButton").addEventListener("click", () => openName("new")); $("renameButton").addEventListener("click", () => openName("board")); $("renameSvgScene").addEventListener("click", () => openName("scene"));
-$("nameForm").addEventListener("submit", event => { event.preventDefault(); const title = $("nameInput").value.trim(); if (!title) return;
-  clickAction(async () => { await act(async () => { if (dialogMode === "new") { await boards.create(title); lastInput = ""; } else await boards.manage({ action: dialogMode === "scene" ? "rename" : "rename_project", title }); await refreshProjects(); }); $("nameDialog").close(); }); });
-document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => button.closest("dialog").close()));
+$("nameForm").addEventListener("submit", event => {
+  event.preventDefault();
+  const title = $("nameInput").value.trim();
+  if (title && !isBusy()) void saveName(title);
+});
+$("nameDialog").addEventListener("cancel", event => { if (isBusy()) event.preventDefault(); });
+document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => {
+  if (!isBusy()) button.closest("dialog").close();
+}));
 $("exportButton").addEventListener("click", () => { $("exportMenu").hidden = !$("exportMenu").hidden; $("exportButton").setAttribute("aria-expanded", String(!$("exportMenu").hidden)); });
 $("exportMenu").addEventListener("click", event => { const button = event.target.closest("[data-export]"); if (button) clickAction(async () => { await exportShot(button.dataset.export); $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); toast("已导出当前镜头"); }); });
 document.addEventListener("click", event => { if (!event.target.closest(".export-wrap")) { $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); } });
@@ -283,9 +346,22 @@ window.addEventListener("pagehide", () => { void voice.stop({ speak: false }); r
 
 async function connect() {
   await act(async () => {
-    let id = params.get("board");
+    let id = new URLSearchParams(location.search).get("board");
     if (!id) { try { id = localStorage.getItem(storageKey); } catch { /* URL 可恢复。 */ } }
-    if (id) await boards.load(id); else await boards.create();
+    if (missingBoardId) {
+      const recent = await boards.request();
+      id = recent.find(board => board.id !== missingBoardId)?.id;
+    }
+    try {
+      if (id) await boards.load(id); else await boards.create();
+    } catch (error) {
+      if (id && error.status === 404 && !boards.board) {
+        missingBoardId = id;
+        throw new Error("该分镜项目已找不到。可以打开最近的项目，或在没有可用项目时新建。");
+      }
+      throw error;
+    }
+    missingBoardId = undefined;
     await refreshProjects(); return boards.agent?.summary || (recognition.isSupported() ? "准备好了，说说你的想法吧。" : "当前浏览器不支持语音，可以输入文字继续创作。");
   });
 }

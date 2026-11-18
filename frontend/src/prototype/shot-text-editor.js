@@ -27,6 +27,7 @@ export class ShotTextEditor {
     this.versionKey = null;
     this.previewSvg = null;
     this.candidate = null;
+    this.hasDraft = false;
     this.measureHost = document.createElement("iframe");
     this.measureHost.className = "text-measure-host";
     this.measureHost.setAttribute("sandbox", "allow-same-origin");
@@ -38,7 +39,14 @@ export class ShotTextEditor {
     document.body.append(this.measureHost);
     this.$("editTextToggle").addEventListener("click", () => this.open());
     this.$("closeTextEditor").addEventListener("click", () => this.close());
-    this.$("textTarget").addEventListener("change", () => this.select());
+    this.$("textTarget").addEventListener("change", () => {
+      if (!this.hasDraft) {
+        this.select();
+        return;
+      }
+      this.$("textTarget").value = String(this.info.block.index);
+      this.$("textEditFeedback").textContent = "请应用改字或重置草稿，再选择其他文字。";
+    });
     for (const id of ["textContent", "textFontSize", "textWrapWidth"]) {
       this.$(id).addEventListener("input", () => this.draft());
     }
@@ -70,6 +78,7 @@ export class ShotTextEditor {
       this.versionKey = key;
       this.previewSvg = null;
       this.candidate = null;
+      this.hasDraft = false;
       this.info = null;
       if (!this.$("textEditor").hidden) this.populate();
     }
@@ -80,6 +89,10 @@ export class ShotTextEditor {
   }
 
   async open() {
+    if (!this.$("textEditor").hidden) {
+      this.$(this.hasDraft ? "textContent" : "textTarget").focus();
+      return;
+    }
     this.$("textEditor").hidden = false;
     await this.ready;
     if (this.$("textEditor").hidden) return;
@@ -88,8 +101,10 @@ export class ShotTextEditor {
   }
 
   close() {
+    if (this.busy || (this.hasDraft && !window.confirm("舍弃尚未保存的改字草稿？"))) return;
     this.previewSvg = null;
     this.candidate = null;
+    this.hasDraft = false;
     this.$("textEditor").hidden = true;
     this.preview(this.state?.svg);
     this.$("editTextToggle").focus();
@@ -126,6 +141,7 @@ export class ShotTextEditor {
   select() {
     this.previewSvg = null;
     this.candidate = null;
+    this.hasDraft = false;
     this.info = null;
     this.$("applyTextEdit").disabled = true;
     const block = this.state?.texts?.find(t => String(t.index) === this.$("textTarget").value);
@@ -176,6 +192,7 @@ export class ShotTextEditor {
 
   draft() {
     if (!this.info || this.busy) return;
+    this.hasDraft = true;
     this.candidate = null;
     this.$("applyTextEdit").disabled = true;
     try {
