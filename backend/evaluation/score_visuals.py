@@ -51,9 +51,22 @@ def image_part(path: Path) -> dict:
 def score_case(client: httpx.Client, config: ShotModelConfig, batch: dict, case: dict,
                directory: Path) -> dict:
     run = json.loads((directory / "result.json").read_text(encoding="utf-8"))
+    snapshot_path = directory / "case.json"
+    snapshot = (
+        json.loads(snapshot_path.read_text(encoding="utf-8")) if snapshot_path.is_file() else None
+    )
+    if snapshot and (snapshot["id"] != case["id"] or snapshot["request"] != run["run"]["request"]):
+        raise ValueError("用例快照与运行记录不一致")
+    rows = snapshot["criteria"] if snapshot else case["criteria"]
+    if snapshot:
+        fields = ("id", "group", "requirement")
+        if [[row[key] for key in fields] for row in rows] != [
+            [row[key] for key in fields] for row in case["criteria"]
+        ]:
+            raise ValueError("归档判据与用例快照不一致")
     criteria = [
         {"id": row["id"], "requirement": row["requirement"]}
-        for row in case["criteria"]
+        for row in rows
         if row["group"] in VISUAL_GROUPS and row.get("visual", True)
     ]
     content = [{
@@ -61,7 +74,11 @@ def score_case(client: httpx.Client, config: ShotModelConfig, batch: dict, case:
         "text": json.dumps({"request": run["run"]["request"], "criteria": criteria},
                            ensure_ascii=False),
     }]
-    if before := case.get("beforeImage"):
+    before = (
+        ("before.png" if snapshot["initial"]["mode"] == "svg" else None)
+        if snapshot else case.get("beforeImage")
+    )
+    if before:
         content.extend([{"type": "text", "text": "起始画面"}, image_part(directory / before)])
     for index, shot in enumerate(run["board"]["shots"], start=1):
         if not shot["svg"]:

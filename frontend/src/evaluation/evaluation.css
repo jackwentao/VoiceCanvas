@@ -33,6 +33,9 @@ h3 { font-size: 15px }
 .brand-mark i:nth-child(3) { height: 17px }
 .brand-mark i:nth-child(4) { height: 8px }
 .topbar-title { color: var(--muted); padding-left: 18px; border-left: 1px solid var(--line) }
+.eval-nav { margin-left: auto; display: flex; flex-wrap: wrap; gap: 14px }
+.eval-nav a { color: var(--muted); text-decoration: none }
+.eval-nav a[aria-current="page"] { color: var(--accent); font-weight: 650 }
 .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 30px 0 22px }
 .heading p { margin-top: 8px; overflow-wrap: anywhere }
 .muted, .caption { color: var(--muted) }
@@ -111,6 +114,7 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflo
   .shell { width: calc(100% - 28px) }
   .topbar-inner { gap: 10px; min-height: 54px }
   .topbar-title { padding-left: 10px }
+  .eval-nav { gap: 8px; font-size: 12px }
   h1 { font-size: 25px }
   .heading { padding-top: 20px }
   .selectors { width: 100% }

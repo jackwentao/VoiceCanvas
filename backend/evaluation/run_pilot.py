@@ -1,4 +1,4 @@
-"""使用生产 Agent 服务运行两个固定用例，记录快照、工具和产物。"""
+"""从用例库运行生产 Agent，记录用例快照、工具和产物。"""
 
 import argparse
 import json
@@ -20,14 +20,16 @@ def write_json(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def run_case(service, source, case, out):
-    historical = json.loads(source.read_text(encoding="utf-8"))
-    board = service.boards.create(case)
-    if case == "VC-02":
-        svg = (source.parent / "before.svg").read_text(encoding="utf-8")
-        board = service.boards.import_svg(board.id, board.version, "递接热咖啡", svg)
-        member = historical["board"]["shots"][0]
-        fields = {key: member[key] for key in ("title", "description", "camera", "durationSeconds")}
+def run_case(service, case, out):
+    write_json(out / "case.json", case)
+    board = service.boards.create(case["id"])
+    initial_case = case["initial"]
+    if initial_case["mode"] == "svg":
+        svg = initial_case["svg"]
+        board = service.boards.import_svg(board.id, board.version, initial_case["title"], svg)
+        fields = {
+            key: initial_case[key] for key in ("title", "description", "camera", "durationSeconds")
+        }
         board = service.boards.describe(
             board.id, board.version, entries=[fields], target_id=board.active_id
         )
@@ -37,7 +39,7 @@ def run_case(service, source, case, out):
     write_json(out / "initial.json", initial)
     started_at = datetime.now(UTC)
     started = perf_counter()
-    run = service.start(board.id, board.version, historical["run"]["request"], background=False)
+    run = service.start(board.id, board.version, case["request"], background=False)
     wall = round(perf_counter() - started, 3)
     snapshot = present_storyboard(service.boards, service.boards.get(board.id))
     first_save = [
@@ -66,16 +68,32 @@ def run_case(service, source, case, out):
                 (out / f"{stem}.png").write_bytes(service.visuals.renderer.render(shot["svg"]))
             except ShotModelError as error:
                 write_json(out / f"{stem}-render-error.json", {"error": str(error)})
-    print(f"{case} {run.status} {wall:.3f}s, {len(run.steps)} tools", flush=True)
+    print(f"{case['id']} {run.status} {wall:.3f}s, {len(run.steps)} tools", flush=True)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--env-file", type=Path, help="现有模型配置文件，可选")
+    parser.add_argument("--case", action="append", help="只运行指定的启用用例，可重复")
     args = parser.parse_args()
     if args.env_file:
         load_dotenv(args.env_file)
+    library = Path(os.getenv(
+        "VOICECANVAS_EVALUATION_CASE_DIR", str(Path(__file__).resolve().parent / "cases")
+    ))
+    selected = set(args.case or [])
+    cases = []
+    for file in sorted(library.glob("VC-*.json")):
+        case = json.loads(file.read_text(encoding="utf-8"))
+        if case["status"] == "active" and (not selected or file.stem in selected):
+            if case["id"] != file.stem:
+                parser.error(f"用例文件名与 ID 不一致：{file.name}")
+            cases.append(case)
+    if missing := selected - {case["id"] for case in cases}:
+        parser.error("以下用例不存在或已归档：" + ", ".join(sorted(missing)))
+    if not cases:
+        parser.error("用例库没有启用的用例")
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
     os.environ["VOICECANVAS_SHOT_DB_PATH"] = str(out / "pilot.sqlite3")
@@ -90,14 +108,10 @@ def main():
         "maxTokens": config.max_tokens, "timeoutSeconds": config.timeout_seconds,
         "localAddress": config.local_address,
     })
-    experiments = Path(__file__).resolve().parents[2] / "docs" / "experiments"
-    for case, source in (
-        ("VC-01", experiments / "storyboard-agent-20261117/api-run.json"),
-        ("VC-02", experiments / "shot-visual-tools-20261117/agent-run.json"),
-    ):
-        case_out = out / case
+    for case in cases:
+        case_out = out / case["id"]
         case_out.mkdir()
-        run_case(service, source, case, case_out)
+        run_case(service, case, case_out)
 
 
 if __name__ == "__main__":

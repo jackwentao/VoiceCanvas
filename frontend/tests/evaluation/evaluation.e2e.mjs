@@ -70,6 +70,37 @@ try {
   await page.goto(`${ui}/evaluation.html?case=VC-01&compare=${baselineId}`);
   await page.getByRole("heading", { name: "与「对照测试批次」对照" }).waitFor();
   assert.match(await page.locator("#case-detail table").innerText(), /V1/);
+  await page.getByRole("link", { name: "用例管理" }).click();
+  await page.getByRole("heading", { name: "编辑用例" }).waitFor();
+  assert.equal(await page.getByLabel("用例标题").inputValue(), "雨天咖啡");
+  await page.getByRole("button", { name: /VC-02/ }).click();
+  await page.locator("#initial-svg").waitFor();
+  assert.match(await page.locator("#initial-svg").inputValue(), /^<svg/);
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
+  if (process.env.VOICECANVAS_E2E_MUTATE_CASES === "1") {
+    await page.getByRole("button", { name: "新建用例" }).click();
+    await page.getByLabel("用例标题").fill("浏览器保存验收");
+    await page.getByLabel("任务类型").fill("结构");
+    await page.getByLabel("用户需求").fill("生成三镜短片");
+    await page.getByLabel("验收条件").fill("保存独立画面");
+    await page.getByRole("button", { name: "保存用例" }).click();
+    await page.getByText(/已保存 VC-\d+ · r1/).waitFor();
+    const id = (await page.locator("#case-revision").textContent()).split(" ")[0];
+    await page.getByLabel("用户需求").fill("生成四镜短片");
+    await page.getByRole("button", { name: "保存用例" }).click();
+    await page.getByText(/已保存 VC-\d+ · r2/).waitFor();
+    await page.reload();
+    await page.getByRole("button", { name: new RegExp(id) }).click();
+    await page.getByText(`${id} · r2`, { exact: true }).waitFor();
+    assert.equal(await page.getByLabel("用户需求").inputValue(), "生成四镜短片");
+    await page.getByRole("button", { name: "归档用例" }).click();
+    await page.getByText(/已保存 VC-\d+ · r3/).waitFor();
+    assert.equal(await page.getByLabel("用例状态").inputValue(), "archived");
+    await page.getByRole("button", { name: "恢复用例" }).click();
+    await page.getByText(/已保存 VC-\d+ · r4/).waitFor();
+    assert.equal(await page.getByLabel("用例状态").inputValue(), "active");
+  }
   assert.deepEqual(errors, []);
   console.log("评测台浏览器验证通过。");
 } finally {

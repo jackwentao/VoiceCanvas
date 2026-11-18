@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>用例管理 · VoiceCanvas</title>
+  <link rel="stylesheet" href="./evaluation.css">
+  <link rel="stylesheet" href="./cases.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="./">VoiceCanvas</a>
+      <span class="topbar-title">评测台</span>
+      <nav class="eval-nav" aria-label="评测台"><a href="./">运行结果</a><a href="./cases.html" aria-current="page">用例管理</a></nav>
+    </div>
+  </header>
+  <main class="shell">
+    <div class="heading">
+      <h1>用例管理</h1>
+      <button class="action primary" id="new-case" disabled>＋ 新建用例</button>
+    </div>
+    <p id="library-status" class="caption" role="status">正在加载用例…</p>
+    <div class="layout case-management">
+      <aside class="cases">
+        <div class="section-title"><h2>测试用例</h2>
+          <select id="library-filter" aria-label="用例状态">
+            <option value="active">启用中</option><option value="archived">已归档</option><option value="all">全部</option>
+          </select>
+        </div>
+        <div id="library-list"></div>
+      </aside>
+      <form id="case-editor" class="detail" hidden>
+        <div class="section-title">
+          <div><p id="case-revision" class="caption"></p><h2 id="editor-title"></h2></div>
+          <button id="case-archive" class="action" type="button" hidden></button>
+        </div>
+        <fieldset id="editor-fields">
+          <div class="case-fields">
+            <label>用例标题<input id="case-title" required maxlength="100"></label>
+            <label>任务类型<input id="case-kind" required maxlength="40" placeholder="例如局部改画"></label>
+          </div>
+          <label>用户需求<textarea id="case-request" rows="5" required maxlength="8000"></textarea></label>
+          <label>初始状态<select id="initial-mode"><option value="blank">空白分镜</option><option value="svg">已有 SVG 镜头</option></select></label>
+          <div id="svg-initial" hidden>
+            <div class="case-fields">
+              <label>镜头标题<input id="initial-title" maxlength="100"></label>
+              <label>景别<input id="initial-camera" maxlength="200"></label>
+              <label>时长（秒）<input id="initial-duration" type="number" min="0.01" max="180" step="any"></label>
+            </div>
+            <label>拍摄说明<textarea id="initial-description" rows="2" maxlength="2000"></textarea></label>
+            <label>初始 SVG<textarea id="initial-svg" rows="4" maxlength="1000000"></textarea></label>
+            <label>从文件载入<input id="initial-file" type="file" accept=".svg,image/svg+xml"></label>
+          </div>
+          <div class="section-title"><h3>验收判据</h3><button class="action" type="button" id="add-criterion">＋ 添加判据</button></div>
+          <div id="criteria-rows"></div>
+          <label>必要操作（每行一条）<textarea id="case-operations" rows="4"></textarea></label>
+        </fieldset>
+        <footer class="editor-actions">
+          <button class="action primary" id="save-case" type="submit">保存用例</button>
+          <button class="action" id="reset-case" type="button">重新加载</button>
+          <p id="editor-feedback" class="caption" role="status"></p>
+        </footer>
+      </form>
+    </div>
+  </main>
+  <script type="module" src="./cases.js"></script>
+</body>
+</html>

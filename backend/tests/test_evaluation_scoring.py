@@ -53,3 +53,18 @@ def test_visual_scoring_keeps_deterministic_checks_out_of_model(tmp_path, monkey
         else:
             with pytest.raises(ValueError, match="额外判据"):
                 score_case(client, config, batch, case, tmp_path)
+
+
+def test_visual_scoring_rejects_changed_frozen_criteria(tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
+    from evaluation.score_visuals import score_case
+
+    run = {"run": {"id": "run_same", "request": "画一个人"}}
+    criteria = [{"id": "V1", "group": "画面", "requirement": "画中有人"}]
+    snapshot = {"id": "VC-01", "request": "画一个人", "criteria": criteria}
+    case = {"id": "VC-01", "criteria": [{**criteria[0], "requirement": "画中有三个人"}]}
+    (tmp_path / "result.json").write_text(json.dumps(run), encoding="utf-8")
+    (tmp_path / "case.json").write_text(json.dumps(snapshot), encoding="utf-8")
+    config = ShotModelConfig("https://example.test", "deepseek/deepseek-v4.1-flash")
+    with pytest.raises(ValueError, match="归档判据与用例快照不一致"):
+        score_case(None, config, {"rubricVersion": "v1"}, case, tmp_path)

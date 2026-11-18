@@ -67,8 +67,7 @@ def test_evaluation_pilot_keeps_failed_run_and_initial_snapshot(setup, tmp_path,
     from evaluation.run_pilot import run_case
 
     boards, shots, _, runs = setup
-    source = tmp_path / "request.json"
-    source.write_text(json.dumps({"run": {"request": "新建分镜"}}), encoding="utf-8")
+    case = {"id": "VC-01", "revision": 2, "initial": {"mode": "blank"}, "request": "新建分镜"}
     out = tmp_path / "evaluation"
     out.mkdir()
 
@@ -76,7 +75,8 @@ def test_evaluation_pilot_keeps_failed_run_and_initial_snapshot(setup, tmp_path,
         raise ShotModelError("模型服务暂不可用")
 
     service = StoryboardAgentService(boards, shots, Decisions(unavailable), runs)
-    run_case(service, source, "VC-01", out)
+    run_case(service, case, out)
+    assert json.loads((out / "case.json").read_text(encoding="utf-8")) == case
     initial = json.loads((out / "initial.json").read_text(encoding="utf-8"))
     result = json.loads((out / "result.json").read_text(encoding="utf-8"))
     assert result["board"] == initial
