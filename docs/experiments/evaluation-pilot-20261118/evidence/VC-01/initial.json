@@ -1,0 +1,31 @@
+{
+  "id": "board_13177c34b46142a3",
+  "version": 0,
+  "title": "VC-01",
+  "context": "",
+  "activeId": "shot_925ba1d79db9449a",
+  "canUndo": false,
+  "canRedo": false,
+  "shots": [
+    {
+      "id": "shot_925ba1d79db9449a",
+      "title": "镜头 1",
+      "description": "",
+      "durationSeconds": null,
+      "camera": "",
+      "svg": null,
+      "version": 0
+    }
+  ],
+  "activeShot": {
+    "id": "shot_925ba1d79db9449a",
+    "title": "镜头 1",
+    "version": 0,
+    "svg": null,
+    "texts": [],
+    "cursor": -1,
+    "canUndo": false,
+    "canRedo": false,
+    "revisions": []
+  }
+}

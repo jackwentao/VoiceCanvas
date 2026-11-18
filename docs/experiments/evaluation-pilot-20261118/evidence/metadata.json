@@ -1,0 +1,9 @@
+{
+  "commit": "ce054cc08182706528be0a187a58db7cbdcf6d9b",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "endpointHost": "api.commandcode.ai",
+  "reasoningEffort": "off",
+  "drawingSkill": "svg-illustration",
+  "maxTokens": 32768,
+  "timeoutSeconds": 300.0
+}

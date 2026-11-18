@@ -2,6 +2,7 @@
 
 import json
 import threading
+from pathlib import Path
 
 import httpx
 import pytest
@@ -59,6 +60,31 @@ def setup(tmp_path):
     shots = ShotService(SQLiteShotRepository(path), pictures)
     runs = SQLiteAgentRunRepository(path)
     return boards, shots, pictures, runs
+
+
+def test_evaluation_pilot_keeps_failed_run_and_initial_snapshot(setup, tmp_path, monkeypatch):
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
+    from evaluation.run_pilot import run_case
+
+    boards, shots, _, runs = setup
+    source = tmp_path / "request.json"
+    source.write_text(json.dumps({"run": {"request": "新建分镜"}}), encoding="utf-8")
+    out = tmp_path / "evaluation"
+    out.mkdir()
+
+    def unavailable(index, messages):
+        raise ShotModelError("模型服务暂不可用")
+
+    service = StoryboardAgentService(boards, shots, Decisions(unavailable), runs)
+    run_case(service, source, "VC-01", out)
+    initial = json.loads((out / "initial.json").read_text(encoding="utf-8"))
+    result = json.loads((out / "result.json").read_text(encoding="utf-8"))
+    assert result["board"] == initial
+    assert result["run"]["request"] == "新建分镜"
+    assert result["run"]["status"] == "failed"
+    assert result["run"]["steps"] == []
+    assert result["timing"]["firstSaveSeconds"] is None
+    assert result["timing"]["wallSeconds"] >= 0
 
 
 def test_complete_brief_reuses_blank_saves_metadata_parallel_pictures_and_verifies(setup):
