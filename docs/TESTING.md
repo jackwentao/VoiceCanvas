@@ -28,7 +28,7 @@ npm test
 | 范围 | 命令 |
 | --- | --- |
 | SVG、修改协议、历史与冲突 | `python -m pytest tests/test_single_shot.py -q` |
-| 分镜结构与自主工具调用 | `python -m pytest tests/test_storyboards.py tests/test_storyboard_agent.py -q` |
+| 分镜结构、SVG 导入与自主工具调用 | `python -m pytest tests/test_storyboards.py tests/test_storyboard_agent.py -q` |
 | 直接改字与真实文字样本回放 | `python -m pytest tests/test_shot_text_edit.py tests/test_storyboard_text_replay.py -q` |
 | 真实图片协议、预览缓存、版本与评审预算 | `python -m pytest tests/test_shot_visual_tools.py -q` |
 | 内置作画知识及首页画廊 | `python -m pytest tests/test_drawing_skills.py tests/test_showcase_api.py -q` |
@@ -69,7 +69,7 @@ npm run test:workspace-browser
 
 将浏览器路径改为本机已安装位置；省略时使用 Playwright 已有浏览器。测试 API 默认8015、UI 默认4178，可用 `VOICECANVAS_E2E_API_URL` 与 `VOICECANVAS_E2E_UI_URL` 覆盖。8015只供测试，正常产品应使用8000。
 
-脚本覆盖首页创建、项目切换与草稿隔离、列表读取失败、重命名重试、改字草稿保护、模型不可用时用按钮删除和撤销、语音转写模拟、失效链接恢复、PNG 下载、390px 布局和示例入口。真实模型的工具选择和视觉效果使用下列在线验收。
+脚本覆盖首页创建、项目切换与草稿隔离、列表读取失败、重命名重试、宽窄屏改字草稿及预览布局、模型不可用时用按钮删除和撤销、语音转写模拟、失效链接恢复、PNG 下载、SVG 导出后重新导入并编辑和示例入口。真实模型的工具选择和视觉效果使用下列在线验收。
 
 ## 真实模型与现场验收
 

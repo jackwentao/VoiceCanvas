@@ -10,6 +10,7 @@ const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const baseUrl = (window.VOICECANVAS_API_BASE_URL || params.get("apiBaseUrl") || "http://127.0.0.1:8000").replace(/\/+$/, "");
 const storageKey = `voicecanvas:last-board:${baseUrl}`;
+const maxSvgBytes = 1_000_000;
 document.body.classList.add("svg-workspace");
 document.querySelector(".brand").href = pageUrl("index.html", location.search);
 renderWorkspaceIcons();
@@ -212,7 +213,7 @@ function render() {
 }
 function fitCanvas() {
   const maxHeight = Math.max(160, $("canvasViewport").clientHeight - 125);
-  $("canvasStage").style.maxWidth = innerWidth > 640 ? `${Math.min(1200, maxHeight * 16 / 9)}px` : "100%";
+  $("canvasStage").style.setProperty("--fit-stage-width", innerWidth > 640 ? `${Math.min(1200, maxHeight * 16 / 9)}px` : "100%");
 }
 function errorMessage(error) { return error instanceof TypeError ? "连接失败，请检查服务并刷新确认结果后再试。" : error?.message || String(error); }
 function showError(error) { failure = errorMessage(error); render(); }
@@ -325,6 +326,27 @@ document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEve
   if (!isBusy()) button.closest("dialog").close();
 }));
 $("exportButton").addEventListener("click", () => { $("exportMenu").hidden = !$("exportMenu").hidden; $("exportButton").setAttribute("aria-expanded", String(!$("exportMenu").hidden)); });
+$("importSvgButton").addEventListener("click", () => {
+  if (textEditor.hasDraft) {
+    showError("请先应用改字或舍弃草稿，再导入镜头。");
+    return;
+  }
+  $("importSvgFile").click();
+});
+$("importSvgFile").addEventListener("change", event => {
+  const file = event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  clickAction(() => act(async () => {
+    if (!/\.svg$/i.test(file.name) || !file.size || file.size > maxSvgBytes) {
+      throw new Error("请选择 1 MB 以内的 SVG 文件。");
+    }
+    const title = [...file.name.slice(0, -4).trim()].slice(0, 100).join("") || "导入镜头";
+    await boards.importSvg(title, await file.text());
+    toast("已导入 SVG 镜头");
+    return "SVG 镜头已导入，可继续编辑。";
+  }));
+});
 $("exportMenu").addEventListener("click", event => { const button = event.target.closest("[data-export]"); if (button) clickAction(async () => { await exportShot(button.dataset.export); $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); toast("已导出当前镜头"); }); });
 document.addEventListener("click", event => { if (!event.target.closest(".export-wrap")) { $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); } });
 $("toggleAssistant").addEventListener("click", () => { assistantOpen = !assistantOpen; render(); });

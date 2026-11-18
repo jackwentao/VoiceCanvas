@@ -11,6 +11,7 @@ from voicecanvas.api.shots import ShotChange, present_shot
 from voicecanvas.application.shot_service import ShotConflict, ShotNotFound
 from voicecanvas.application.storyboard_service import StoryboardService
 from voicecanvas.domain.storyboard import Storyboard
+from voicecanvas.domain.svg_document import MAX_SVG_BYTES
 
 
 class CreateStoryboard(BaseModel):
@@ -28,6 +29,13 @@ class StoryboardChange(ShotChange):
     position: int | None = Field(default=None, ge=1, le=40)
     count: int = Field(default=1, ge=1, le=12)
     confirmed: bool = False
+
+
+class ImportStoryboardSvg(ShotChange):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(min_length=1, max_length=100)
+    svg: str = Field(min_length=1, max_length=MAX_SVG_BYTES)
 
 
 def present_storyboard(service: StoryboardService, board: Storyboard) -> dict:
@@ -112,5 +120,11 @@ def create_storyboard_router(factory: Callable[[], StoryboardService]) -> APIRou
                 )
             )
         )
+
+    @router.post("/{board_id}/import-svg", status_code=201)
+    def import_svg(board_id: str, request: ImportStoryboardSvg) -> dict:
+        return execute(lambda: present(
+            get_service().import_svg(board_id, request.expected_version, request.title, request.svg)
+        ))
 
     return router

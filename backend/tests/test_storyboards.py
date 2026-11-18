@@ -66,6 +66,46 @@ def test_lifecycle_order_rename_restore_and_independent_picture_history(services
     assert reloaded == board
 
 
+def test_svg_import_roundtrip_preserves_existing_shots_and_validates_before_write(services):
+    boards, shots, generator = services
+    app = FastAPI()
+    app.include_router(create_storyboard_router(lambda: boards))
+    app.include_router(create_shot_router(lambda: shots))
+    board = boards.create("导入分镜")
+    path = f"/api/storyboards/{board.id}"
+    with TestClient(app) as client:
+        rejected = client.post(f"{path}/import-svg", json={
+            "expectedVersion": 0, "title": "损坏的图", "svg": "<svg />",
+        })
+        assert rejected.status_code == 422
+        assert boards.get(board.id) == board
+        first = client.post(f"{path}/import-svg", json={
+            "expectedVersion": 0, "title": "雨夜", "svg": SVG,
+        })
+        assert first.status_code == 201, first.text
+        imported = first.json()
+        assert len(imported["shots"]) == 1
+        first_id = imported["activeId"]
+        assert first_id != board.active_id
+        assert imported["activeShot"]["texts"][0]["text"] == "雨夜"
+        exported = client.get(f"/api/shots/{first_id}/export.svg").text
+        second = client.post(f"{path}/import-svg", json={
+            "expectedVersion": 1, "title": "第二镜", "svg": exported,
+        })
+        assert second.status_code == 201
+        assert len(second.json()["shots"]) == 2
+        assert second.json()["activeShot"]["svg"] == exported
+        stale = client.post(f"{path}/import-svg", json={
+            "expectedVersion": 1, "title": "冲突", "svg": SVG,
+        })
+        assert stale.status_code == 409
+        assert len(client.get(path).json()["shots"]) == 2
+        assert boards.change(board.id, 2, "undo").active_id == first_id
+        assert boards.change(board.id, 3, "undo").active_id == board.active_id
+        assert not shots.get(board.active_id).svg
+        assert not generator.calls
+
+
 def test_duplicate_snapshots_current_picture_and_does_not_share_history(services):
     boards, shots, _ = services
     board = boards.create("故事")

@@ -17,6 +17,8 @@
       <div class="project-heading"><button id="renameButton" class="project-name" title="重命名项目" data-requires-project>连接中…</button><span class="save-status" id="saveStatus"><i></i>正在连接</span></div>
       <div class="header-actions">
         <button class="button quiet" id="toggleAssistant" aria-label="创作助手" aria-expanded="true" aria-controls="assistantPanel"><span data-icon="panel"></span><span class="wide-label">助手</span></button>
+        <button class="button quiet small" id="importSvgButton" type="button" aria-label="导入 SVG 镜头" title="导入 SVG 镜头" data-requires-project><span data-icon="folder"></span><span class="wide-label">导入</span></button>
+        <input id="importSvgFile" type="file" accept=".svg,image/svg+xml" hidden />
         <div class="export-wrap"><button class="button primary small" id="exportButton" aria-expanded="false" aria-controls="exportMenu" data-requires-project><span data-icon="download"></span>导出<span data-icon="chevron"></span></button>
           <div id="exportMenu" class="popover" hidden><button data-export="png"><span data-icon="image"></span>当前镜头 · PNG</button><button data-export="svg"><span data-icon="file"></span>当前镜头 · SVG</button></div>
         </div>
@@ -39,6 +41,7 @@
       <section class="editor" aria-label="分镜创作区">
         <div class="editor-toolbar"><div class="scene-breadcrumb"><span data-icon="layout"></span><span id="sceneName">创作空间</span><span class="dimension" id="canvasSize"></span></div><div class="editor-actions"><button class="icon-button" id="undoButton" title="撤销 · Ctrl+Z" aria-label="撤销" disabled><span data-icon="undo"></span></button><button class="icon-button" id="redoButton" title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled><span data-icon="redo"></span></button></div></div>
         <div class="canvas-viewport" id="canvasViewport">
+          <div class="shot-preview">
           <div class="scene-caption"><span class="eyebrow" id="sceneEyebrow">YOUR NEXT STORY</span><span id="sceneDescription">让灵感，先有一个轮廓。</span></div>
           <div class="canvas-stage" id="canvasStage"><div id="canvasSurface" class="canvas-surface" aria-label="当前镜头画布"></div>
             <div id="emptyCanvas" class="empty-canvas">
@@ -55,8 +58,10 @@
           <div class="svg-shot-tools"><button class="button quiet small" id="renameSvgScene">镜头改名</button><button class="button quiet small" id="moveSvgSceneUp">前移</button><button class="button quiet small" id="moveSvgSceneDown">后移</button><button class="button quiet small" id="editTextToggle" disabled>编辑文字</button></div>
           <details id="shotBrief" class="shot-brief" hidden><summary>拍摄说明</summary><p id="shotBriefText"></p></details>
           <div class="canvas-footer"><span id="selectionLabel">自由绘制 · 可继续改画或编辑文字</span><button class="button quiet small" id="fitButton"><span data-icon="maximize"></span>适应画布</button></div>
-      <section id="textEditor" class="text-editor" aria-label="直接编辑镜头文字" hidden>
-        <div class="text-editor-heading"><div><h3>编辑画面文字</h3><p>改字即时预览，应用后可撤销。</p></div><button id="closeTextEditor" type="button">关闭</button></div>
+          </div>
+      <section id="textEditor" class="text-editor" aria-labelledby="textEditorTitle" hidden>
+        <div class="text-editor-heading"><h3 id="textEditorTitle">编辑画面文字</h3><button id="closeTextEditor" type="button">关闭</button></div>
+        <div class="text-editor-fields">
         <label for="textTarget">选择文字</label>
         <select id="textTarget"></select>
         <label for="textContent">文字内容</label>
@@ -64,6 +69,7 @@
         <div class="text-layout-controls"><label for="textFontSize">字号<input id="textFontSize" type="number" min="8" max="160" step="0.5" /></label><label for="textWrapWidth">换行宽度<input id="textWrapWidth" type="number" min="20" max="1280" step="1" /></label><button type="button" id="recommendedTextSize">按预览放大字号</button></div>
         <p id="textReadability" class="text-edit-feedback"></p>
         <p id="textEditFeedback" class="text-edit-feedback" role="status" aria-live="polite"></p>
+        </div>
         <div class="text-edit-actions"><button type="button" id="resetTextDraft">还原预览</button><button type="button" id="applyTextEdit" disabled>应用改字</button></div>
       </section>
         </div>

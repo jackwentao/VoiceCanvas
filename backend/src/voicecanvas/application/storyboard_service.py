@@ -7,6 +7,7 @@ from uuid import uuid4
 from voicecanvas.application.shot_service import ShotConflict, ShotNotFound
 from voicecanvas.domain.shot import ShotDocument, ShotRevision
 from voicecanvas.domain.storyboard import Storyboard, StoryboardShot, StoryboardState
+from voicecanvas.domain.svg_document import validate_svg
 
 
 class StoryboardRepository(Protocol):
@@ -60,6 +61,32 @@ class StoryboardService:
         if board.version != version:
             raise ShotConflict("分镜已在其他页面修改，已同步最新状态，请重新操作")
         return board
+
+    def import_svg(self, board_id: str, version: int, title: str, svg: str) -> Storyboard:
+        board = self.current(board_id, version)
+        state = board.state.model_copy(deep=True)
+        expected_shots = {}
+        if len(board.states) == 1 and len(state.shots) == 1 and not state.shots[0].description:
+            placeholder = self.repository.load_shots([board.active_id]).get(board.active_id)
+            if placeholder is not None and not placeholder.revisions:
+                state.shots.clear()
+                expected_shots[placeholder.id] = placeholder.version
+        if len(state.shots) >= 40:
+            raise ValueError("每个项目最多 40 个镜头")
+
+        shot = ShotDocument(
+            id=f"shot_{uuid4().hex[:16]}",
+            title=self._title(title),
+            revisions=[ShotRevision(
+                svg=validate_svg(svg),
+                instruction="导入 SVG",
+                createdAt=datetime.now(UTC).isoformat(),
+            )],
+            cursor=0,
+        )
+        state.shots.append(StoryboardShot(id=shot.id, title=shot.title))
+        state.active_id = shot.id
+        return self._save_structure(board, state, [shot], expected_shots)
 
     def describe(
         self,
@@ -224,13 +251,19 @@ class StoryboardService:
             raise ValueError("不支持的分镜操作")
         if state.shots == board.state.shots and state.title == board.state.title:
             return board
+        return self._save_structure(board, state, new_shots)
+
+    def _save_structure(
+        self, board: Storyboard, state: StoryboardState, new_shots: list[ShotDocument],
+        expected_shots: dict[str, int] | None = None,
+    ) -> Storyboard:
         states = [*board.states[: board.cursor + 1], state][-100:]
         changed = Storyboard(
             id=board.id,
-            version=version + 1,
+            version=board.version + 1,
             states=states,
             cursor=len(states) - 1,
             activeId=state.active_id,
         )
-        self.repository.save(changed, version, new_shots)
+        self.repository.save(changed, board.version, new_shots, expected_shots)
         return changed

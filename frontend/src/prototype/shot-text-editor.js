@@ -97,7 +97,8 @@ export class ShotTextEditor {
     await this.ready;
     if (this.$("textEditor").hidden) return;
     this.populate();
-    this.$("textTarget").focus();
+    const target = this.info ? "textContent" : "textTarget";
+    this.$(target).focus();
   }
 
   close() {

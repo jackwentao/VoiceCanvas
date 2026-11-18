@@ -13,7 +13,7 @@ async function testPrototypeHtml() {
   const app = await readFile(new URL("svg-workspace.js", root), "utf-8");
   const css = await readFile(new URL("workspace.css", root), "utf-8");
   for (const id of ["voiceButton", "voiceInput", "canvasSurface", "sceneList", "undoButton",
-    "redoButton", "clarificationCard", "exportButton", "textEditor", "retryButton"]) {
+    "redoButton", "clarificationCard", "exportButton", "importSvgButton", "textEditor", "retryButton"]) {
     assert.ok(html.includes(`id="${id}"`), `工作台缺少入口 ${id}`);
   }
   assert.ok(html.includes('src="./svg-workspace.js"'));

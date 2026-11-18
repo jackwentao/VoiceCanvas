@@ -1,7 +1,7 @@
 // 需要现有 Playwright 和 Edge/Chromium；不安装依赖，不访问在线绘图模型。
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { mkdir } from "node:fs/promises";
+import { mkdir, readFile } from "node:fs/promises";
 
 const require = createRequire(process.env.VOICECANVAS_PLAYWRIGHT_PACKAGE || import.meta.url);
 const { chromium } = require("playwright");
@@ -90,8 +90,29 @@ try {
   await textTarget.selectOption(secondText);
   assert.equal(await textTarget.inputValue(), initialText);
   assert.equal(await page.locator("#textContent").inputValue(), "我到家了。");
-  await page.locator("#editTextToggle").click();
-  assert.equal(await page.locator("#textContent").inputValue(), "我到家了。");
+  for (const size of [{ width: 390, height: 844 }, { width: 1500, height: 1000 }]) {
+    await page.setViewportSize(size);
+    assert.equal(await page.locator("#textContent").inputValue(), "我到家了。");
+    await page.locator("#applyTextEdit").click({ trial: true });
+    const layout = await page.evaluate(() => {
+      const stage = document.querySelector("#canvasStage").getBoundingClientRect();
+      const panel = document.querySelector("#textEditor").getBoundingClientRect();
+      const input = document.querySelector("#textContent").getBoundingClientRect();
+      const saveButton = document.querySelector("#applyTextEdit");
+      const save = saveButton.getBoundingClientRect();
+      return {
+        separated: stage.right <= panel.left + 1 || stage.bottom <= panel.top + 1,
+        previewVisible: stage.width > 120 && stage.height > 60,
+        inputBeforeSave: input.top >= panel.top && input.bottom <= save.top,
+      };
+    });
+    if (out) {
+      await mkdir(out, { recursive: true });
+      await page.screenshot({ path: `${out}/text-draft-${size.width}.png` });
+    }
+    assert.ok(layout.separated && layout.previewVisible && layout.inputBeforeSave,
+      `改字草稿、预览和应用按钮应在 ${size.width}px 下同时排列：${JSON.stringify(layout)}`);
+  }
   await page.locator("#textFontSize").fill("1");
   assert.equal(await page.locator("#applyTextEdit").isDisabled(), true);
   assert.equal(await page.locator("#exportButton").isDisabled(), true);
@@ -131,6 +152,24 @@ try {
   await page.locator("#exportButton").click();
   const downloaded = page.waitForEvent("download"); await page.locator('[data-export="png"]').click();
   const download = await downloaded; assert.equal(await download.failure(), null); assert.match(download.suggestedFilename(), /\.png$/);
+  await page.locator("#exportButton").click();
+  const svgDownload = page.waitForEvent("download");
+  await page.locator('[data-export="svg"]').click();
+  const svg = await svgDownload;
+  const chooser = page.waitForEvent("filechooser");
+  await page.locator("#importSvgButton").click();
+  await (await chooser).setFiles({
+    name: "导回的镜头.svg", mimeType: "image/svg+xml", buffer: await readFile(await svg.path()),
+  });
+  await count(5);
+  await waitIdle();
+  assert.equal(await page.locator("#sceneName").textContent(), "导回的镜头");
+  await page.locator("#editTextToggle").click();
+  assert.ok(await page.locator("#textContent").inputValue());
+  await page.locator("#closeTextEditor").click();
+  await page.locator("#undoStructure").click();
+  await count(4);
+  await waitIdle();
   if (out) { await mkdir(out, { recursive: true }); await page.screenshot({ path: `${out}/desktop.png`, fullPage: true }); }
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
@@ -167,5 +206,5 @@ try {
   if (out) await page.screenshot({ path: `${out}/mobile-empty.png`, fullPage: true });
 
   assert.deepEqual(errors, []);
-  console.log("工作台 E2E 通过：首页、项目切换、失败提示、分镜管理、改字草稿、语音、下载、失效链接与窄屏示例。");
+  console.log("工作台 E2E 通过：首页、项目切换、分镜管理、宽窄屏改字、语音、PNG 下载、SVG 导出与导入、失效链接。");
 } finally { await browser.close(); }

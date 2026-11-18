@@ -95,6 +95,17 @@ export class StoryboardClient {
 
   manage(fields) { return this.run(() => this.manageRequest(fields)); }
 
+  importSvg(title, svg) {
+    return this.run(async () => {
+      const board = await this.request(`/${this.board.id}/import-svg`, {
+        expectedVersion: this.board.version, title, svg,
+      });
+      this.pendingDelete = null;
+      this.accept(board);
+      return board;
+    });
+  }
+
   async refresh() {
     if (!this.board) return;
     const reply = await this.request(`/${this.board.id}/agent/run`);

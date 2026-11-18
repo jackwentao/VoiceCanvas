@@ -12,10 +12,13 @@
 | `GET /api/storyboards` | 最近50个项目的 ID、标题与镜头数 |
 | `GET /api/storyboards/{id}` | 顺序、共用设定、每镜说明/景别/时长/当前 SVG、结构版本、当前画面完整状态 |
 | `POST /api/storyboards/{id}/manage` | `{expectedVersion, action, targetId?, title?, position?, count?, confirmed?}` |
+| `POST /api/storyboards/{id}/import-svg` | `{expectedVersion, title, svg}`；校验自包含 SVG 后保存并返回分镜，201 |
 
 管理 action 为 `add/switch/rename/rename_project/move/duplicate/delete/undo/redo`。位置从1开始；省略目标使用当前镜头。每项目1–40镜，单次新增1–12镜。复制只复制当前画面，副本建立独立历史。
 
 结构版本与画面版本分别检查。切换不消耗结构历史，但增加项目版本。删除仅移除引用，可通过结构撤销恢复；至少保留一镜。项目结构与新增画面同事务保存，条件更新失败不会留下半个新增镜头。
+
+导入沿用绘图 SVG 校验（1280×720、最大 1 MB），无需调用模型。导入记录在结构历史中，新增镜头拥有独立画面历史。
 
 ## 自主 Agent 任务
 
