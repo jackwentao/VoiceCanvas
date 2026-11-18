@@ -389,31 +389,6 @@ function hasCommandKeyword(text) {
   ].some((keyword) => text.includes(keyword));
 }
 
-export function resolveClarificationOption(answer, options) {
-  const normalizedAnswer = normalizeAnswer(answer);
-  if (!normalizedAnswer || !Array.isArray(options) || options.length === 0) return null;
-
-  const direct = options.find((option) => {
-    const values = [option.id, option.value, option.label, option.elementId]
-      .filter(Boolean)
-      .map(normalizeAnswer);
-    return values.some((value) => normalizedAnswer.includes(value) || value.includes(normalizedAnswer));
-  });
-  if (direct) return direct;
-
-  const ordinal = ordinalIndexFromAnswer(normalizedAnswer);
-  if (ordinal !== null && options[ordinal]) return options[ordinal];
-
-  if (normalizedAnswer.includes("左")) return extremeOption(options, "x", "min");
-  if (normalizedAnswer.includes("右")) return extremeOption(options, "x", "max");
-  if (normalizedAnswer.includes("上")) return extremeOption(options, "y", "min");
-  if (normalizedAnswer.includes("下")) return extremeOption(options, "y", "max");
-  if (normalizedAnswer.includes("大")) return areaOption(options, "max");
-  if (normalizedAnswer.includes("小")) return areaOption(options, "min");
-
-  return null;
-}
-
 function normalizeAnswer(value) {
   return String(value || "")
     .trim()
@@ -421,43 +396,4 @@ function normalizeAnswer(value) {
     .replaceAll("，", "")
     .replaceAll("。", "")
     .toLowerCase();
-}
-
-function ordinalIndexFromAnswer(answer) {
-  const pairs = [
-    [0, ["第一个", "第一", "一个", "1", "一号"]],
-    [1, ["第二个", "第二", "2", "二号"]],
-    [2, ["第三个", "第三", "3", "三号"]],
-    [3, ["第四个", "第四", "4", "四号"]]
-  ];
-  const matched = pairs.find(([, words]) => words.some((word) => answer.includes(word)));
-  return matched ? matched[0] : null;
-}
-
-function extremeOption(options, axis, mode) {
-  const withBounds = options.filter((option) => option.bounds && Number.isFinite(option.bounds[axis]));
-  if (!withBounds.length) return null;
-  return withBounds.reduce((best, option) => {
-    if (!best) return option;
-    return mode === "min"
-      ? option.bounds[axis] < best.bounds[axis]
-        ? option
-        : best
-      : option.bounds[axis] > best.bounds[axis]
-        ? option
-        : best;
-  }, null);
-}
-
-function areaOption(options, mode) {
-  const withBounds = options.filter(
-    (option) => option.bounds && Number.isFinite(option.bounds.width) && Number.isFinite(option.bounds.height)
-  );
-  if (!withBounds.length) return null;
-  return withBounds.reduce((best, option) => {
-    if (!best) return option;
-    const area = option.bounds.width * option.bounds.height;
-    const bestArea = best.bounds.width * best.bounds.height;
-    return mode === "min" ? (area < bestArea ? option : best) : area > bestArea ? option : best;
-  }, null);
 }

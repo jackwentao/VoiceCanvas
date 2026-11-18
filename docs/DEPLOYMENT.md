@@ -39,7 +39,7 @@ VOICECANVAS_SHOT_REASONING_EFFORT=off
 
 | 变量 | 默认值与用途 |
 | --- | --- |
-| `VOICECANVAS_SHOT_LLM_BASE_URL`、`MODEL`、`API_KEY` | 优先使用镜头配置；未设置时回退到对应 `VOICECANVAS_LLM_*` |
+| `VOICECANVAS_SHOT_LLM_BASE_URL`、`VOICECANVAS_SHOT_LLM_MODEL`、`VOICECANVAS_SHOT_LLM_API_KEY` | 模型端点、模型标识和 API 密钥，创作前需要配置 |
 | `VOICECANVAS_SHOT_REASONING_EFFORT` | `off`，当前网关关闭思考的有效参数；`provider-default` 表示不发送该字段 |
 | `VOICECANVAS_SHOT_MAX_TOKENS` | 32768；绘图输出预算，允许1024–65536 |
 | `VOICECANVAS_SHOT_TIMEOUT_SECONDS` | 300秒；绘图超时，允许1–600 |
@@ -86,6 +86,5 @@ docker run --rm --name voicecanvas-backend -p 127.0.0.1:8000:8000 `
 | IPv4 TLS 中断 | 先独立确认 IPv6 连通，再尝试 `VOICECANVAS_SHOT_LOCAL_ADDRESS=::`；不关闭证书校验 |
 | 渲染浏览器未找到 | 指定有效的服务端浏览器路径，确认服务账号可启动；重新部署后再检查字体与图片 |
 | 任务中断 | 检查已经保存的镜头，再提交继续需求；刷新不会自动重放 |
-| 启动时检查 MinIO 素材失败 | 当前 SVG 工作台无需 MinIO；移除遗留 `VOICECANVAS_ASSET_PROVIDER=minio` 或设为 `local` |
 
-当前没有账号权限隔离及生产任务队列，本地演示默认绑定127.0.0.1。当前工作台不使用旧 Planner、长期记忆或素材桶；无需为了启动本产品配置它们，技术范围见[架构说明](ARCHITECTURE.md)。
+本地运行默认绑定 `127.0.0.1`。公开部署需要自行提供访问控制和任务运行环境。[架构说明](ARCHITECTURE.md)

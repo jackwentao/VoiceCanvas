@@ -82,7 +82,3 @@ flowchart TD
 `render_shot` 的真实 PNG 附在下一次 Agent 决策消息中；Base64 不写入任务数据库。`review_shot` 自带渲染与缓存，把 PNG、拍摄要求和检查重点发送给同一模型，不附 SVG 源码。评审最多列三个可观察偏差和不确定项，无自动重试。
 
 渲染、缓存读取和评审结束时核对版本，旧图不能作为当前图返回。只读预览 GET 不启动浏览器、不请求模型；前端把改画前记录标为历史。模型可能误判，静态图不能证明完整运动过程，真实失败样本见[视觉实测](experiments/shot-visual-tools-20261117/README.md)。
-
-## 仓库中的历史模块
-
-`graph/`、旧 CanvasElement/Planner、`/api/projects`、`/api/orchestrations`、长期记忆与 MinIO 素材模块仍保留源码和回归测试，但当前工作台不调用这些创作入口。它们不是当前产品功能清单，也不是启动自由 SVG Agent 的必备配置。本轮文档整理不删除业务代码。旧实现可通过 Git 历史和代码定位，当前 HTTP 全集可查看服务的 `/docs`。

@@ -239,7 +239,7 @@ def test_reasoning_effort_is_explicit_and_applies_to_draw_and_edit(effort):
 
 
 def test_reasoning_factory_defaults_to_fast_and_can_use_provider_default(tmp_path, monkeypatch):
-    monkeypatch.setattr("voicecanvas.infrastructure.settings.load_dotenv", lambda: None)
+    monkeypatch.setattr("voicecanvas.infrastructure.shot_factory.load_dotenv", lambda: None)
     monkeypatch.setenv("VOICECANVAS_SHOT_DB_PATH", str(tmp_path / "shots.sqlite3"))
     monkeypatch.delenv("VOICECANVAS_SHOT_REASONING_EFFORT", raising=False)
     assert create_shot_service().generator.config.reasoning_effort == "off"
@@ -375,7 +375,7 @@ def test_optional_local_address_reaches_transport_without_retry(monkeypatch):
 
 
 def test_factory_local_address_is_optional(tmp_path, monkeypatch):
-    monkeypatch.setattr("voicecanvas.infrastructure.settings.load_dotenv", lambda: None)
+    monkeypatch.setattr("voicecanvas.infrastructure.shot_factory.load_dotenv", lambda: None)
     monkeypatch.setenv("VOICECANVAS_SHOT_DB_PATH", str(tmp_path / "shots.sqlite3"))
     monkeypatch.delenv("VOICECANVAS_SHOT_LOCAL_ADDRESS", raising=False)
     assert create_shot_service().generator.config.local_address is None

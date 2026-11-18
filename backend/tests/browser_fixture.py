@@ -15,8 +15,6 @@ from voicecanvas.infrastructure.sqlite_shot_repository import SQLiteShotReposito
 # 可通过环境变量将临时数据库放在 D 盘；进程退出后由 TemporaryDirectory 清理。
 _data = TemporaryDirectory(prefix="voicecanvas-browser-", dir=os.getenv("VOICECANVAS_E2E_DATA_DIR"))
 os.environ["VOICECANVAS_SHOT_DB_PATH"] = str(Path(_data.name) / "shots.sqlite3")
-os.environ["VOICECANVAS_PROJECT_DB_PATH"] = str(Path(_data.name) / "projects.sqlite3")
-os.environ["VOICECANVAS_ASSET_PROVIDER"] = "local"
 
 
 class FixtureGenerator:

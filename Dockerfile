@@ -4,16 +4,16 @@ WORKDIR /app/backend
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app/backend/src \
-    VOICECANVAS_PROJECT_DB_PATH=/app/backend/data/voicecanvas.sqlite3
+    VOICECANVAS_SHOT_DB_PATH=/app/backend/data/svg-shots.sqlite3
 
-COPY backend/pyproject.toml backend/uv.lock ./
-RUN uv sync --frozen --no-dev --no-editable
+COPY backend/pyproject.toml backend/uv.lock backend/README.md ./
+RUN uv sync --frozen --no-dev --no-install-project
 
 COPY backend/src ./src
-COPY backend/scripts ./scripts
+RUN uv sync --frozen --no-dev --no-editable
 
 RUN mkdir -p /app/backend/data
 
 EXPOSE 8000
 
-CMD ["uv", "run", "--frozen", "--no-dev", "--no-editable", "uvicorn", "voicecanvas.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD [".venv/bin/uvicorn", "voicecanvas.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

@@ -21,7 +21,7 @@ uv run --frozen --no-editable uvicorn voicecanvas.api.main:app --host 127.0.0.1 
 | `src/voicecanvas/infrastructure/` | SQLite、配置及图片缓存 |
 | `tests/` | 离线回归与浏览器专用 fixture |
 
-`graph/`、旧 Planner/CanvasElement、长期记忆和 MinIO 模块仍在仓库，当前工作台不使用其创作入口。完整 HTTP 类型可访问 `/docs`；当前产品接口见[API 说明](../docs/API.md)。
+完整 HTTP 类型可访问 `/docs`。[API 说明](../docs/API.md)
 
 ```powershell
 uv run --frozen --no-editable pytest -q
