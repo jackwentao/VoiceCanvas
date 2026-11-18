@@ -16,6 +16,7 @@
       <a class="brand" href="./index.html" aria-label="返回手绘画廊首页"><svg class="brand-sketch" viewBox="0 0 42 42" aria-hidden="true"><path d="M6 16v11m7-18v25m8-29v32m8-25v19m7-13v8M3 39q18-3 36 0"/></svg><span>VoiceCanvas<span class="brand-dot">.</span></span><span class="brand-label">我的画桌</span></a>
       <div class="project-heading"><button id="renameButton" class="project-name" title="重命名项目" data-requires-project>连接中…</button><span class="save-status" id="saveStatus"><i></i>正在连接</span></div>
       <div class="header-actions">
+        <button class="button quiet small" id="drawingStyleButton" type="button" aria-label="默认画风" title="默认画风"><span data-icon="palette"></span><span class="wide-label">画风</span></button>
         <button class="button quiet" id="toggleAssistant" aria-label="创作助手" aria-expanded="true" aria-controls="assistantPanel"><span data-icon="panel"></span><span class="wide-label">助手</span></button>
         <button class="button quiet small" id="importSvgButton" type="button" aria-label="导入 SVG 镜头" title="导入 SVG 镜头" data-requires-project><span data-icon="folder"></span><span class="wide-label">导入</span></button>
         <input id="importSvgFile" type="file" accept=".svg,image/svg+xml" hidden />
@@ -99,6 +100,15 @@
       <input id="nameInput" maxlength="100" required placeholder="例如：雨天咖啡" />
       <p class="dialog-error" id="nameError" role="alert" hidden></p>
       <div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button id="nameSubmit" type="submit" class="button primary">确认</button></div>
+    </form>
+  </dialog>
+  <dialog id="drawingStyleDialog" class="dialog" aria-labelledby="drawingStyleTitle">
+    <form id="drawingStyleForm">
+      <div class="dialog-heading"><h2 id="drawingStyleTitle">默认画风</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div>
+      <label for="drawingStyleInput">在此浏览器的项目中沿用</label>
+      <textarea id="drawingStyleInput" maxlength="500" rows="3" placeholder="例如：暖色手绘，线条柔和，背景简洁"></textarea>
+      <p id="drawingStyleError" class="dialog-error" role="alert" hidden></p>
+      <div class="dialog-actions"><button id="clearDrawingStyle" class="button" type="button">清除默认</button><button class="button primary" type="submit">保存默认</button></div>
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" hidden></div>

@@ -70,7 +70,11 @@ class FinishTask(ToolArgs):
 
 TOOL_SPECS = {
     "get_storyboard": (ToolArgs, "读取实际镜头顺序、共用设定、每镜说明/时长和画面状态。"),
-    "set_context": (SetContext, "保存项目共用角色外观、服装、场景和画风；后续绘图自动携带。"),
+    "set_context": (
+        SetContext,
+        "保存项目共用角色外观、服装、场景。画风只有用户明确要求整个项目沿用时才保存，"
+        "个人默认和本次指定画风只可用于 draw_shot。",
+    ),
     "create_shots": (CreateShots, "按你自主决定的拆镜方案创建独立镜头；初始唯一空镜头会被复用。"),
     "describe_shot": (DescribeShot, "保存或修订指定镜头的拍摄说明、时长、景别，不重画。"),
     "manage_storyboard": (Manage, "按稳定镜头 id 新增、切换、重命名、移动、复制或撤销结构。"),

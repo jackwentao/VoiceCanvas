@@ -4,6 +4,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+MAX_DRAWING_STYLE_LENGTH = 500
+
 
 class AgentToolCall(BaseModel):
     id: str
@@ -26,6 +28,9 @@ class StoryboardAgentRun(BaseModel):
     id: str
     board_id: str = Field(alias="boardId")
     request: str
+    default_drawing_style: str = Field(
+        default="", alias="defaultDrawingStyle", max_length=MAX_DRAWING_STYLE_LENGTH
+    )
     status: Literal["running", "completed", "needs_input", "failed", "interrupted"] = "running"
     summary: str = "正在理解需求"
     steps: list[AgentStep] = Field(default_factory=list)

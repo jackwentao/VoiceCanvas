@@ -11,10 +11,14 @@ from voicecanvas.api.shots import ShotChange
 from voicecanvas.api.storyboards import present_storyboard
 from voicecanvas.application.shot_service import ShotConflict, ShotNotFound
 from voicecanvas.application.storyboard_agent_service import StoryboardAgentService
+from voicecanvas.domain.storyboard_agent import MAX_DRAWING_STYLE_LENGTH
 
 
 class AgentRequest(ShotChange):
     request: str = Field(min_length=1, max_length=8000)
+    default_drawing_style: str = Field(
+        default="", alias="defaultDrawingStyle", max_length=MAX_DRAWING_STYLE_LENGTH
+    )
 
 
 def create_agent_router(factory: Callable[[], StoryboardAgentService]) -> APIRouter:
@@ -33,7 +37,10 @@ def create_agent_router(factory: Callable[[], StoryboardAgentService]) -> APIRou
         try:
             current = get_service()
             run = (
-                current.start(board_id, request.expected_version, request.request)
+                current.start(
+                    board_id, request.expected_version, request.request,
+                    default_drawing_style=request.default_drawing_style,
+                )
                 if request
                 else current.get(board_id)
             )

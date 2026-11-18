@@ -38,6 +38,10 @@ try {
   await page.goto(`${ui}/index.html?apiBaseUrl=${encodeURIComponent(api)}`);
   await page.locator("[data-create]").first().click();
   await page.waitForURL(/workspace.html.*board=/); await count(1);
+  const styleInput = page.locator("#drawingStyleInput");
+  await page.locator("#drawingStyleButton").click();
+  await styleInput.fill("暖色手绘，背景简洁");
+  await page.getByRole("button", { name: "保存默认" }).click();
   assert.ok(requests.some(url => url.endsWith("/api/storyboards")));
   assert.equal(requests.some(url => /\/api\/projects$/.test(url)), false);
   const originalBoard = new URL(page.url()).searchParams.get("board");
@@ -53,6 +57,9 @@ try {
   await waitIdle();
   assert.equal(await page.locator("#renameButton").textContent(), otherBoard.title);
   assert.equal(await page.locator("#voiceInput").inputValue(), "");
+  await page.locator("#drawingStyleButton").click();
+  assert.equal(await styleInput.inputValue(), "暖色手绘，背景简洁");
+  await page.locator("#drawingStyleDialog [data-close-dialog]").click();
   await page.locator("#projectSelect").selectOption(originalBoard);
   await page.waitForURL(url => url.searchParams.get("board") === originalBoard);
   await waitIdle();
@@ -79,7 +86,15 @@ try {
   await page.locator("#nameDialog").waitFor({ state: "hidden" });
   assert.equal(await page.locator("#renameButton").textContent(), "雨夜分镜");
 
-  await submit("切换到第一个镜头"); await submit("画一个雨夜镜头");
+  await submit("切换到第一个镜头");
+  const draw = page.waitForRequest(r => r.method() === "POST" && r.url().endsWith("/agent/runs"));
+  await submit("画一个雨夜镜头");
+  assert.deepEqual((await draw).postDataJSON().defaultDrawingStyle, "暖色手绘，背景简洁");
+  await page.locator("#drawingStyleButton").click();
+  await page.locator("#clearDrawingStyle").click();
+  await page.locator("#drawingStyleButton").click();
+  assert.equal(await styleInput.inputValue(), "");
+  await page.locator("#drawingStyleDialog [data-close-dialog]").click();
   await page.locator("#canvasSurface img").waitFor();
   await page.locator("#editTextToggle").click();
   await page.locator("#textContent").fill("我到家了。");

@@ -127,11 +127,44 @@ def test_existing_picture_can_edit_directly_without_creation_or_planning(setup):
         return [call("finish_task", summary="已修改", shotIds=[sid], expectedCount=1)]
 
     service = StoryboardAgentService(boards, shots, Decisions(choose), runs)
-    run = service.start(board.id, 0, "把当前画面改成夜晚", background=False)
+    run = service.start(
+        board.id, 0, "把当前画面改成夜晚", default_drawing_style="暖色手绘", background=False
+    )
     assert run.status == "completed"
     assert [s.call.name for s in run.steps] == ["draw_shot", "finish_task"]
     assert len(boards.get(board.id).state.shots) == 1
     assert pictures.calls[-1] == ("改成夜晚", original)
+
+
+def test_default_drawing_style_is_scoped_to_the_run_and_keeps_project_context(setup):
+    boards, shots, pictures, runs = setup
+    board = boards.create("新项目")
+    board = boards.describe(board.id, board.version, context="本项目使用蓝色水彩")
+    request = "这次用黑白线稿画一杯咖啡"
+    preference = "暖色手绘"
+
+    def choose(index, messages):
+        if index == 0:
+            payload = json.loads(messages[1]["content"])
+            assert payload["request"] == request
+            assert payload["defaultDrawingStyle"] == preference
+            assert payload["storyboard"]["context"] == "本项目使用蓝色水彩"
+            return [call("draw_shot", shotId=board.active_id, instruction=request, reason="创作")]
+        return [
+            call("finish_task", summary="已保存", shotIds=[board.active_id], expectedCount=1)
+        ]
+
+    service = StoryboardAgentService(boards, shots, Decisions(choose), runs)
+    run = service.start(
+        board.id, board.version, request, default_drawing_style=f" {preference} ", background=False
+    )
+    assert run.status == "completed"
+    prompt, existing = pictures.calls[0]
+    assert existing is None
+    assert request in prompt and preference in prompt
+    assert "仅当两者均未指定画风" in prompt
+    assert runs.get_run(run.id).default_drawing_style == preference
+    assert boards.get(board.id).state.context == "本项目使用蓝色水彩"
 
 
 def test_invalid_delivery_and_foreign_target_return_errors_to_agent(setup):

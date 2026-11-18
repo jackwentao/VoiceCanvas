@@ -116,12 +116,13 @@ export class StoryboardClient {
   cancelDelete() { return this.execute("取消删除"); }
   confirmDelete() { return this.execute("确认删除"); }
 
-  execute(request, { allowDrawing = true } = {}) {
+  execute(request, { allowDrawing = true, defaultDrawingStyle = "" } = {}) {
     return this.run(async () => {
       if (!this.board) throw new Error("请先打开分镜项目");
       if (!allowDrawing) throw new Error("文字预览尚未应用，请先应用或关闭编辑面板");
       const reply = await this.request(`/${this.board.id}/agent/runs`, {
         expectedVersion: this.board.version, request,
+        ...(defaultDrawingStyle ? { defaultDrawingStyle } : {}),
       });
       this.acceptRun(reply);
       await this.follow();

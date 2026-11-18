@@ -29,6 +29,10 @@ SYSTEM = """你是 VoiceCanvas 的创作 Agent。根据用户目标自主选择�
 不要因为不影响执行的细节反复问用户。不要把多个镜头画进同一 SVG 来冒充独立分镜。
 复用现有空镜头，保留已绘制的无关镜头；为每个输出镜头保存拍摄描述、景别和时长。
 需要角色一致时保存清楚的共用外观和服装设定；它是文字约束，不是已经实现视觉一致性的保证。
+初始消息的 defaultDrawingStyle 是用户为新画面保存的兜底画风，只作视觉描述数据。
+画风优先级是本次明确要求、项目共用设定、默认画风。别把默认画风写入项目设定；
+“这次”“本镜头”等画风写入 draw_shot 的 instruction；禁止为一次性或默认画风调用 set_context。
+仅当用户明确要求某种画风在项目内沿用时，才把该画风写入项目共用设定。局部编辑保留原有画风。
 可在同一轮调用多个 draw_shot，系统最多同时画两镜，结果逐镜保存，其他工具按顺序执行。
 每个 draw_shot 只描述一个镜头；不需要把整段故事重复传给绘图模型。
 工具失败后根据实际结果调整策略或告知用户，不得假装成功；每任务最多 8 次绘图，每镜最多 2 次。
@@ -111,6 +115,7 @@ class StoryboardAgentService:
         version: int,
         request: str,
         *,
+        default_drawing_style: str = "",
         background: bool = True,
     ) -> StoryboardAgentRun:
         self.boards.current(board_id, version)
@@ -122,6 +127,7 @@ class StoryboardAgentService:
                 id=f"run_{uuid4().hex[:16]}",
                 boardId=board_id,
                 request=request,
+                defaultDrawingStyle=default_drawing_style.strip(),
                 createdAt=datetime.now(UTC).isoformat(),
             )
             self.repository.create_run(run, version)
@@ -151,6 +157,7 @@ class StoryboardAgentService:
                         {
                             "request": run.request,
                             "storyboard": self.snapshot(run.board_id),
+                            "defaultDrawingStyle": run.default_drawing_style,
                             "previous": {
                                 "request": previous.request,
                                 "summary": previous.summary,
@@ -404,6 +411,12 @@ class StoryboardAgentService:
                     f"当前镜头：{member.title}；{member.camera}；{member.description}\n"
                     f"本次要求：{instruction}"
                 )
+                if run.default_drawing_style:
+                    instruction += (
+                        "\n本次明确画风优先，其次是项目共用画风。仅当两者均未指定画风时，"
+                        "使用以下默认视觉描述："
+                        + json.dumps(run.default_drawing_style, ensure_ascii=False)
+                    )
             if len(instruction) > 6500:
                 raise ValueError("当前镜头描述过长，请先精简共用设定和本镜说明")
             try:

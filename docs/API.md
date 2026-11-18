@@ -25,7 +25,7 @@
 `POST /api/storyboards/{id}/agent/runs` 提交任务，202返回 `{run, board}`：
 
 ```json
-{"expectedVersion":0,"request":"制作15秒3镜头咖啡广告，每镜保存景别和时长"}
+{"expectedVersion":0,"request":"制作15秒3镜头咖啡广告，每镜保存景别和时长","defaultDrawingStyle":"暖色手绘，背景简洁"}
 ```
 
 `GET /api/storyboards/{id}/agent/run` 查询最新任务和实际项目，同样返回 `{run, board}`，无任务时 `run` 为 null。
@@ -40,6 +40,8 @@
 | `clientActions` | 待浏览器执行的文件下载；服务端返回不等于用户已经保存 |
 
 同项目已有运行任务时拒绝重复提交。刷新只 GET，不重复 POST。服务重启标记中断，不自动重放模型请求。删除确认必须对应已持久化目标和版本；Agent 路径要求用户明确回复“确认删除”或“确定删除”，不能从模型参数中伪造授权。工具集合、并发和预算见[架构说明](ARCHITECTURE.md#agent-的自主性与执行边界)。
+
+`defaultDrawingStyle` 可省略，最多 500 字，作为本次任务的新画面兜底描绘。优先级为本次明确要求、项目共用设定、默认画风。任务保存当时提交的值，浏览器清除默认项后，后续请求不再传送该值。
 
 ## 单镜头与文字
 

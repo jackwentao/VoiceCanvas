@@ -10,6 +10,7 @@ const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
 const baseUrl = (window.VOICECANVAS_API_BASE_URL || params.get("apiBaseUrl") || "http://127.0.0.1:8000").replace(/\/+$/, "");
 const storageKey = `voicecanvas:last-board:${baseUrl}`;
+const drawingStyleKey = `voicecanvas:default-drawing-style:${baseUrl}`;
 const maxSvgBytes = 1_000_000;
 document.body.classList.add("svg-workspace");
 document.querySelector(".brand").href = pageUrl("index.html", location.search);
@@ -218,6 +219,22 @@ function fitCanvas() {
 function errorMessage(error) { return error instanceof TypeError ? "连接失败，请检查服务并刷新确认结果后再试。" : error?.message || String(error); }
 function showError(error) { failure = errorMessage(error); render(); }
 function toast(text) { $("toast").textContent = text; $("toast").hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("toast").hidden = true; }, 3500); }
+function savedDrawingStyle() {
+  try { return localStorage.getItem(drawingStyleKey) || ""; }
+  catch { return ""; }
+}
+function saveDrawingStyle(value) {
+  try {
+    if (value) localStorage.setItem(drawingStyleKey, value);
+    else localStorage.removeItem(drawingStyleKey);
+  } catch {
+    $("drawingStyleError").textContent = "当前浏览器无法保存默认画风。";
+    $("drawingStyleError").hidden = false;
+    return;
+  }
+  $("drawingStyleDialog").close();
+  toast(value ? "已保存默认画风" : "已清除默认画风");
+}
 async function act(fn, { guard = true, inlineError = false } = {}) {
   if (isBusy()) throw new Error("正在完成上一条指令，请稍候");
   if (guard && textEditor?.hasDraft) throw new Error("请先应用改字或舍弃草稿，再切换镜头或执行指令。");
@@ -244,7 +261,7 @@ async function submit(text) {
   text = String(text || "").trim(); if (!text) return "请描述画面或分镜指令。";
   return act(async () => {
     lastInput = text;
-    const reply = await boards.execute(text);
+    const reply = await boards.execute(text, { defaultDrawingStyle: savedDrawingStyle() });
     $("voiceInput").value = ""; resizeInput();
     await refreshProjects();
     return reply;
@@ -322,8 +339,22 @@ $("nameForm").addEventListener("submit", event => {
   if (title && !isBusy()) void saveName(title);
 });
 $("nameDialog").addEventListener("cancel", event => { if (isBusy()) event.preventDefault(); });
+$("drawingStyleButton").addEventListener("click", () => {
+  const style = savedDrawingStyle();
+  $("drawingStyleInput").value = style;
+  $("clearDrawingStyle").disabled = !style;
+  $("drawingStyleError").hidden = true;
+  $("drawingStyleDialog").showModal();
+  $("drawingStyleInput").focus();
+});
+$("drawingStyleForm").addEventListener("submit", event => {
+  event.preventDefault();
+  saveDrawingStyle($("drawingStyleInput").value.trim());
+});
+$("clearDrawingStyle").addEventListener("click", () => saveDrawingStyle(""));
 document.querySelectorAll("[data-close-dialog]").forEach(button => button.addEventListener("click", () => {
-  if (!isBusy()) button.closest("dialog").close();
+  const dialog = button.closest("dialog");
+  if (dialog.id !== "nameDialog" || !isBusy()) dialog.close();
 }));
 $("exportButton").addEventListener("click", () => { $("exportMenu").hidden = !$("exportMenu").hidden; $("exportButton").setAttribute("aria-expanded", String(!$("exportMenu").hidden)); });
 $("importSvgButton").addEventListener("click", () => {
