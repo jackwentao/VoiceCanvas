@@ -1,32 +1,38 @@
 import { createServer } from "node:http";
 import { readFile } from "node:fs/promises";
-import { extname, join, normalize } from "node:path";
+import { extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = normalize(join(fileURLToPath(new URL("..", import.meta.url)), "src", "prototype"));
+const root = fileURLToPath(new URL("../src/prototype/", import.meta.url));
+const archive = fileURLToPath(new URL("../../docs/experiments/", import.meta.url));
 const port = Number(process.env.PORT || 4178);
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8"
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png"
 };
 
 function resolveRequestPath(url) {
-  const pathname = new URL(url, `http://127.0.0.1:${port}`).pathname;
-  const relativePath = decodeURIComponent(pathname === "/" ? "/index.html" : pathname);
-  const normalized = normalize(join(root, relativePath));
-
-  if (!normalized.startsWith(root)) {
-    return null;
+  const pathname = decodeURIComponent(new URL(url, `http://127.0.0.1:${port}`).pathname);
+  if (pathname === "/evaluation-data/index.json") return resolve(archive, "evaluations.json");
+  if (pathname.startsWith("/evaluation-data/")) {
+    const asset = pathname.slice("/evaluation-data/".length);
+    return /^evaluation-[a-z0-9-]+\/evidence\/(?:metadata\.json|[A-Z]+-\d+\/(?:initial\.json|result\.json|before\.png|shot-\d+\.png))$/.test(asset)
+      ? resolve(archive, asset)
+      : null;
   }
-
-  return normalized;
+  const file = resolve(root, "." + (pathname === "/" ? "/index.html" : pathname));
+  const rel = relative(root, file);
+  return rel && rel !== ".." && !rel.startsWith(".." + sep) && !isAbsolute(rel) ? file : null;
 }
 
 const server = createServer(async (request, response) => {
-  const filePath = resolveRequestPath(request.url || "/");
+  let filePath;
+  try { filePath = resolveRequestPath(request.url || "/"); }
+  catch { filePath = null; }
 
   if (!filePath) {
     response.writeHead(403, { "content-type": "text/plain; charset=utf-8" });

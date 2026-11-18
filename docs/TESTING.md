@@ -21,6 +21,14 @@ npm test
 
 前端测试使用 Node 内置测试运行器和断言，无需安装 npm 包。默认回归测试使用离线样本和模型替身。
 
+## 评测台
+
+从 `frontend` 运行 `npm run prototype`，打开 [评测台](http://127.0.0.1:4178/evaluation.html)。页面由 Node 静态服务和原生浏览器 API 提供，读取已归档的用例、工具结果、SVG 状态与 PNG。无需启动后端或配置模型。评测台的指标计算、证据浏览和批次对照由项目实现。
+
+新批次可沿用[试跑脚本](experiments/evaluation-pilot-20261118/README.md#复跑)。完成逐项验收后，把 `metadata.json` 及每个用例的 `initial.json`、`result.json` 和 PNG 放入 `docs/experiments/evaluation-<批次>/evidence/`，并在 [评测索引](experiments/evaluations.json) 添加判据、结论和工具选择审核记录。用例目录使用 `VC-01` 这样的编号。工具审核的覆盖序号从 1 开始，对应调用在 `run.steps` 中的顺序，执行成功数由原始状态计算。页面按相同用例、初始镜头内容、模型配置和判据版本匹配对照批次。
+
+在 `frontend` 运行 `npm run test:evaluation` 核对首轮归档和对照条件。评测服务启动后，可以沿用下文的 Playwright 和浏览器配置，再运行 `npm run test:evaluation-browser` 检查详情页、异常筛选、批次对照和窄屏。用 `VOICECANVAS_E2E_UI_URL` 指向自定义预览端口。
+
 ## 当前产品重点用例
 
 在 `backend` 下可按关注点运行：

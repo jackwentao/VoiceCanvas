@@ -1,0 +1,164 @@
+{
+  "batches": [
+    {
+      "id": "evaluation-pilot-20261118",
+      "label": "首轮真实试跑",
+      "date": "2026-11-18",
+      "rubricVersion": "pilot-v1",
+      "environmentFailures": 2,
+      "cases": [
+        {
+          "id": "VC-01",
+          "title": "雨天咖啡",
+          "kind": "完整三镜",
+          "criteria": [
+            {
+              "id": "S1",
+              "group": "结构",
+              "requirement": "三份可渲染的独立 SVG，按入店、递杯、特写排列",
+              "status": "pass",
+              "note": "三个独立镜头均已保存，且有对应 PNG。"
+            },
+            {
+              "id": "S2",
+              "group": "结构",
+              "requirement": "每镜 5 秒且保存景别",
+              "status": "pass",
+              "note": "三个镜头各 5 秒，景别均已记录。"
+            },
+            {
+              "id": "V1",
+              "group": "画面",
+              "requirement": "雨天店外，黄雨衣黑短发女孩有清晰的入店动作，门头可读",
+              "status": "fail",
+              "note": "雨景、服装和「暖杯咖啡」招牌成立。女孩仍在门外，入店动作不清楚。"
+            },
+            {
+              "id": "V2",
+              "group": "画面",
+              "requirement": "女孩与白衬衫绿围裙店员各自以手接触同一杯咖啡",
+              "status": "fail",
+              "note": "两个人的手均离开吧台上的杯子。"
+            },
+            {
+              "id": "V3",
+              "group": "画面",
+              "requirement": "咖啡为近景主体，优惠字幕逐字可读",
+              "status": "pass",
+              "note": "「雨天咖啡买一送一」完整可读。"
+            },
+            {
+              "id": "V4",
+              "group": "画面",
+              "requirement": "三镜具有共同的暖色插画语言",
+              "status": "pass",
+              "note": "暖色门面及室内画风一致，雨景冷色作为对比。"
+            }
+          ],
+          "operations": [
+            {
+              "label": "建立独立镜头并保存时长与景别",
+              "status": "pass"
+            },
+            {
+              "label": "逐镜生成 SVG",
+              "status": "pass"
+            },
+            {
+              "label": "核对实际交付",
+              "status": "pass"
+            }
+          ],
+          "toolReview": {
+            "default": "pass",
+            "overrides": {
+              "10": {
+                "status": "fail",
+                "note": "该镜头已耗尽绘图预算，Agent 再次发起绘制。"
+              }
+            }
+          }
+        },
+        {
+          "id": "VC-02",
+          "title": "递杯修正",
+          "kind": "局部改画",
+          "beforeImage": "before.png",
+          "criteria": [
+            {
+              "id": "M1",
+              "group": "目标修改",
+              "requirement": "女孩的手贴住杯柄并表达抓握",
+              "status": "pass",
+              "note": "女孩的手移至杯柄，手形环绕杯柄。"
+            },
+            {
+              "id": "M2",
+              "group": "目标修改",
+              "requirement": "店员从下方接触并托住杯底",
+              "status": "fail",
+              "note": "杯底有手形，但该手形没有与店员前臂形成清楚的连接。"
+            },
+            {
+              "id": "M3",
+              "group": "目标修改",
+              "requirement": "两人接触同一杯",
+              "status": "fail",
+              "note": "店员的托杯动作无法从画面成立。"
+            },
+            {
+              "id": "P1",
+              "group": "保留项",
+              "requirement": "保留暖色插画",
+              "status": "pass",
+              "note": "构图、底色和暖光与原图一致。"
+            },
+            {
+              "id": "P2",
+              "group": "保留项",
+              "requirement": "保留黄雨衣、白衬衫和绿围裙",
+              "status": "pass",
+              "note": "三项服装特征均保留。"
+            },
+            {
+              "id": "P3",
+              "group": "保留项",
+              "requirement": "保留原有文字符号",
+              "status": "pass",
+              "note": "SVG 中的 ☕ 文本及属性保留。"
+            },
+            {
+              "id": "P4",
+              "group": "保留项",
+              "requirement": "镜头 ID、顺序与拍摄说明不变",
+              "status": "pass",
+              "note": "运行前后镜头元数据一致。"
+            }
+          ],
+          "operations": [
+            {
+              "label": "渲染原图",
+              "status": "pass"
+            },
+            {
+              "label": "初评",
+              "status": "pass"
+            },
+            {
+              "label": "一次修正",
+              "status": "pass"
+            },
+            {
+              "label": "复审",
+              "status": "pass"
+            }
+          ],
+          "toolReview": {
+            "default": "pass",
+            "overrides": {}
+          }
+        }
+      ]
+    }
+  ]
+}

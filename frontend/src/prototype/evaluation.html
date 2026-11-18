@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f8f5">
+  <title>评测台 · VoiceCanvas</title>
+  <link rel="stylesheet" href="./evaluation.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <a class="brand" href="./index.html" aria-label="VoiceCanvas 首页"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>VoiceCanvas</a>
+      <span class="topbar-title">评测台</span>
+      <a class="topbar-link" href="./workspace.html">创作工作台 ↗</a>
+    </div>
+  </header>
+  <main class="shell">
+    <div class="heading">
+      <div>
+        <h1>分镜 Agent 评测</h1>
+        <p id="batch-meta" class="muted"></p>
+      </div>
+      <div class="selectors">
+        <label>评测批次<select id="batch-select" disabled></select></label>
+        <label>对照批次<select id="baseline-select" disabled><option value="">无</option></select></label>
+      </div>
+    </div>
+    <p id="loading" class="state" role="status">正在读取评测归档…</p>
+    <div id="dashboard" hidden>
+      <section id="metrics" class="metrics" aria-label="批次指标"></section>
+      <div class="layout">
+        <aside class="cases" aria-labelledby="cases-heading">
+          <div class="section-title">
+            <h2 id="cases-heading">测试用例</h2>
+            <label class="sr-only" for="case-filter">筛选用例</label>
+            <select id="case-filter">
+              <option value="all">全部</option>
+              <option value="fail">未通过</option>
+              <option value="pass">通过</option>
+              <option value="review">待复核</option>
+            </select>
+          </div>
+          <div id="case-list"></div>
+        </aside>
+        <section id="case-detail" class="detail" aria-label="用例详情"></section>
+      </div>
+    </div>
+  </main>
+  <script type="module" src="./evaluation.js"></script>
+</body>
+</html>

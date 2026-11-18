@@ -81,6 +81,7 @@ FastAPI 和 Pydantic 提供 API 与数据校验，SQLite 保存分镜与版本�
 | Agent 如何决策，状态如何保存 | [架构说明](docs/ARCHITECTURE.md) |
 | 具体接口、参数和错误语义 | [API 说明](docs/API.md) |
 | 如何运行回归和浏览器验收 | [测试指南](docs/TESTING.md) |
+| 如何浏览真实评测与对照批次 | [本地评测台](http://127.0.0.1:4178/evaluation.html) · [归档与复跑](docs/TESTING.md#评测台) |
 | 第三方能力、许可与自研范围 | [依赖与原创边界](docs/技术选型与依赖声明.md) |
 
 基础回归分别从仓库根目录执行：
