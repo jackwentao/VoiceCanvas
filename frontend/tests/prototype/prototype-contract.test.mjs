@@ -120,8 +120,8 @@ async function testVoiceSessionController() {
   assert.equal(feedback.messages[0], "语音创作模式已开启，请说出你想绘制的内容。");
   assert.equal(feedback.readyToneCount, 1);
 
-  await controller.handleFinalTranscript("创建一个三镜头奶茶广告分镜");
-  assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜"]);
+  await controller.handleFinalTranscript("创建一个三镜头雨夜便利店分镜");
+  assert.deepEqual(submitted, ["创建一个三镜头雨夜便利店分镜"]);
   assert.ok(feedback.messages.includes("已创建三个分镜"));
   assert.equal(feedback.readyToneCount, 2);
   assert.equal(controller.isListening(), true);
@@ -147,12 +147,12 @@ async function testVoiceSessionDoesNotListenDuringFeedback() {
 
   await controller.start();
   feedback.holdNext = true;
-  const firstTurn = controller.handleFinalTranscript("创建一个三镜头奶茶广告分镜");
+  const firstTurn = controller.handleFinalTranscript("创建一个三镜头雨夜便利店分镜");
   await new Promise((resolve) => setTimeout(resolve, 0));
 
   assert.equal(controller.isListening(), false, "系统播报期间必须关闭语音监听");
   assert.equal(recognition.started, false, "系统播报期间 recognition 不应保持 started");
-  assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜"]);
+  assert.deepEqual(submitted, ["创建一个三镜头雨夜便利店分镜"]);
 
   feedback.release();
   await firstTurn;
@@ -162,7 +162,7 @@ async function testVoiceSessionDoesNotListenDuringFeedback() {
   assert.equal(controller.isListening(), true, "提示音后必须恢复监听");
 
   await controller.handleFinalTranscript("撤销上一步");
-  assert.deepEqual(submitted, ["创建一个三镜头奶茶广告分镜", "撤销上一步"]);
+  assert.deepEqual(submitted, ["创建一个三镜头雨夜便利店分镜", "撤销上一步"]);
   assert.equal(feedback.cancelCount, 0, "播报期间不再通过打断监听取消系统播报");
 }
 
