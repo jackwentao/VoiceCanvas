@@ -20,17 +20,18 @@ $("exportMenu").replaceChildren(...[ ["png", "当前镜头 · PNG"], ["svg", "�
 }));
 $("voiceInput").maxLength = 8000;
 $("voiceInput").placeholder = "描述完整故事、需要几个镜头，或直接说要修改哪里…";
-$("selectionLabel").textContent = "自由绘制 · 可继续改画或编辑文字";
 
 let boards, textEditor, voice;
 let working = false;
 let lastInput = "";
+let taskReply = "";
+let submitting = false;
 let renderedBoardId;
 const inputDrafts = new Map();
-let message = "连接后即可开始创作";
 let failure = "";
 let missingBoardId;
-let assistantOpen = innerWidth > 980;
+let assistantOpen = false;
+let voiceMessage = "";
 let dialogMode = "new";
 let previewSvg = null;
 let previewUrl = null;
@@ -48,19 +49,19 @@ textEditor = new ShotTextEditor({ frame: $("canvasStage"),
   preview: svg => {
     void showSvg(svg);
     $("exportButton").disabled = isBusy() || !shots.shot?.svg || Boolean(textEditor?.hasDraft);
-    $("selectionLabel").textContent = textEditor?.hasDraft ? "改字草稿未保存" : "自由绘制 · 可继续改画或编辑文字";
   },
-  save: layout => act(async () => { await shots.editText(layout); await boards.refresh(); return "文字已保存，可以撤销或继续修改。"; }, { guard: false }).catch(showError),
+  save: layout => act(async () => { await shots.editText(layout); await boards.refresh(); toast("文字已保存"); }, { guard: false }).catch(showError),
 });
 voice = new VoiceSessionController({ recognition, feedback: new BrowserVoiceFeedbackAdapter(),
   submitTranscript: text => submit(text),
-  onStatusChange: text => { $("voiceStatus").textContent = text; renderVoice(); },
+  onStatusChange: text => { voiceMessage = text; renderVoice(); },
   onListeningChange: () => renderVoice(),
   onPartialTranscript: text => { $("voiceInput").value = text; resizeInput(); },
   onFinalTranscript: text => { $("voiceInput").value = text; resizeInput(); },
 });
 
 function isBusy() { return working || shots.busy || boards.busy; }
+function taskRunning() { return submitting || boards.agent?.status === "running"; }
 function renderStatus() {
   const elapsed = Math.floor((Date.now() - actionStarted) / 1000);
   const run = boards?.agent;
@@ -70,9 +71,10 @@ function renderStatus() {
     const target = boards.board?.shots.find(p => p.id === s.call.arguments.shotId);
     return `${labels[s.call.name] || "执行操作"}${target ? `：${target.title}` : ""}`;
   }).join("；");
-  const status = failure || (run?.status === "running" ? `${progress || run.summary} · 已等待 ${elapsed} 秒，逐镜保存` : isBusy() && shots.busy ? `正在绘制画面 · 已等待 ${elapsed} 秒，完成后自动保存` : message);
-  if (!voice?.isActive() || failure || shots.busy || run?.status === "running") $("voiceStatus").textContent = status.length > 120 ? `${status.slice(0, 120)}… 展开创作助手查看结果` : status;
+  const status = run?.status === "running" ? `${progress || run.summary} · 已等待 ${elapsed} 秒`
+    : submitting ? "正在提交指令…" : taskReply || run?.summary || "";
   $("resultMessage").textContent = status;
+  renderVoice();
 }
 function renderVoice() {
   if (!voice) return;
@@ -80,6 +82,13 @@ function renderVoice() {
   $("voiceButton").setAttribute("aria-label", voice.isActive() ? "结束语音创作" : "开始语音创作");
   $("voiceButton").disabled = !voice.isActive() && (!boards.board || isBusy() || !recognition.isSupported());
   $("composerContext").dataset.listening = String(voice.isListening());
+  const taskLink = Boolean(lastInput || boards.agent) && !assistantOpen && !failure;
+  const status = voice.isActive() && !isBusy() ? voiceMessage
+    : taskLink && taskRunning() ? $("resultMessage").textContent : "";
+  $("voiceStatus").textContent = status;
+  $("composerContext").hidden = !status && !taskLink;
+  $("openTaskResult").hidden = !taskLink;
+  $("openTaskResult").textContent = taskRunning() ? "查看进度" : "查看结果";
 }
 function remember() {
   const url = new URL(location.href);
@@ -117,6 +126,7 @@ function render() {
     }
     renderedBoardId = board.id;
     lastInput = "";
+    taskReply = "";
   }
   textEditor?.setState(shot, busy);
   document.querySelectorAll("[data-requires-project]").forEach(node => { node.disabled = !board || busy; });
@@ -126,7 +136,6 @@ function render() {
   $("redoStructure").disabled = busy || !board?.canRedo;
   $("undoButton").disabled = busy || !shot?.canUndo;
   $("redoButton").disabled = busy || !shot?.canRedo;
-  $("undoResult").hidden = busy || !shot?.canUndo;
   $("exportButton").disabled = busy || !shot?.svg || Boolean(textEditor?.hasDraft);
   $("saveStatus").replaceChildren(document.createTextNode(failure ? "连接待确认" : busy ? "处理中…" : board ? "已同步" : "等待连接"));
   $("saveStatus").dataset.busy = String(busy);
@@ -136,15 +145,15 @@ function render() {
   $("nameInput").disabled = naming;
   $("nameSubmit").disabled = naming;
   $("nameSubmit").textContent = naming ? "正在保存…" : "确认";
-  $("assistantConnection").textContent = busy ? "正在协助创作" : board ? "准备好和你一起创作" : "等待连接";
-  $("backendStatus").textContent = busy ? "正在执行，完成后自动保存" : "每次修改，自动保存";
   $("composerContext").dataset.busy = String(busy);
   renderStatus();
   $("sendButton").setAttribute("aria-label", busy ? "正在执行指令" : "发送指令");
   $("turnCard").hidden = !lastInput && !boards.agent;
-  $("assistantPanel").dataset.active = String(Boolean(lastInput || boards.pendingDelete));
+  $("assistantEmpty").hidden = !$("turnCard").hidden;
   $("lastInput").textContent = lastInput || boards.agent?.request || "";
-  $("resultHeading").textContent = busy ? "正在完成你的指令" : failure ? "这次需要再试一下" : boards.agent?.status === "needs_input" ? "等待验收或确认" : "已完成";
+  $("resultHeading").textContent = taskRunning() ? "进行中"
+    : failure || ["failed", "interrupted"].includes(boards.agent?.status) ? "任务未完成"
+    : boards.agent?.status === "needs_input" ? "等待验收或确认" : "已完成";
   const feedback = visualFeedback(board, boards.agent);
   const nextFeedbackKey = JSON.stringify(feedback);
   if (nextFeedbackKey !== feedbackKey) {
@@ -172,18 +181,13 @@ function render() {
   renderVoice();
   if (!board || !shot) return;
   remember();
-  $("renameButton").textContent = board.title;
   $("sceneCount").textContent = board.shots.length;
   const index = board.shots.findIndex(s => s.id === board.activeId);
   $("sceneName").textContent = board.shots[index].title;
-  $("sceneEyebrow").textContent = `SCENE ${String(index + 1).padStart(2, "0")}`;
-  $("sceneDescription").textContent = `${index + 1} / ${board.shots.length} · ${board.shots[index].title}`;
-  $("canvasSize").textContent = "1280 × 720";
+  $("sceneDescription").textContent = `${index + 1} / ${board.shots.length}`;
   const detail = board.shots[index];
   $("shotBrief").hidden = !detail.description;
   $("shotBriefText").textContent = [detail.durationSeconds ? `${detail.durationSeconds} 秒` : "", detail.camera, detail.description].filter(Boolean).join(" · ");
-  $("narrationText").textContent = [detail.durationSeconds ? `${detail.durationSeconds} 秒` : "", detail.camera, detail.description, shot.svg ? `画面版本 ${shot.cursor + 1} / ${shot.revisions.length}` : "等待绘制"].filter(Boolean).join(" · ");
-  $("narrationText").title = $("narrationText").textContent;
   $("moveSvgSceneUp").disabled = busy || index === 0;
   $("moveSvgSceneDown").disabled = busy || index === board.shots.length - 1;
   document.querySelectorAll("[data-prompt]").forEach(button => { button.disabled = busy; });
@@ -197,8 +201,8 @@ function render() {
       const thumb = document.createElement("div"); thumb.className = "scene-thumbnail";
       if (s.svg) { const img = new Image(); img.alt = `${s.title}缩略图`; img.src = URL.createObjectURL(new Blob([s.svg], { type: "image/svg+xml" })); thumbnails.push(img.src); thumb.append(img); }
       const label = document.createElement("div"); label.className = "scene-label";
-      const title = document.createElement("strong"); title.textContent = `${String(i + 1).padStart(2, "0")} · ${s.title}`;
-      const info = document.createElement("span"); info.textContent = `${s.durationSeconds ? `${s.durationSeconds} 秒 · ` : ""}${s.svg ? "已绘制" : "待绘制"}`;
+      const title = document.createElement("strong"); title.textContent = s.title;
+      const info = document.createElement("span"); info.textContent = s.durationSeconds ? `${s.durationSeconds} 秒` : "";
       label.append(title, info); button.append(thumb, label); return button;
     }));
     $("historyCount").textContent = shot.revisions.length;
@@ -233,12 +237,11 @@ function saveDrawingStyle(value) {
 async function act(fn, { guard = true, inlineError = false } = {}) {
   if (isBusy()) throw new Error("正在完成上一条指令，请稍候");
   if (guard && textEditor?.hasDraft) throw new Error("请先应用改字或舍弃草稿，再切换镜头或执行指令。");
-  working = true; failure = ""; message = "正在完成指令，请稍候…";
+  working = true; failure = "";
   actionStarted = Date.now(); progressTimer = setInterval(renderStatus, 1000); render();
-  try { const result = await fn(); message = typeof result === "string" ? result : "已保存，可以继续创作。"; return message; }
+  try { return await fn(); }
   catch (error) {
     if (!inlineError) failure = errorMessage(error);
-    message = "本次操作未完成。";
     throw error;
   }
   finally { clearInterval(progressTimer); working = false; render(); }
@@ -256,7 +259,17 @@ async function submit(text) {
   text = String(text || "").trim(); if (!text) return "请描述画面或分镜指令。";
   return act(async () => {
     lastInput = text;
-    const reply = await boards.execute(text, { defaultDrawingStyle: savedDrawingStyle() });
+    taskReply = "";
+    submitting = true;
+    if (innerWidth > 980) assistantOpen = true;
+    render();
+    let reply;
+    try {
+      reply = await boards.execute(text, { defaultDrawingStyle: savedDrawingStyle() });
+      taskReply = reply;
+    } finally {
+      submitting = false;
+    }
     $("voiceInput").value = ""; resizeInput();
     await refreshProjects();
     return reply;
@@ -325,7 +338,7 @@ $("deleteSvgScene").addEventListener("click", () => clickAction(() => act(async 
   return `已删除镜头「${target.title}」。`;
 })));
 for (const [id, direction] of [["moveSvgSceneUp", -1], ["moveSvgSceneDown", 1]]) $(id).addEventListener("click", () => clickAction(() => act(() => boards.manage({ action: "move", position: boards.board.shots.findIndex(s => s.id === boards.board.activeId) + 1 + direction }))));
-for (const [id, action] of [["undoButton", "undo"], ["redoButton", "redo"], ["undoResult", "undo"]]) $(id).addEventListener("click", () => clickAction(() => act(async () => { await shots.change(action); await boards.refresh(); })));
+for (const [id, action] of [["undoButton", "undo"], ["redoButton", "redo"]]) $(id).addEventListener("click", () => clickAction(() => act(async () => { await shots.change(action); await boards.refresh(); })));
 $("clarificationOptions").replaceChildren(...[ ["确认删除", "确认删除"], ["取消", "取消"] ].map(([answer, text]) => { const button = document.createElement("button"); button.textContent = text; button.dataset.deleteAnswer = answer; button.addEventListener("click", () => clickAction(() => submit(answer))); return button; }));
 $("newButton").addEventListener("click", () => openName("new")); $("renameButton").addEventListener("click", () => openName("board")); $("renameSvgScene").addEventListener("click", () => openName("scene"));
 $("nameForm").addEventListener("submit", event => {
@@ -376,9 +389,23 @@ $("importSvgFile").addEventListener("change", event => {
 $("exportMenu").addEventListener("click", event => { const button = event.target.closest("[data-export]"); if (button) clickAction(async () => { await exportShot(button.dataset.export); $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); toast("已导出当前镜头"); }); });
 document.addEventListener("click", event => { if (!event.target.closest(".export-wrap")) { $("exportMenu").hidden = true; $("exportButton").setAttribute("aria-expanded", "false"); } });
 $("toggleAssistant").addEventListener("click", () => { assistantOpen = !assistantOpen; render(); });
+$("closeAssistant").addEventListener("click", () => { assistantOpen = false; render(); $("toggleAssistant").focus(); });
+$("openTaskResult").addEventListener("click", () => { assistantOpen = true; render(); $("closeAssistant").focus(); });
+function setSceneActions(open) {
+  $("sceneActions").hidden = !open;
+  $("sceneActionsButton").setAttribute("aria-expanded", String(open));
+}
+$("sceneActionsButton").addEventListener("click", () => setSceneActions($("sceneActions").hidden));
+document.addEventListener("click", event => {
+  if (!event.target.closest(".scene-actions-wrap") || event.target.closest("#sceneActions button")) setSceneActions(false);
+});
 $("dismissError").addEventListener("click", () => { failure = ""; render(); });
 document.querySelectorAll("[data-prompt]").forEach(button => button.addEventListener("click", () => { $("voiceInput").value = button.dataset.prompt; resizeInput(); $("voiceInput").focus(); }));
 document.addEventListener("keydown", event => {
+  if (event.key === "Escape" && !$("sceneActions").hidden) {
+    setSceneActions(false);
+    $("sceneActionsButton").focus();
+  }
   if (event.altKey && event.key.toLowerCase() === "v") { event.preventDefault(); if (!$("voiceButton").disabled) $("voiceButton").click(); }
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && !event.target.closest("input,textarea,select,[contenteditable]")) { event.preventDefault(); $(event.shiftKey ? "redoButton" : "undoButton").click(); }
 });

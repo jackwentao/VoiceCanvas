@@ -14,7 +14,7 @@
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="./index.html" aria-label="返回手绘画廊首页"><svg class="brand-sketch" viewBox="0 0 42 42" aria-hidden="true"><path d="M6 16v11m7-18v25m8-29v32m8-25v19m7-13v8M3 39q18-3 36 0"/></svg><span>VoiceCanvas<span class="brand-dot">.</span></span><span class="brand-label">我的画桌</span></a>
-      <div class="project-heading"><button id="renameButton" class="project-name" title="重命名项目" data-requires-project>连接中…</button><span class="save-status" id="saveStatus"><i></i>正在连接</span></div>
+      <span class="save-status" id="saveStatus">正在连接</span>
       <div class="header-actions">
         <button class="button quiet small" id="drawingStyleButton" type="button" aria-label="默认画风" title="默认画风"><span data-icon="palette"></span><span class="wide-label">画风</span></button>
         <button class="button quiet" id="toggleAssistant" aria-label="创作助手" aria-expanded="true" aria-controls="assistantPanel"><span data-icon="panel"></span><span class="wide-label">助手</span></button>
@@ -30,20 +30,31 @@
 
     <main class="workspace">
       <aside class="sidebar" aria-label="项目与镜头">
-        <div class="project-tools"><label class="sr-only" for="projectSelect">切换项目</label><select id="projectSelect" aria-label="切换项目" data-requires-project><option>正在连接…</option></select><button class="icon-button" id="newButton" title="新建项目" aria-label="新建项目"><span data-icon="plus"></span></button></div>
+        <div class="project-tools"><label class="sr-only" for="projectSelect">切换项目</label><select id="projectSelect" aria-label="切换项目" data-requires-project><option>正在连接…</option></select><button class="icon-button" id="renameButton" title="重命名项目" aria-label="重命名项目" data-requires-project><span data-icon="type"></span></button><button class="icon-button" id="newButton" title="新建项目" aria-label="新建项目"><span data-icon="plus"></span></button></div>
         <div class="sidebar-heading"><h2>我的分镜</h2><span id="sceneCount" class="count">—</span></div>
-        <div class="svg-scene-tools"><button class="button small" id="addSvgScene">＋ 镜头</button><button class="button small" id="copySvgScene">复制</button><button class="button small" id="deleteSvgScene">删除</button></div>
+        <button class="button small add-scene" id="addSvgScene"><span data-icon="plus"></span>添加镜头</button>
         <div id="sceneList" class="scene-list"><p class="sidebar-placeholder">连接后显示你的分镜</p></div>
-        <div class="svg-structure-tools"><button class="button quiet small" id="undoStructure">撤销分镜</button><button class="button quiet small" id="redoStructure">重做分镜</button></div>
-        <details class="history-section"><summary><span data-icon="history"></span>操作历史<span id="historyCount"></span></summary><ol id="historyList" class="history-list"><li>暂无操作</li></ol></details>
-        <div class="sidebar-foot"><span class="tiny-wave" aria-hidden="true">▂▅▇▃▆</span><span>从一句想法开始</span><kbd>Alt V</kbd></div>
+        <details class="history-section"><summary><span data-icon="history"></span>历史记录</summary>
+          <div class="svg-structure-tools"><button class="button quiet small" id="undoStructure">撤销分镜结构</button><button class="button quiet small" id="redoStructure">重做分镜结构</button></div>
+          <p class="history-label">当前画面 · <span id="historyCount">0</span> 个版本</p>
+          <ol id="historyList" class="history-list"></ol>
+        </details>
       </aside>
 
       <section class="editor" aria-label="分镜创作区">
-        <div class="editor-toolbar"><div class="scene-breadcrumb"><span data-icon="layout"></span><span id="sceneName">创作空间</span><span class="dimension" id="canvasSize"></span></div><div class="editor-actions"><button class="icon-button" id="undoButton" title="撤销 · Ctrl+Z" aria-label="撤销" disabled><span data-icon="undo"></span></button><button class="icon-button" id="redoButton" title="重做 · Ctrl+Shift+Z" aria-label="重做" disabled><span data-icon="redo"></span></button></div></div>
+        <div class="editor-toolbar">
+          <div class="scene-breadcrumb"><span class="scene-position" id="sceneDescription" aria-label="镜头位置"></span><span id="sceneName">创作空间</span></div>
+          <div class="editor-actions">
+            <button class="button quiet small" id="editTextToggle" aria-controls="textEditor" aria-expanded="false" disabled><span data-icon="type"></span>改字</button>
+            <div class="scene-actions-wrap">
+              <button class="icon-button" id="sceneActionsButton" aria-label="镜头操作" title="镜头操作" aria-expanded="false" aria-controls="sceneActions" data-requires-project><span data-icon="more"></span></button>
+              <div id="sceneActions" class="popover" hidden><button id="renameSvgScene">重命名</button><button id="copySvgScene">复制镜头</button><button id="moveSvgSceneUp">向前移动</button><button id="moveSvgSceneDown">向后移动</button><button id="deleteSvgScene">删除镜头</button></div>
+            </div>
+            <button class="icon-button" id="undoButton" title="撤销画面 · Ctrl+Z" aria-label="撤销画面" disabled><span data-icon="undo"></span></button><button class="icon-button" id="redoButton" title="重做画面 · Ctrl+Shift+Z" aria-label="重做画面" disabled><span data-icon="redo"></span></button>
+          </div>
+        </div>
         <div class="canvas-viewport" id="canvasViewport">
           <div class="shot-preview">
-          <div class="scene-caption"><span class="eyebrow" id="sceneEyebrow">YOUR NEXT STORY</span><span id="sceneDescription">让灵感，先有一个轮廓。</span></div>
           <div class="canvas-frame"><div class="canvas-stage" id="canvasStage"><div id="canvasSurface" class="canvas-surface" aria-label="当前镜头画布"></div>
             <div id="emptyCanvas" class="empty-canvas">
               <div class="storyboard-art" aria-hidden="true"><svg viewBox="0 0 260 140" fill="none" stroke="#526b46" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -52,14 +63,12 @@
                 <g transform="rotate(-3 130 70)"><path d="M80 19q48-3 101 0l-2 106q-49 3-100-1Z" fill="#fffdf7"/><path d="M92 94q16-27 30-16l15-28 29 46" fill="#e8ecdb"/><path d="m92 94 74 2m-66 13q27-3 59 0"/><circle cx="108" cy="43" r="9" fill="#e4cc91" stroke="#ad9c70"/><path d="m109 14 40 1-1 13-39-1" fill="#d5deba" stroke="none"/></g>
                 <path d="m224 14 2 13m-8-6 14-1M37 17l-3 8m-7-7 7 7m-14 3 10 1" stroke="#8a9c6a"/>
               </svg></div>
-              <span class="eyebrow">A LITTLE IDEA. YOUR NEXT STORY.</span><h1>把刚才的灵感，接着画下去。</h1><p>有想法就好，我们从这一张开始。<br />说出一个场景，或试试下面的小灵感。</p>
+              <h1>这个镜头还没有画面</h1>
               <div class="suggestions"><button data-prompt="给咖啡店做一条15秒短片，分三个镜头：穿黄色雨衣的客人雨中到店，店员递上咖啡，最后给杯子和「雨天咖啡买一送一」字幕一个特写。为每镜保存景别和时长。"><span data-icon="film"></span>雨天咖啡 · 三镜头故事<span>↗</span></button><button data-prompt="画一个雨夜便利店的远景。穿黄色雨衣的人撑伞站在暖光门口，地面倒映店里的灯。"><span data-icon="image"></span>雨夜便利店 · 单镜头草图<span>↗</span></button></div>
             </div>
           </div>
           </div>
-          <div class="svg-shot-tools"><button class="button quiet small" id="renameSvgScene">镜头改名</button><button class="button quiet small" id="moveSvgSceneUp">前移</button><button class="button quiet small" id="moveSvgSceneDown">后移</button><button class="button quiet small" id="editTextToggle" disabled>编辑文字</button></div>
           <details id="shotBrief" class="shot-brief" hidden><summary>拍摄说明</summary><p id="shotBriefText"></p></details>
-          <div class="canvas-footer"><span id="selectionLabel">自由绘制 · 可继续改画或编辑文字</span></div>
           </div>
       <section id="textEditor" class="text-editor" aria-labelledby="textEditorTitle" hidden>
         <div class="text-editor-heading"><h3 id="textEditorTitle">编辑画面文字</h3><button id="closeTextEditor" type="button">关闭</button></div>
@@ -75,20 +84,17 @@
         <div class="text-edit-actions"><button type="button" id="resetTextDraft">还原预览</button><button type="button" id="applyTextEdit" disabled>应用改字</button></div>
       </section>
         </div>
-        <div class="composer-area"><div class="composer-context" id="composerContext"><span class="status-dot"></span><span id="voiceStatus" role="status">连接后即可开始创作</span><span class="composer-hint">语音 / 文字，随你喜欢</span></div>
+        <div class="composer-area"><div class="composer-context" id="composerContext" hidden><span class="status-dot"></span><span id="voiceStatus" role="status"></span><button class="text-button" id="openTaskResult" type="button" hidden>查看任务</button></div>
           <form id="composerForm" class="composer"><button type="button" id="voiceButton" class="mic-button" aria-label="开始语音创作" aria-pressed="false" title="开始语音创作 · Alt+V" data-requires-project><span data-icon="mic"></span></button><label class="sr-only" for="voiceInput">描述你想创作或修改的内容</label><textarea id="voiceInput" rows="1" placeholder="描述你的画面，或说“把标题放大一点”…" data-requires-project></textarea><button class="send-button" id="sendButton" type="submit" aria-label="发送指令" title="发送 · Enter" data-requires-project><span data-icon="arrowUp"></span></button></form>
-          <div class="composer-foot"><span><kbd>Enter</kbd> 发送 · <kbd>Shift Enter</kbd> 换行</span><span id="narrationText">每一步创作，都可以继续修改</span></div>
         </div>
       </section>
 
-      <aside class="assistant-panel" id="assistantPanel" aria-label="创作助手"><div class="assistant-header"><div class="assistant-avatar"><span data-icon="sparkles"></span></div><div><h2>创作助手</h2><span id="assistantConnection">等待连接</span></div><span class="assistant-live" aria-hidden="true"></span></div>
-        <div class="assistant-body"><div class="assistant-intro"><span class="eyebrow">A LITTLE HELP ALONG THE WAY</span><h3>一点点想法，<br />一起慢慢画。</h3><p>不必一次想清楚。说出你的想法，再一起调整成喜欢的样子。</p><svg class="assistant-doodle" viewBox="0 0 120 50" aria-hidden="true"><path d="M8 18c11-14 24 4 10 15C2 47-4 9 34 26s52 3 61-7m-11-1 12 1-4 12M105 6v12m-6-6h12"/></svg></div>
-          <div class="assistant-note"><span data-icon="wave"></span><p>可以直接说：<br /><strong>“把第二个镜头移到最后”</strong></p></div>
-          <section class="turn-card" id="turnCard" hidden><div class="user-request" id="lastInput"></div><div class="result-heading"><span data-icon="sparkles"></span><strong id="resultHeading">正在构思画面</strong></div><p id="resultMessage"></p><button class="text-button" id="undoResult" hidden>撤销上一步 <span>↶</span></button></section>
+      <aside class="assistant-panel" id="assistantPanel" aria-label="创作助手"><div class="assistant-header"><h2>创作助手</h2><button id="closeAssistant" class="icon-button" type="button" aria-label="关闭创作助手" title="关闭创作助手"><span data-icon="close"></span></button></div>
+        <div class="assistant-body"><p class="assistant-empty" id="assistantEmpty">暂无创作任务</p>
+          <section class="turn-card" id="turnCard" hidden><details class="user-request"><summary>原始指令</summary><p id="lastInput"></p></details><div class="result-heading"><strong id="resultHeading"></strong></div><p id="resultMessage" role="status"></p></section>
           <section id="visualFeedback" aria-label="画面预览与评审记录" hidden></section>
           <section class="clarification-card" id="clarificationCard" hidden><span class="eyebrow">需要你的选择</span><h3 id="clarificationQuestion"></h3><div id="clarificationOptions" class="clarification-options"></div><p>也可以直接说出或输入你的回答。</p></section>
         </div>
-        <div class="assistant-footer"><span data-icon="shield"></span><span id="backendStatus">每次修改，自动保存</span></div>
       </aside>
     </main>
   </div>

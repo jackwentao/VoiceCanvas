@@ -2,12 +2,31 @@
 .svg-workspace .canvas-surface { inset:0; width:100%; height:100%; background:transparent }
 .svg-workspace .canvas-surface img { width:100%; height:100%; object-fit:contain; display:block }
 .svg-workspace .scene-thumbnail img { display:block; width:100%; height:100%; object-fit:contain }
-.svg-workspace .svg-scene-tools,.svg-workspace .svg-structure-tools { display:flex; flex-wrap:wrap; gap:4px; margin:0 0 12px; flex-shrink:0 }
-.svg-workspace .svg-scene-tools .button { flex:1; padding:7px 5px }
-.svg-workspace .svg-structure-tools { margin:10px 0 0 }
+.svg-workspace .sidebar .add-scene { margin:0 0 12px; flex-shrink:0 }
+.svg-workspace .svg-structure-tools { display:flex; flex-wrap:wrap; gap:4px }
 .svg-workspace .svg-structure-tools .button { padding:6px }
-.svg-workspace .svg-shot-tools { display:flex; gap:6px; flex-wrap:wrap; width:100%; max-width:1200px; align-self:center; margin-top:14px }
-.svg-workspace .svg-shot-tools button { font-size:10px; padding:6px 8px }
+.svg-workspace .history-label { margin:12px 3px 6px; font-size:10px; color:var(--muted) }
+.svg-workspace .history-section summary { justify-content:flex-start; padding-block:10px }
+.svg-workspace .history-section summary span:last-child { margin-left:0 }
+.svg-workspace .topbar > .save-status { margin-left:auto }
+.svg-workspace .project-tools select { width:0; flex:1 }
+.svg-workspace .scene-position { white-space:nowrap; font-variant-numeric:tabular-nums; color:var(--muted) }
+.svg-workspace .scene-actions-wrap { position:relative }
+.svg-workspace .editor-actions { flex-shrink:0 }
+.svg-workspace .editor-actions .button { padding:6px 8px }
+.svg-workspace #sceneActions { z-index:16 }
+.svg-workspace #sceneActions button:last-child { color:#963e36 }
+.svg-workspace #openTaskResult { margin-left:auto; padding:0; flex-shrink:0 }
+.svg-workspace #voiceStatus { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+.svg-workspace .assistant-header { height:52px; min-height:52px; justify-content:space-between; padding:10px 18px }
+.svg-workspace .assistant-header h2 { margin:0; font-family:inherit; font-size:14px; font-weight:600 }
+.svg-workspace .assistant-body { padding:16px 18px }
+.svg-workspace .assistant-empty { color:var(--muted); margin:0 }
+.svg-workspace .user-request { margin:0 0 14px; padding:7px 10px }
+.svg-workspace .user-request summary { cursor:pointer }
+.svg-workspace .user-request p { margin:6px 0 0; white-space:pre-wrap }
+.svg-workspace .result-heading strong { color:var(--ink); font-weight:600 }
+.svg-workspace .turn-card > p { margin:5px 0 0; white-space:pre-wrap }
 .svg-workspace .canvas-viewport { overflow:clip }
 .svg-workspace .shot-brief { width:100%; max-width:1200px; align-self:center; font-size:12px; line-height:1.7; padding:10px 0; color:var(--muted) }
 .svg-workspace .shot-brief summary { cursor:pointer }
@@ -40,7 +59,7 @@
   gap:16px;
   justify-content:stretch;
 }
-.svg-workspace .canvas-viewport:has(.text-editor:not([hidden])) :is(.svg-shot-tools,.shot-brief,.canvas-footer,.scene-caption) { display:none }
+.svg-workspace .canvas-viewport:has(.text-editor:not([hidden])) .shot-brief { display:none }
 .svg-workspace .text-editor:not([hidden]) {
   display:flex;
   flex-direction:column;
@@ -82,13 +101,19 @@
   }
 }
 @media(max-width:640px) {
-  .svg-workspace .svg-scene-tools { margin-bottom:8px }
-  .svg-workspace .svg-structure-tools { margin-top:4px }
   .svg-workspace .empty-canvas .suggestions { flex-direction:column; width:min(100%, 260px); gap:8px }
   .svg-workspace .empty-canvas .suggestions button { min-height:44px; font-size:12px; padding:7px 10px; text-align:left }
   .svg-workspace .empty-canvas .storyboard-art { display:none }
 }
 @media(max-width:680px) {
+  .svg-workspace .topbar > .save-status { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%) }
+  .svg-workspace .sidebar { grid-template-columns:minmax(0,1fr) auto }
+  .svg-workspace .sidebar .add-scene { margin:0; padding:5px 8px }
+  .svg-workspace .scene-list { grid-column:1/-1 }
+  .svg-workspace .history-section { display:block; grid-column:1/-1; margin:0; max-height:none }
+  .svg-workspace .history-section summary { padding-block:5px }
+  .svg-workspace .history-list { max-height:100px; overflow:auto }
+  .svg-workspace .scene-breadcrumb #sceneName { max-width:none }
   .svg-workspace .canvas-viewport:not(:has(.text-editor:not([hidden]))) .canvas-frame { display:contents }
   .svg-workspace .canvas-viewport:not(:has(.text-editor:not([hidden]))) .canvas-stage { max-width:100% }
   .svg-workspace .canvas-viewport:not(:has(.text-editor:not([hidden]))) .canvas-stage:has(.empty-canvas:not([hidden])) { min-height:280px }

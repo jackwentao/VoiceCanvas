@@ -32,22 +32,27 @@ const count = async n => page.waitForFunction(n => document.querySelectorAll("[d
 const canvasFits = () => page.waitForFunction(() => {
   const viewport = document.querySelector("#canvasViewport");
   const stage = document.querySelector("#canvasStage").getBoundingClientRect();
-  const footer = viewport.querySelector(".canvas-footer").getBoundingClientRect();
   const bounds = viewport.getBoundingClientRect();
   return viewport.scrollHeight <= viewport.clientHeight + 1
     && viewport.scrollWidth <= viewport.clientWidth + 1
     && stage.height > 0 && Math.abs(stage.width / stage.height - 16 / 9) < 0.02
-    && stage.top >= bounds.top && stage.bottom <= footer.top && footer.bottom <= bounds.bottom;
+    && stage.top >= bounds.top && stage.bottom <= bounds.bottom;
 });
 const submit = async text => {
   await page.locator("#voiceInput").fill(text);
   await page.locator("#composerForm").evaluate(f => f.requestSubmit()); await waitIdle();
   assert.equal(await page.locator("#errorBanner").isVisible(), false, await page.locator("#errorText").textContent());
 };
+const shotAction = async id => {
+  await page.locator("#sceneActionsButton").click();
+  await page.locator(`#${id}`).click();
+};
 try {
   await page.goto(`${ui}/index.html?apiBaseUrl=${encodeURIComponent(api)}`);
   await page.locator("[data-create]").first().click();
   await page.waitForURL(/workspace.html.*board=/); await count(1);
+  assert.equal(await page.locator("#assistantPanel").isVisible(), false);
+  assert.equal(await page.locator("#composerContext").isVisible(), false);
   for (const width of [1920, 1366]) {
     await page.setViewportSize({ width, height: width === 1920 ? 906 : 768 });
     await canvasFits();
@@ -70,7 +75,7 @@ try {
   await page.locator("#projectSelect").selectOption(otherBoard.id);
   await page.waitForURL(url => url.searchParams.get("board") === otherBoard.id);
   await waitIdle();
-  assert.equal(await page.locator("#renameButton").textContent(), otherBoard.title);
+  assert.equal(await page.locator("#projectSelect option:checked").textContent(), otherBoard.title);
   assert.equal(await page.locator("#voiceInput").inputValue(), "");
   await page.locator("#drawingStyleButton").click();
   assert.equal(await styleInput.inputValue(), "暖色手绘，背景简洁");
@@ -99,7 +104,7 @@ try {
   await page.unroute(manageUrl);
   await page.locator("#nameSubmit").click();
   await page.locator("#nameDialog").waitFor({ state: "hidden" });
-  assert.equal(await page.locator("#renameButton").textContent(), "雨夜分镜");
+  assert.equal(await page.locator("#projectSelect option:checked").textContent(), "雨夜分镜");
 
   await submit("切换到第一个镜头");
   const draw = page.waitForRequest(r => r.method() === "POST" && r.url().endsWith("/agent/runs"));
@@ -152,24 +157,25 @@ try {
   await page.locator("#textFontSize").fill("48");
   await page.waitForFunction(() => !document.querySelector("#applyTextEdit").disabled);
   await page.locator("#applyTextEdit").click(); await waitIdle();
-  assert.match(await page.locator("#resultMessage").textContent(), /文字已保存/);
+  assert.match(await page.locator("#toast").textContent(), /文字已保存/);
   await page.locator("#closeTextEditor").click();
   assert.equal(await page.locator("#exportButton").isDisabled(), false);
-  await page.locator("#copySvgScene").click(); await count(4); await waitIdle();
+  await shotAction("copySvgScene"); await count(4); await waitIdle();
   await submit("把第二个镜头移到第一位");
   const agentUrl = `${listUrl}/${originalBoard}/agent/runs`;
   await page.route(agentUrl, route => route.fulfill({ status: 503, json: { detail: "模型服务暂不可用" } }));
   const requestsBeforeDelete = requests.length;
   page.once("dialog", dialog => dialog.dismiss());
-  await page.locator("#deleteSvgScene").click(); await waitIdle(); await count(4);
+  await shotAction("deleteSvgScene"); await waitIdle(); await count(4);
   assert.equal(requests.length, requestsBeforeDelete);
   page.once("dialog", async dialog => {
     assert.match(dialog.message(), /删除镜头/);
     await dialog.accept();
   });
-  await page.locator("#deleteSvgScene").click(); await waitIdle(); await count(3);
+  await shotAction("deleteSvgScene"); await waitIdle(); await count(3);
   assert.deepEqual(requests.slice(requestsBeforeDelete), [manageUrl]);
   await page.unroute(agentUrl);
+  await page.locator(".history-section summary").click();
   await page.locator("#undoStructure").click(); await count(4); await waitIdle();
   await submit("删除当前镜头"); await count(4);
   await page.locator('[data-delete-answer="确认删除"]').click(); await count(3); await waitIdle();
@@ -179,6 +185,10 @@ try {
   await page.waitForFunction(() => window.__listening && document.querySelector("#sceneDescription").textContent.startsWith("2 /"));
   await page.locator("#voiceButton").click();
   const savedUrl = page.url(); await page.reload(); await count(4);
+  await page.locator("#openTaskResult").click();
+  assert.equal(await page.locator("#turnCard").isVisible(), true);
+  await page.locator("#closeAssistant").click();
+  await page.locator(".history-section summary").click();
   assert.equal(page.url(), savedUrl);
   await page.locator("#exportButton").click();
   const downloaded = page.waitForEvent("download"); await page.locator('[data-export="png"]').click();

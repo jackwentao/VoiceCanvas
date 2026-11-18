@@ -94,6 +94,7 @@ export class ShotTextEditor {
       return;
     }
     this.$("textEditor").hidden = false;
+    this.$("editTextToggle").setAttribute("aria-expanded", "true");
     await this.ready;
     if (this.$("textEditor").hidden) return;
     this.populate();
@@ -107,6 +108,7 @@ export class ShotTextEditor {
     this.candidate = null;
     this.hasDraft = false;
     this.$("textEditor").hidden = true;
+    this.$("editTextToggle").setAttribute("aria-expanded", "false");
     this.preview(this.state?.svg);
     this.$("editTextToggle").focus();
   }
