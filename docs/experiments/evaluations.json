@@ -123,6 +123,7 @@
             {
               "id": "P3",
               "group": "保留项",
+              "visual": false,
               "requirement": "保留原有文字符号",
               "status": "pass",
               "note": "SVG 中的 ☕ 文本及属性保留。"
@@ -130,6 +131,7 @@
             {
               "id": "P4",
               "group": "保留项",
+              "visual": false,
               "requirement": "镜头 ID、顺序与拍摄说明不变",
               "status": "pass",
               "note": "运行前后镜头元数据一致。"

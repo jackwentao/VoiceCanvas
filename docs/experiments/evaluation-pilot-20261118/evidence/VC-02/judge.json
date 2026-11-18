@@ -1,0 +1,40 @@
+{
+  "runId": "run_65d11bf1880244bd",
+  "rubricVersion": "pilot-v1",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "scoredAt": "2026-11-18T10:20:49.830242+00:00",
+  "elapsedSeconds": 5.377,
+  "reasoningEffort": "off",
+  "usage": {
+    "completion_tokens": 218,
+    "prompt_tokens": 1495,
+    "total_tokens": 1713
+  },
+  "criteria": [
+    {
+      "id": "M1",
+      "status": "pass",
+      "note": "最终第1镜中，女孩右臂伸向杯子，手部位于杯柄处并与之重叠，呈抓握状。"
+    },
+    {
+      "id": "M2",
+      "status": "fail",
+      "note": "最终第1镜中，店员双手位于杯身右侧及杯底下方附近，但未见手部从下方托住杯底，杯底下方仅见白色杯托/杯身延伸，无店员手部接触。"
+    },
+    {
+      "id": "M3",
+      "status": "pass",
+      "note": "最终第1镜中，女孩手部与店员手部均位于同一只白色杯子上，两人接触同一杯。"
+    },
+    {
+      "id": "P1",
+      "status": "pass",
+      "note": "最终第1镜整体为暖黄色调，背景灯光与墙面呈暖色，保留暖色插画风格。"
+    },
+    {
+      "id": "P2",
+      "status": "pass",
+      "note": "最终第1镜中女孩穿黄色雨衣，店员穿白衬衫外搭绿色围裙，服装保留。"
+    }
+  ]
+}

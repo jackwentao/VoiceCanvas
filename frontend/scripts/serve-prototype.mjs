@@ -4,26 +4,17 @@ import { extname, isAbsolute, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = fileURLToPath(new URL("../src/prototype/", import.meta.url));
-const archive = fileURLToPath(new URL("../../docs/experiments/", import.meta.url));
 const port = Number(process.env.PORT || 4178);
 
 const contentTypes = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png"
+  ".json": "application/json; charset=utf-8"
 };
 
 function resolveRequestPath(url) {
   const pathname = decodeURIComponent(new URL(url, `http://127.0.0.1:${port}`).pathname);
-  if (pathname === "/evaluation-data/index.json") return resolve(archive, "evaluations.json");
-  if (pathname.startsWith("/evaluation-data/")) {
-    const asset = pathname.slice("/evaluation-data/".length);
-    return /^evaluation-[a-z0-9-]+\/evidence\/(?:metadata\.json|[A-Z]+-\d+\/(?:initial\.json|result\.json|before\.png|shot-\d+\.png))$/.test(asset)
-      ? resolve(archive, asset)
-      : null;
-  }
   const file = resolve(root, "." + (pathname === "/" ? "/index.html" : pathname));
   const rel = relative(root, file);
   return rel && rel !== ".." && !rel.startsWith(".." + sep) && !isAbsolute(rel) ? file : null;

@@ -7,7 +7,7 @@ const browser = await chromium.launch({
   headless: true,
   ...(process.env.VOICECANVAS_BROWSER_PATH ? { executablePath: process.env.VOICECANVAS_BROWSER_PATH } : {}),
 });
-const ui = process.env.VOICECANVAS_E2E_UI_URL || "http://127.0.0.1:4178";
+const ui = process.env.VOICECANVAS_E2E_UI_URL || "http://127.0.0.1:4180";
 const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
@@ -33,6 +33,11 @@ try {
   await page.getByRole("button", { name: /VC-02/ }).click();
   await page.getByRole("button", { name: "验收判据" }).click();
   assert.match(await page.locator("#case-detail").innerText(), /保留项/);
+  assert.match(await page.locator("#case-detail").innerText(), /deepseek\/deepseek-v4\.1-flash/);
+  assert.match(await page.locator("#case-detail").innerText(), /与首轮核验有分歧/);
+  const scoreUrl = await page.getByRole("link", { name: "评分 JSON" }).getAttribute("href");
+  const score = await (await page.request.get(new URL(scoreUrl, ui).href)).json();
+  assert.equal(score.criteria.length, 5);
   await page.getByRole("button", { name: "产出与对照" }).click();
   await page.waitForFunction(() => document.images.length === 2 && [...document.images].every(img => img.naturalWidth === 1280));
   await page.setViewportSize({ width: 390, height: 844 });

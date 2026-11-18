@@ -1,0 +1,35 @@
+{
+  "runId": "run_bdda064048d3476e",
+  "rubricVersion": "pilot-v1",
+  "model": "deepseek/deepseek-v4.1-flash",
+  "scoredAt": "2026-11-18T10:20:44.442873+00:00",
+  "elapsedSeconds": 9.7,
+  "reasoningEffort": "off",
+  "usage": {
+    "completion_tokens": 187,
+    "prompt_tokens": 2117,
+    "total_tokens": 2304
+  },
+  "criteria": [
+    {
+      "id": "V1",
+      "status": "pass",
+      "note": "第1镜：雨线清晰，女孩黑色短发、穿黄色雨衣，右手伸向店门把手，呈入店动作；门头招牌“暖杯咖啡”四字可读。"
+    },
+    {
+      "id": "V2",
+      "status": "fail",
+      "note": "第2镜：白衬衫绿围裙店员与黄雨衣女孩分站柜台两侧，咖啡杯独立放在两人之间的台面上，两人双手均未接触杯子。"
+    },
+    {
+      "id": "V3",
+      "status": "pass",
+      "note": "第3镜：咖啡杯位于画面中央近景，上方字幕“雨天咖啡买一送一”逐字清晰可读。"
+    },
+    {
+      "id": "V4",
+      "status": "pass",
+      "note": "三镜均以棕黄暖色为主调，采用扁平插画式造型与柔和光晕，视觉语言统一。"
+    }
+  ]
+}

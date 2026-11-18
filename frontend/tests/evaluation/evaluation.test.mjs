@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { comparisonMismatch, countStatus, median, toolSteps, verdict } from "../../src/prototype/evaluation-data.js";
+import { comparisonMismatch, countStatus, median, toolSteps, verdict } from "../../src/evaluation/evaluation-data.js";
 
 const archive = new URL("../../../docs/experiments/", import.meta.url);
 const readJson = async path => JSON.parse(await readFile(new URL(path, archive), "utf8"));

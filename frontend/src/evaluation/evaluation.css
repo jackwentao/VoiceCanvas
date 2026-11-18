@@ -33,7 +33,6 @@ h3 { font-size: 15px }
 .brand-mark i:nth-child(3) { height: 17px }
 .brand-mark i:nth-child(4) { height: 8px }
 .topbar-title { color: var(--muted); padding-left: 18px; border-left: 1px solid var(--line) }
-.topbar-link { margin-left: auto; text-decoration: none; font-size: 13px }
 .heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding: 30px 0 22px }
 .heading p { margin-top: 8px; overflow-wrap: anywhere }
 .muted, .caption { color: var(--muted) }
@@ -84,7 +83,8 @@ table { border-spacing: 0; width: 100%; text-align: left; background: var(--surf
 th, td { padding: 9px 11px; border-bottom: 1px solid var(--line); vertical-align: top }
 th { color: var(--muted); font-size: 12px; background: #eff3ef }
 .criterion { min-width: 180px }
-.table-status { white-space: nowrap }
+td p { margin-top: 5px }
+td small { color: var(--review) }
 .timings { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; background: var(--surface); border: 1px solid var(--line); padding: 12px; border-radius: 5px }
 .timings div { min-width: 104px }
 .timings dt { color: var(--muted); font-size: 12px }
@@ -111,7 +111,6 @@ pre { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflo
   .shell { width: calc(100% - 28px) }
   .topbar-inner { gap: 10px; min-height: 54px }
   .topbar-title { padding-left: 10px }
-  .topbar-link { font-size: 12px }
   h1 { font-size: 25px }
   .heading { padding-top: 20px }
   .selectors { width: 100% }

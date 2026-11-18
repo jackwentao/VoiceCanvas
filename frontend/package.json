@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "prototype": "node scripts/serve-prototype.mjs",
-    "test": "npm run test:prototype && npm run test:shot && npm run test:evaluation",
+    "evaluation": "node scripts/serve-evaluation.mjs",
+    "test": "npm run test:prototype && npm run test:shot",
     "test:evaluation": "node --test tests/evaluation/evaluation.test.mjs",
     "test:evaluation-browser": "node tests/evaluation/evaluation.e2e.mjs",
     "test:workspace-browser": "node tests/shot/svg-workspace.e2e.mjs",

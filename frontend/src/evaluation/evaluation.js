@@ -39,6 +39,17 @@ async function json(url) {
   return response.json();
 }
 
+async function loadJudge(base, batch, result) {
+  const response = await fetch(`${base}/judge.json`);
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`读取评分失败（HTTP ${response.status}）`);
+  const score = await response.json();
+  if (score.runId !== result.run.id || score.rubricVersion !== batch.rubricVersion) {
+    throw new Error("评分记录与当前运行或判据版本不匹配。");
+  }
+  return score;
+}
+
 async function loadBatch(batch) {
   if (!batch) return null;
   if (!batchCache.has(batch.id)) {
@@ -48,7 +59,8 @@ async function loadBatch(batch) {
       Promise.all(batch.cases.map(async entry => {
         const base = `${archive}/${encodeURIComponent(entry.id)}`;
         const [initial, result] = await Promise.all([json(`${base}/initial.json`), json(`${base}/result.json`)]);
-        return { ...entry, base, initial, result, verdict: verdict(entry.criteria) };
+        const judge = await loadJudge(base, batch, result);
+        return { ...entry, base, initial, result, judge, verdict: verdict(entry.criteria) };
       })),
     ]).then(([meta, cases]) => ({ ...batch, meta, cases })).catch(error => {
       batchCache.delete(batch.id);
@@ -195,11 +207,34 @@ function renderComparison(entry) {
 
 function renderRubric(entry) {
   const operationCount = countStatus(entry.operations.map(item => item.status), "pass");
+  const modelScores = new Map(entry.judge?.criteria.map(item => [item.id, item]));
+  const rows = entry.criteria.map(item => {
+    const review = container("div", badge(item.status), node("p", item.note));
+    const row = [`${item.id} · ${item.group}`, node("span", item.requirement, { class: "criterion" }), review];
+    if (entry.judge) {
+      const score = modelScores.get(item.id);
+      const evaluation = score ? container("div", badge(score.status), node("p", score.note)) : node("span", "—");
+      if (score && score.status !== item.status) evaluation.append(node("small", "与首轮核验有分歧", { class: "caption" }));
+      row.push(evaluation);
+    }
+    return row;
+  });
+  const headers = ["判据", "验收条件", "归档核验"];
+  const details = [];
+  if (entry.judge) {
+    headers.push("DeepSeek 评分");
+    const count = countStatus(entry.judge.criteria.map(item => item.status), "pass");
+    const meta = container("p", document.createTextNode(
+      `${entry.judge.model} · ${ratio(count)} 画面判据通过 · ${seconds(entry.judge.elapsedSeconds)} · `),
+    link("评分 JSON", `${entry.base}/judge.json`));
+    meta.className = "caption";
+    details.push(meta);
+  } else {
+    details.push(node("p", "暂无模型评分。", { class: "caption" }));
+  }
   return [
-    table(["判据", "验收条件", "结果", "观察记录"], entry.criteria.map(item => [
-      `${item.id} · ${item.group}`, node("span", item.requirement, { class: "criterion" }),
-      badge(item.status), item.note,
-    ])),
+    ...details,
+    table(headers, rows),
     node("h3", `必要操作 · ${ratio(operationCount)}`),
     table(["操作", "结果"], entry.operations.map(item => [item.label, badge(item.status)])),
   ];
