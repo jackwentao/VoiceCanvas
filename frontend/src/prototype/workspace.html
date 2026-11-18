@@ -49,7 +49,7 @@
                 <path d="m224 14 2 13m-8-6 14-1M37 17l-3 8m-7-7 7 7m-14 3 10 1" stroke="#8a9c6a"/>
               </svg></div>
               <span class="eyebrow">A LITTLE IDEA. YOUR NEXT STORY.</span><h1>把刚才的灵感，接着画下去。</h1><p>有想法就好，我们从这一张开始。<br />说出一个场景，或试试下面的小灵感。</p>
-              <div class="suggestions"><button data-prompt="创建一个三镜头的珍珠奶茶带货分镜，主打低糖和新品上市"><span data-icon="film"></span>新品奶茶 · 三镜头分镜<span>↗</span></button><button data-prompt="添加一个标题，内容是今天也要好好生活"><span data-icon="type"></span>从一句标题开始<span>↗</span></button></div>
+              <div class="suggestions"><button data-prompt="给咖啡店做一条15秒短片，分三个镜头：穿黄色雨衣的客人雨中到店，店员递上咖啡，最后给杯子和「雨天咖啡买一送一」字幕一个特写。为每镜保存景别和时长。"><span data-icon="film"></span>雨天咖啡 · 三镜头故事<span>↗</span></button><button data-prompt="画一个雨夜便利店的远景。穿黄色雨衣的人撑伞站在暖光门口，地面倒映店里的灯。"><span data-icon="image"></span>雨夜便利店 · 单镜头草图<span>↗</span></button></div>
             </div>
           </div>
           <div class="svg-shot-tools"><button class="button quiet small" id="renameSvgScene">镜头改名</button><button class="button quiet small" id="moveSvgSceneUp">前移</button><button class="button quiet small" id="moveSvgSceneDown">后移</button><button class="button quiet small" id="editTextToggle" disabled>编辑文字</button></div>
@@ -75,7 +75,7 @@
 
       <aside class="assistant-panel" id="assistantPanel" aria-label="创作助手"><div class="assistant-header"><div class="assistant-avatar"><span data-icon="sparkles"></span></div><div><h2>创作助手</h2><span id="assistantConnection">等待连接</span></div><span class="assistant-live" aria-hidden="true"></span></div>
         <div class="assistant-body"><div class="assistant-intro"><span class="eyebrow">A LITTLE HELP ALONG THE WAY</span><h3>一点点想法，<br />一起慢慢画。</h3><p>不必一次想清楚。说出你的想法，再一起调整成喜欢的样子。</p><svg class="assistant-doodle" viewBox="0 0 120 50" aria-hidden="true"><path d="M8 18c11-14 24 4 10 15C2 47-4 9 34 26s52 3 61-7m-11-1 12 1-4 12M105 6v12m-6-6h12"/></svg></div>
-          <div class="assistant-note"><span data-icon="wave"></span><p>可以直接说：<br /><strong>“把第二个镜头的标题放大一点”</strong></p></div>
+          <div class="assistant-note"><span data-icon="wave"></span><p>可以直接说：<br /><strong>“把第二个镜头移到最后”</strong></p></div>
           <section class="turn-card" id="turnCard" hidden><div class="user-request" id="lastInput"></div><div class="result-heading"><span data-icon="sparkles"></span><strong id="resultHeading">正在构思画面</strong></div><p id="resultMessage"></p><button class="text-button" id="undoResult" hidden>撤销上一步 <span>↶</span></button></section>
           <section id="visualFeedback" aria-label="画面预览与评审记录" hidden></section>
           <section class="clarification-card" id="clarificationCard" hidden><span class="eyebrow">需要你的选择</span><h3 id="clarificationQuestion"></h3><div id="clarificationOptions" class="clarification-options"></div><p>也可以直接说出或输入你的回答。</p></section>
@@ -85,7 +85,7 @@
     </main>
   </div>
 
-  <dialog id="nameDialog" class="dialog"><form id="nameForm"><div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>给这次创作取个名字。</p><label for="nameInput">项目名称</label><input id="nameInput" maxlength="120" required placeholder="例如：低糖奶茶上新分镜" /><div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button type="submit" class="button primary">确认</button></div></form></dialog>
+  <dialog id="nameDialog" class="dialog"><form id="nameForm"><div class="dialog-heading"><h2 id="nameDialogTitle">新建项目</h2><button type="button" class="icon-button" data-close-dialog aria-label="关闭"><span data-icon="close"></span></button></div><p>给这次创作取个名字。</p><label for="nameInput">项目名称</label><input id="nameInput" maxlength="120" required placeholder="例如：雨天咖啡" /><div class="dialog-actions"><button type="button" class="button" data-close-dialog>取消</button><button type="submit" class="button primary">确认</button></div></form></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
   <script type="module" src="./svg-workspace.js"></script>
 </body>

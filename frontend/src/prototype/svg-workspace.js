@@ -16,11 +16,6 @@ renderWorkspaceIcons();
 $("exportMenu").replaceChildren(...[ ["png", "当前镜头 · PNG"], ["svg", "当前镜头 · SVG"] ].map(([format, text]) => {
   const button = document.createElement("button"); button.dataset.export = format; button.textContent = text; return button;
 }));
-document.querySelector(".assistant-note strong").textContent = "说出完整故事，Agent 会选择工具完成分镜";
-document.querySelectorAll("[data-prompt]").forEach((button, index) => {
-  button.dataset.prompt = index ? "新建一个镜头，画雨夜里的手机特写" : "画一个雨夜便利店门口，女孩抱起小猫的中景插画";
-  button.textContent = index ? "下一个镜头 · 手机特写 ↗" : "从一个雨夜故事开始 ↗";
-});
 $("voiceInput").maxLength = 8000;
 $("voiceInput").placeholder = "描述完整故事、需要几个镜头，或直接说要修改哪里…";
 $("nameInput").maxLength = 100;

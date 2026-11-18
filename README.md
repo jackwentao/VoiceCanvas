@@ -1,12 +1,16 @@
 # VoiceCanvas
 
-用语音或文字，把故事变成可继续修改的分镜草图。
+**用语音或文字创建可编辑的 SVG 分镜。**
 
 VoiceCanvas 面向需要向摄影师、剪辑师或团队说明画面想法的内容创作者。用户描述故事、镜头数量、时长和关键动作，Agent 自主选择工具，创建独立镜头并生成自由 SVG；之后可以调整顺序、继续改画、直接修改对白和字幕，导出 PNG 或 SVG。
 
-![VoiceCanvas 分镜工作台实测](docs/experiments/storyboard-agent-20261117/workspace.jpg)
+## 界面预览
 
-上图来自真实模型的三镜头业务模拟。项目目前是可运行的创作原型，适合表达和讨论镜头意图；复杂人物动作、手与物体接触、跨镜角色一致性仍需人工验收。
+![雨天咖啡的三镜头项目，当前画布为咖啡特写](docs/experiments/storyboard-agent-20261117/workspace.jpg)
+
+工作台截图来自真实模型生成的「雨天咖啡」三镜头项目。每个镜头可单独改画、编辑文字和导出。
+
+![VoiceCanvas 画廊首页，展示三幅原创样例与新建分镜入口](docs/screenshots/gallery.webp)
 
 ## 能做什么
 
@@ -26,7 +30,7 @@ VoiceCanvas 面向需要向摄影师、剪辑师或团队说明画面想法的�
 
 ## 本地运行
 
-准备 Python 3.11+、uv、Node.js 20+，以及可用的模型 API 密钥。当前验证模型为 `deepseek/deepseek-v4.1-flash`；语音和文字使用同一条 Agent 通路。画廊和管理按钮可离线使用，创作与看图评审需要模型服务。
+准备 Python 3.11+、uv、Node.js 20+，以及支持工具调用的 OpenAI-compatible 模型 API 密钥。已验证 `deepseek/deepseek-v4.1-flash`。语音和文字使用同一个 Agent。画廊、分镜管理和直接改字可在本机使用，生成画面和图片评审需要模型服务。
 
 终端一，从仓库根目录启动后端：
 
@@ -52,11 +56,9 @@ npm run prototype
 
 项目实现了工具调用执行与交付核对、SVG 白名单及原子源码修改、独立版本历史、并发冲突处理、任务持久化恢复，以及直接文字编辑的测量和保存闭环。领域与应用层通过协议隔离模型、浏览器、数据库和 HTTP。
 
-画面构图、SVG 绘制、自然语言决策和图片评审来自外部 DeepSeek 模型；语音识别与播报来自浏览器 Web Speech API；内置作画知识改编自有明确许可的第三方 skill。这些能力不作为项目自研模型或自研语音识别来描述。来源和用途见[依赖与原创边界](docs/技术选型与依赖声明.md)。
+FastAPI 和 Pydantic 提供 API 与数据校验，SQLite 保存分镜与版本，HTTPX 调用模型 API。画面构图、SVG 绘制、自然语言决策和图片评审由外部模型完成。语音识别和播报使用浏览器 Web Speech API，服务端看图工具使用 Chromium 或 Edge 渲染。内置作画知识改编自第三方 skill。[依赖与原创边界](docs/技术选型与依赖声明.md)
 
-真实验证中，完整三镜头需求能形成独立镜头并保存；单镜生成关闭思考后的两个样本约为16.7秒、20.8秒，不能视为平均延迟。递杯用例中，模型能够看出主要偏差，一次修正后仍未画准。当前没有证据证明已达到稳定成品画质，也没有正式客户使用数据。[验证索引](docs/experiments/README.md) 保留原始产物、用量和失败样本。
-
-当前版本未提供账号权限、多人协作、视频生成或生产环境任务队列。服务使用单个 Uvicorn 进程；浏览器语音支持和字体效果需在实际设备上检查。
+复杂人物动作、手与物体接触和跨镜角色一致性需要人工检查。在递杯实测中，模型识别了握杯偏差，一次修正后仍有问题。[原始输出、耗时与失败样本](docs/experiments/README.md)
 
 ## 阅读与验证
 
@@ -80,3 +82,5 @@ uv run --frozen --no-editable pytest -q
 cd frontend
 npm test
 ```
+
+欢迎提交问题和改进建议。反馈绘图偏差时，请附上提示词、模型名称和对应镜头截图。[GitHub Issues](https://github.com/jackwentao/VoiceCanvas/issues)

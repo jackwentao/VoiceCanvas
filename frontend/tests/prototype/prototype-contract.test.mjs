@@ -9,6 +9,7 @@ import {
 async function testPrototypeHtml() {
   const root = new URL("../../src/prototype/", import.meta.url);
   const html = await readFile(new URL("workspace.html", root), "utf-8");
+  const home = await readFile(new URL("index.html", root), "utf-8");
   const app = await readFile(new URL("svg-workspace.js", root), "utf-8");
   const css = await readFile(new URL("workspace.css", root), "utf-8");
   for (const id of ["voiceButton", "voiceInput", "canvasSurface", "sceneList", "undoButton",
@@ -20,6 +21,9 @@ async function testPrototypeHtml() {
     assert.ok(!html.includes(removed), `工作台不应保留旧入口 ${removed}`);
   }
   assert.ok(app.includes("new StoryboardClient"));
+  assert.match(home, /用三个镜头讲一场雨和一杯咖啡/);
+  assert.match(html, /data-prompt="给咖啡店[^"]*景别和时长/);
+  assert.match(html, /data-prompt="画一个雨夜便利店/);
   assert.ok(!app.includes('params.get("shot")'));
   assert.ok(!app.includes('import("./app.js")'));
   assert.ok(css.includes("prefers-reduced-motion"));
