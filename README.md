@@ -1,8 +1,10 @@
 # VoiceCanvas
 
-**用语音或文字创建可编辑的 SVG 分镜。**
+**一句话语音或文本生成多镜头分镜 → 局部编辑修改 → 导出画面。**
 
 VoiceCanvas 帮短视频创作者把拍摄想法变成可以逐镜讨论和修改的分镜。描述故事、时长和关键动作后，Agent 会拆分镜头，生成画面并保存拍摄说明。开拍前可以调整顺序、修改字幕，再把镜头交给拍摄或剪辑团队。
+
+[架构设计](docs/ARCHITECTURE.md) · [演示视频](#视频演示) · Cloudflare 在线体验（待部署）
 
 ## 视频演示
 
@@ -11,6 +13,10 @@ VoiceCanvas 帮短视频创作者把拍摄想法变成可以逐镜讨论和修�
 [播放或下载 MP4](https://raw.githubusercontent.com/jackwentao/VoiceCanvas/main/docs/demo/voicecanvas-demo.mp4) · [图文演示](#图文演示)
 
 视频从首页进入新版工作台，再打开先前由真实模型生成的「雨天咖啡」项目，演示镜头管理、直接改字、SVG 导出与导入，以及保存默认画风。
+
+| 查看镜头 | 局部编辑 | 导回导出的 SVG |
+| --- | --- | --- |
+| ![雨天咖啡镜头列表](docs/screenshots/demo-workspace.webp) | ![修改咖啡特写的字幕](docs/screenshots/demo-edit.webp) | ![导入已导出的分镜](docs/screenshots/demo-import.webp) |
 
 ## 图文演示
 
